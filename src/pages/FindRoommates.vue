@@ -22,8 +22,8 @@
               :class="{ 'is-saved': isSaved(posting._id) }"
               :title="isSaved(posting._id) ? 'Remove from favorites' : 'Add to favorites'"
             >
-              <span v-if="isSaved(posting._id)">❤️</span>
-              <span v-else>🤍</span>
+              <span v-if="isSaved(posting._id)">♥</span>
+              <span v-else>♡</span>
             </button>
           </div>
 
@@ -448,6 +448,10 @@ export default {
   padding: 0.25rem;
   transition: transform 0.2s;
   line-height: 1;
+}
+
+.favorite-btn.is-saved {
+  color: #dc3545;
 }
 
 .favorite-btn:hover {

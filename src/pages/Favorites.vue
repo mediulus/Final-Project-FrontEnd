@@ -24,7 +24,7 @@
                   class="favorite-btn"
                   title="Remove from favorites"
                 >
-                  <span>❤️</span>
+                  <span>♥</span>
                 </button>
               </div>
 
@@ -58,7 +58,7 @@
                   class="favorite-btn"
                   title="Remove from favorites"
                 >
-                  <span>❤️</span>
+                  <span>♥</span>
                 </button>
               </div>
 
@@ -410,6 +410,7 @@ export default {
   padding: 0.25rem;
   transition: transform 0.2s;
   line-height: 1;
+  color: #dc3545;
 }
 
 .favorite-btn:hover {

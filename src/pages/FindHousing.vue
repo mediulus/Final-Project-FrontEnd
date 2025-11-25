@@ -23,8 +23,8 @@
                 :class="{ 'is-saved': isSaved(listing._id) }"
                 :title="isSaved(listing._id) ? 'Remove from favorites' : 'Add to favorites'"
               >
-                <span v-if="isSaved(listing._id)">❤️</span>
-                <span v-else>🤍</span>
+                <span v-if="isSaved(listing._id)">♥</span>
+                <span v-else>♡</span>
               </button>
               <div v-if="isOwner(listing)" class="owner-badge">Your Listing</div>
             </div>
@@ -573,6 +573,7 @@ export default {
 }
 
 .favorite-btn.is-saved {
+  color: #dc3545;
   animation: heartbeat 0.3s ease;
 }
 
