@@ -389,6 +389,9 @@ export default {
         const result = await listings.sendInterest(listingId);
         console.log('Interest sent successfully:', result);
         alert('Your interest has been sent to the listing owner!');
+        
+        // Refetch saved items to update local state
+        await fetchSavedItems();
       } catch (err) {
         console.error('Error sending interest:', err);
         alert('Failed to send interest: ' + (err.message || 'Unknown error'));

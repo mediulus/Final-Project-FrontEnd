@@ -261,6 +261,9 @@ export default {
         const result = await roommatePostings.contact(postingId);
         console.log('Contact sent successfully:', result);
         alert('Your interest has been sent to the posting owner!');
+        
+        // Refetch saved items to update local state
+        await fetchSavedItems();
       } catch (err) {
         console.error('Error contacting poster:', err);
         alert('Failed to send contact request: ' + (err.message || 'Unknown error'));

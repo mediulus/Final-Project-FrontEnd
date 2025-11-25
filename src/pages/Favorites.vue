@@ -32,8 +32,15 @@
                 <p class="info"><strong>👤</strong> {{ posting.gender }}, {{ posting.age }} years old</p>
                 <p class="description">{{ posting.description }}</p>
                 <div class="tags">
-                  <span v-for="tag in getItemTags(posting._id)" :key="tag" class="tag">{{ tag }}</span>
+                  <span v-for="tag in getItemTags(posting._id)" :key="tag" class="tag" :class="{ 'tag-contacted': tag === 'Contacted' }">{{ tag }}</span>
                 </div>
+                <button 
+                  @click="contactPoster(posting._id)" 
+                  class="contact-btn"
+                  :disabled="isContacting"
+                >
+                  {{ isContacting ? 'Sending...' : 'Contact Me' }}
+                </button>
               </div>
             </div>
           </div>
@@ -62,8 +69,15 @@
                 </p>
                 <p class="price"><strong>💵</strong> ${{ listing.price }}/month</p>
                 <div class="tags">
-                  <span v-for="tag in getItemTags(listing._id)" :key="tag" class="tag">{{ tag }}</span>
+                  <span v-for="tag in getItemTags(listing._id)" :key="tag" class="tag" :class="{ 'tag-contacted': tag === 'Contacted' }">{{ tag }}</span>
                 </div>
+                <button 
+                  @click="sendInterest(listing._id)" 
+                  class="interest-btn"
+                  :disabled="isSendingInterest"
+                >
+                  {{ isSendingInterest ? 'Sending...' : 'Send Interest' }}
+                </button>
               </div>
             </div>
           </div>
@@ -91,6 +105,8 @@ export default {
     const allHousingListings = ref([]);
     const isLoading = ref(false);
     const error = ref('');
+    const isContacting = ref(false);
+    const isSendingInterest = ref(false);
 
     const savedItems = computed(() => {
       return savedItems_data.value;
@@ -108,7 +124,9 @@ export default {
 
     const getItemTags = (itemId) => {
       const savedItem = savedItemsMap.value.get(itemId);
-      return savedItem && savedItem.tags ? savedItem.tags : [];
+      const tags = savedItem && savedItem.tags ? savedItem.tags : [];
+      console.log(`getItemTags(${itemId}):`, tags, 'savedItemsMap:', Array.from(savedItemsMap.value.entries()));
+      return tags;
     };
 
     const formatDate = (dateString) => {
@@ -147,10 +165,28 @@ export default {
         const tagsMap = new Map();
         
         items.forEach(saved => {
+          console.log('Processing saved item structure:', JSON.stringify(saved, null, 2));
           if (saved.savedItem && saved.savedItem.item) {
             const itemId = saved.savedItem.item;
-            itemIds.push(itemId);
-            tagsMap.set(itemId, { tags: saved.savedItem.tags || [] });
+            const tags = saved.savedItem.tags || [];
+            console.log(`Found itemId: ${itemId}, tags:`, tags);
+            
+            // Add itemId if not already in the list
+            if (!itemIds.includes(itemId)) {
+              itemIds.push(itemId);
+            }
+            
+            // Merge tags if item already exists in map
+            if (tagsMap.has(itemId)) {
+              const existingTags = tagsMap.get(itemId).tags;
+              const mergedTags = [...new Set([...existingTags, ...tags])];
+              tagsMap.set(itemId, { tags: mergedTags });
+              console.log(`Merged tags for ${itemId}:`, mergedTags);
+            } else {
+              tagsMap.set(itemId, { tags: tags });
+            }
+          } else {
+            console.log('Saved item does not have expected structure');
           }
         });
         
@@ -181,6 +217,56 @@ export default {
 
 
 
+    const contactPoster = async (postingId) => {
+      if (!sessionStore.user || !sessionStore.user.id) {
+        alert('Please log in to contact posters');
+        return;
+      }
+
+      isContacting.value = true;
+
+      try {
+        console.log('Contacting poster for posting:', postingId);
+        const result = await roommatePostingsApi.contact(postingId);
+        console.log('Contact sent successfully:', result);
+        alert('Your interest has been sent to the posting owner!');
+        
+        // Wait a moment for backend to process, then refetch saved items
+        await new Promise(resolve => setTimeout(resolve, 500));
+        await fetchSavedItems();
+      } catch (err) {
+        console.error('Error contacting poster:', err);
+        alert('Failed to send contact request: ' + (err.message || 'Unknown error'));
+      } finally {
+        isContacting.value = false;
+      }
+    };
+
+    const sendInterest = async (listingId) => {
+      if (!sessionStore.user || !sessionStore.user.id) {
+        alert('Please log in to send interest');
+        return;
+      }
+
+      isSendingInterest.value = true;
+
+      try {
+        console.log('Sending interest for listing:', listingId);
+        const result = await listingsApi.sendInterest(listingId);
+        console.log('Interest sent successfully:', result);
+        alert('Your interest has been sent to the listing owner!');
+        
+        // Wait a moment for backend to process, then refetch saved items
+        await new Promise(resolve => setTimeout(resolve, 500));
+        await fetchSavedItems();
+      } catch (err) {
+        console.error('Error sending interest:', err);
+        alert('Failed to send interest: ' + (err.message || 'Unknown error'));
+      } finally {
+        isSendingInterest.value = false;
+      }
+    };
+
     const removeFavorite = async (itemId) => {
       if (!sessionStore.user || !sessionStore.user.id) {
         alert('Please log in');
@@ -210,7 +296,11 @@ export default {
       error,
       getItemTags,
       formatDate,
-      removeFavorite
+      removeFavorite,
+      contactPoster,
+      isContacting,
+      sendInterest,
+      isSendingInterest
     };
   }
 };
@@ -365,6 +455,37 @@ export default {
   border-radius: 12px;
   font-size: 0.85rem;
   font-weight: 600;
+}
+
+.tag-contacted {
+  background: #e7e6b5;
+  color: #5c6d43;
+}
+
+.contact-btn,
+.interest-btn {
+  width: 100%;
+  background: #1e5a2e;
+  color: white;
+  border: none;
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-top: 1rem;
+  transition: background 0.2s, opacity 0.2s;
+}
+
+.contact-btn:hover:not(:disabled),
+.interest-btn:hover:not(:disabled) {
+  background: #123619;
+}
+
+.contact-btn:disabled,
+.interest-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 @media (max-width: 768px) {
