@@ -65,18 +65,67 @@ export default {
       errorMessage.value = '';
 
       try {
-        // Login creates session automatically
-        const result = await auth.login(formData.value.username, formData.value.password);
-        // If backend returns a session token, store it in Pinia
-        if (result && result.token) {
-          sessionStore.setToken(result.token);
+        // Authenticate user
+        console.log('Attempting login with username:', formData.value.username);
+        const authResult = await auth.login(formData.value.username, formData.value.password);
+        console.log('Auth result:', authResult);
+        console.log('Auth result type:', typeof authResult);
+        console.log('Auth result keys:', authResult ? Object.keys(authResult) : 'null');
+        
+        if (!authResult) {
+          throw new Error('Authentication failed - no response');
         }
-        if (result && result.user) {
-          sessionStore.setUser(result.user);
+
+        // Backend returns session directly from authenticate endpoint
+        let sessionToken;
+        let userId;
+        
+        if (authResult.session) {
+          // Backend creates session automatically during authentication
+          sessionToken = authResult.session;
+          console.log('Session token from auth:', sessionToken);
+          
+          // We can get user ID from session token or use username as fallback
+          userId = authResult.user || formData.value.username;
+        } else if (authResult.user) {
+          // Old flow: get user ID, then create session
+          userId = authResult.user;
+          console.log('User ID:', userId);
+          
+          // Create session
+          console.log('Creating session for user:', userId);
+          const sessionResult = await auth.createSession(userId);
+          console.log('Session result:', sessionResult);
+          
+          if (!sessionResult || !sessionResult.session) {
+            throw new Error('Failed to create session');
+          }
+          
+          sessionToken = sessionResult.session;
+          console.log('Session token:', sessionToken);
+        } else {
+          console.error('Unexpected auth result format:', authResult);
+          throw new Error('Authentication failed - invalid response format');
         }
+
+        // Store session token
+        sessionStore.setToken(sessionToken);
+        
+        // Store user info (id and username for now)
+        sessionStore.setUser({ 
+          id: userId, 
+          username: formData.value.username 
+        });
+        
+        console.log('Session store after login:', {
+          token: sessionStore.token,
+          user: sessionStore.user
+        });
+        
         // Redirect to home page (Find Housing)
         router.push('/home');
       } catch (error) {
+        console.error('Login error:', error);
         errorMessage.value = error.message || 'Login failed. Please check your credentials.';
       } finally {
         isLoading.value = false;

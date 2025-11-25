@@ -2,7 +2,7 @@
   <main class="register-page">
     <div class="register-container">
       <h1>Register for DAM Good Housing</h1>
-  <form @submit.prevent="emitRegister" class="register-form">
+  <form @submit.prevent="handleRegister" class="register-form">
         <div class="form-group">
           <label for="username">Username *</label>
           <input
@@ -88,13 +88,19 @@
 </template>
 
 <script>
+import { ref } from 'vue';
+import { useRouter } from 'vue-router';
+import { auth } from '../utils/api.js';
+import { useSessionStore } from '../stores/session.js';
+
 export default {
   name: 'Register',
-  props: {
-    isLoading: Boolean,
-    errorMessage: String
-  },
-  setup(props, { emit }) {
+  setup() {
+    const router = useRouter();
+    const sessionStore = useSessionStore();
+    const isLoading = ref(false);
+    const errorMessage = ref('');
+    
     const formData = ref({
       username: '',
       password: '',
@@ -104,13 +110,34 @@ export default {
       affiliation: ''
     });
 
-    const emitRegister = () => {
-      emit('register', { ...formData.value });
+    const handleRegister = async () => {
+      isLoading.value = true;
+      errorMessage.value = '';
+
+      try {
+        const result = await auth.register(
+          formData.value.username,
+          formData.value.password,
+          formData.value.age,
+          formData.value.gender,
+          formData.value.affiliation,
+          formData.value.emailAddress
+        );
+        
+        // Registration successful, redirect to login
+        router.push('/login');
+      } catch (error) {
+        errorMessage.value = error.message || 'Registration failed. Please try again.';
+      } finally {
+        isLoading.value = false;
+      }
     };
 
     return {
       formData,
-      emitRegister
+      isLoading,
+      errorMessage,
+      handleRegister
     };
   }
 };

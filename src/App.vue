@@ -16,7 +16,7 @@
           </div>
 
           <!-- Profile Dropdown -->
-          <div v-if="showProfileDropdown" class="profile-dropdown" @click.stop>
+          <div v-if="showProfileDropdown && sessionStore.user" class="profile-dropdown" @click.stop>
             <div class="dropdown-header">
               <h3>Profile</h3>
               <button @click="toggleProfileDropdown" class="close-btn">×</button>
@@ -29,11 +29,11 @@
                 <div class="info-value">
                   <input
                     v-if="editing.username"
-                    v-model="userInfo.username"
+                    v-model="sessionStore.user.username"
                     @blur="saveField('username')"
                     @keyup.enter="saveField('username')"
                   />
-                  <span v-else>{{ userInfo.username }}</span>
+                  <span v-else>{{ sessionStore.user.username }}</span>
                   <button @click="editField('username')" class="edit-btn">✏️</button>
                 </div>
               </div>
@@ -44,12 +44,12 @@
                 <div class="info-value">
                   <input
                     v-if="editing.email"
-                    v-model="userInfo.email"
+                    v-model="sessionStore.user.email"
                     @blur="saveField('email')"
                     @keyup.enter="saveField('email')"
                     type="email"
                   />
-                  <span v-else>{{ userInfo.email }}</span>
+                  <span v-else>{{ sessionStore.user.email }}</span>
                   <button @click="editField('email')" class="edit-btn">✏️</button>
                 </div>
               </div>
@@ -60,12 +60,12 @@
                 <div class="info-value">
                   <input
                     v-if="editing.age"
-                    v-model.number="userInfo.age"
+                    v-model.number="sessionStore.user.age"
                     @blur="saveField('age')"
                     @keyup.enter="saveField('age')"
                     type="number"
                   />
-                  <span v-else>{{ userInfo.age }}</span>
+                  <span v-else>{{ sessionStore.user.age }}</span>
                   <button @click="editField('age')" class="edit-btn">✏️</button>
                 </div>
               </div>
@@ -76,7 +76,7 @@
                 <div class="info-value">
                   <select
                     v-if="editing.gender"
-                    v-model="userInfo.gender"
+                    v-model="sessionStore.user.gender"
                     @blur="saveField('gender')"
                     @change="saveField('gender')"
                   >
@@ -96,7 +96,7 @@
                 <div class="info-value">
                   <select
                     v-if="editing.affiliation"
-                    v-model="userInfo.affiliation"
+                    v-model="sessionStore.user.affiliation"
                     @blur="saveField('affiliation')"
                     @change="saveField('affiliation')"
                   >

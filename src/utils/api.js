@@ -25,7 +25,12 @@ export async function apiRequest(endpoint, body = {}, timeout = 30000) {
     headers['Authorization'] = `Bearer ${sessionStore.token}`;
   }
   try {
-    console.log('API Request:', { endpoint: fullPath, body });
+    console.log('API Request:', { 
+      endpoint: fullPath, 
+      body,
+      sessionToken: sessionStore.token,
+      hasToken: !!sessionStore.token
+    });
     const response = await axios.post(fullPath, body, {
       withCredentials: true,
       timeout,
@@ -78,9 +83,13 @@ export const auth = {
     return await apiRequest('/PasswordAuth/authenticate', { username, password });
   },
 
+  async createSession(userId) {
+    return await apiRequest('/Sessioning/create', { user: userId });
+  },
+
   async logout() {
     const sessionStore = useSessionStore();
-    return await apiRequest('/logout', { session: sessionStore.token });
+    return await apiRequest('/Sessioning/delete', { session: sessionStore.token });
   },
 
   async changePassword(username, currentPass, newPass) {

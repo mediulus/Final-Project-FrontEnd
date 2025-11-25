@@ -19,4 +19,5 @@ export const useSessionStore = defineStore('session', {
       this.user = null;
     },
   },
+  persist: true,
 });
