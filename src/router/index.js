@@ -12,7 +12,7 @@ const router = createRouter({
   routes: [
     {
       path: '/',
-      redirect: '/register'
+      redirect: '/login'
     },
     {
       path: '/register',

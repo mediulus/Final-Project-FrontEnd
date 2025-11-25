@@ -126,33 +126,37 @@ export const savedItems = {
     });
   },
 
-  async removeItem(item) {
+  async removeItem(user, item) {
     const sessionStore = useSessionStore();
     return await apiRequest("/SavedItems/removeItem", {
+      user,
       item,
       session: sessionStore.token,
     });
   },
 
-  async getSavedItems() {
+  async getSavedItems(user) {
     const sessionStore = useSessionStore();
     return await apiRequest("/SavedItems/_getSavedItems", {
+      user,
       session: sessionStore.token,
     });
   },
 
-  async addTag(item, tag) {
+  async addTag(user, item, tag) {
     const sessionStore = useSessionStore();
     return await apiRequest("/SavedItems/addItemTag", {
+      user,
       item,
       tag,
       session: sessionStore.token,
     });
   },
 
-  async removeTag(item, tag) {
+  async removeTag(user, item, tag) {
     const sessionStore = useSessionStore();
     return await apiRequest("/SavedItems/removeItemTag", {
+      user,
       item,
       tag,
       session: sessionStore.token,

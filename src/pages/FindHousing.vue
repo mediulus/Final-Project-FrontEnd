@@ -16,7 +16,18 @@
         <div v-for="listing in listings" :key="listing._id" class="listing-card">
           <div class="listing-header">
             <h3>{{ listing.title }}</h3>
-            <div v-if="isOwner(listing)" class="owner-badge">Your Listing</div>
+            <div class="header-actions">
+              <button 
+                @click="toggleSavedItem(listing._id)" 
+                class="favorite-btn"
+                :class="{ 'is-saved': isSaved(listing._id) }"
+                :title="isSaved(listing._id) ? 'Remove from favorites' : 'Add to favorites'"
+              >
+                <span v-if="isSaved(listing._id)">❤️</span>
+                <span v-else>🤍</span>
+              </button>
+              <div v-if="isOwner(listing)" class="owner-badge">Your Listing</div>
+            </div>
           </div>
 
           <div class="listing-details">
@@ -144,13 +155,17 @@
 </template>
 
 <script>
-import { ref, onMounted } from 'vue';
-import { listings, auth } from '../utils/api.js';
+import { ref, onMounted, watch } from 'vue';
+import { useRoute } from 'vue-router';
+import { listings, auth, savedItems } from '../utils/api.js';
+import { useSessionStore } from '../stores/session.js';
 
 export default {
   name: 'FindHousing',
   setup() {
+    const sessionStore = useSessionStore();
     const listingsData = ref([]);
+    const savedItemIds = ref(new Set());
     const loading = ref(true);
     const error = ref('');
     const showCreateModal = ref(false);
@@ -188,6 +203,83 @@ export default {
         error.value = err.message || 'Failed to load listings';
       } finally {
         loading.value = false;
+      }
+    };
+
+    const fetchSavedItems = async () => {
+      if (!sessionStore.user || !sessionStore.user.id) {
+        console.log('No user logged in, skipping fetchSavedItems');
+        return;
+      }
+      
+      try {
+        console.log('Fetching saved items for user:', sessionStore.user.id);
+        const result = await savedItems.getSavedItems(sessionStore.user.id);
+        console.log('Raw saved items result:', result);
+        const items = result?.results || result;
+        console.log('Items to process:', items, 'Is array:', Array.isArray(items));
+        
+        if (items && Array.isArray(items)) {
+          // API might return nested structure: {item: {item: "id", tags: []}} or direct objects with _id
+          const ids = items.map(saved => {
+            console.log('Processing saved item:', JSON.stringify(saved, null, 2));
+            // API returns: {user: "...", savedItem: {item: "id", tags: [...]}}
+            if (saved.savedItem && saved.savedItem.item) {
+              console.log('Using saved.savedItem.item:', saved.savedItem.item);
+              return saved.savedItem.item;
+            } else if (saved._id) {
+              console.log('Using saved._id:', saved._id);
+              return saved._id;
+            } else if (saved.item && saved.item.item) {
+              console.log('Using saved.item.item:', saved.item.item);
+              return saved.item.item;
+            }
+            console.log('No ID found for this item');
+            return null;
+          }).filter(id => id !== null);
+          savedItemIds.value = new Set(ids);
+          console.log('Saved item IDs set to:', Array.from(savedItemIds.value));
+        } else {
+          console.log('Result is not an array, clearing saved items');
+          savedItemIds.value = new Set();
+        }
+      } catch (err) {
+        console.error('Error fetching saved items:', err);
+      }
+    };
+
+    const isSaved = (itemId) => {
+      const saved = savedItemIds.value.has(itemId);
+      console.log(`isSaved(${itemId}):`, saved, 'Current saved IDs:', Array.from(savedItemIds.value));
+      return saved;
+    };
+
+    const toggleSavedItem = async (itemId) => {
+      if (!sessionStore.user || !sessionStore.user.id) {
+        alert('Please log in to save items');
+        return;
+      }
+
+      const userId = sessionStore.user.id;
+      console.log('toggleSavedItem called for:', itemId, 'User:', userId);
+
+      try {
+        if (isSaved(itemId)) {
+          // Remove from saved items
+          console.log('Removing item from saved items via API');
+          await savedItems.removeItem(userId, itemId);
+          savedItemIds.value.delete(itemId);
+          console.log('Removed from saved items:', itemId);
+        } else {
+          // Add to saved items with "Favorite" tag
+          console.log('Adding item to saved items via API');
+          await savedItems.addTag(userId, itemId, 'Favorite');
+          savedItemIds.value.add(itemId);
+          console.log('Added to saved items:', itemId, 'Updated set:', Array.from(savedItemIds.value));
+        }
+      } catch (err) {
+        console.error('Error toggling saved item:', err);
+        alert('Failed to update favorites: ' + (err.message || 'Unknown error'));
       }
     };
 
@@ -287,8 +379,19 @@ export default {
       };
     };
 
+    const route = useRoute();
+
     onMounted(() => {
       fetchListings();
+      fetchSavedItems();
+    });
+
+    // Watch for route changes to refetch saved items when returning to this page
+    watch(() => route.path, (newPath) => {
+      if (newPath === '/home') {
+        console.log('Navigated to Find Housing - refetching saved items');
+        fetchSavedItems();
+      }
     });
 
     return {
@@ -305,8 +408,10 @@ export default {
       deleteListing,
       editListing,
       closeCreateModal,
-  isOwner,
-  formatDate,
+      isOwner,
+      formatDate,
+      isSaved,
+      toggleSavedItem,
     };
   }
 };
@@ -410,6 +515,34 @@ export default {
   color: #123619;
   font-size: 1.5rem;
   margin: 0;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.favorite-btn {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0.25rem;
+  transition: transform 0.2s ease;
+}
+
+.favorite-btn:hover {
+  transform: scale(1.2);
+}
+
+.favorite-btn.is-saved {
+  animation: heartbeat 0.3s ease;
+}
+
+@keyframes heartbeat {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.2); }
 }
 
 .owner-badge {

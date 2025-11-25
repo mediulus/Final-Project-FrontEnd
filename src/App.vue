@@ -112,7 +112,7 @@
             </div>
 
             <div class="dropdown-footer">
-              <button @click="handleLogout" class="logout-btn-dropdown">Logout</button>
+              <button @click.stop="handleLogout" class="logout-btn-dropdown">Logout</button>
             </div>
           </div>
         </div>
@@ -202,16 +202,22 @@ export default {
     };
 
     const handleLogout = async () => {
+      console.log('Logout button clicked');
       try {
+        console.log('Calling auth.logout()...');
         await auth.logout();
+        console.log('Logout API call successful');
         sessionStore.clearToken();
         sessionStore.clearUser();
+        console.log('Session cleared, redirecting to login...');
+        showProfileDropdown.value = false;
         alert('You have been logged out.');
         router.push('/login');
       } catch (error) {
         console.error('Logout failed:', error);
         sessionStore.clearToken();
         sessionStore.clearUser();
+        showProfileDropdown.value = false;
         alert('Logout failed, but you have been redirected to login.');
         router.push('/login');
       }
