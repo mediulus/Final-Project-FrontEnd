@@ -4,7 +4,11 @@
 
 import axios from "axios";
 import { useSessionStore } from "../stores/session.js";
-const API_BASE = import.meta.env.VITE_API_BASE_URL || "/api";
+// Use full URL to ensure requests go directly to backend
+// Or use relative path /api for Vite proxy
+const API_BASE =
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:8000/api";
+console.log("[api.js] API_BASE configured as:", API_BASE);
 
 /**
  * Make an API request
@@ -24,28 +28,53 @@ export async function apiRequest(endpoint, body = {}, timeout = 30000) {
     headers["Authorization"] = `Bearer ${sessionStore.token}`;
   }
   try {
-    console.log("API Request:", {
-      endpoint: fullPath,
+    console.log("[api.js] Making API Request:", {
+      endpoint,
+      fullPath,
+      API_BASE,
       body,
-      sessionToken: sessionStore.token,
+      sessionToken: sessionStore.token
+        ? `${sessionStore.token.substring(0, 20)}...`
+        : null,
       hasToken: !!sessionStore.token,
+      headers,
     });
     const response = await axios.post(fullPath, body, {
       withCredentials: false,
       timeout,
       headers,
     });
-    console.log("API Response data:", response.data);
+    console.log("[api.js] API Response:", {
+      status: response.status,
+      data: response.data,
+    });
     return response.data;
   } catch (error) {
+    console.error("[api.js] API Request Error:", {
+      endpoint,
+      fullPath,
+      error: error.message,
+      code: error.code,
+      response: error.response
+        ? {
+            status: error.response.status,
+            data: error.response.data,
+          }
+        : null,
+      request: error.request
+        ? {
+            url: error.request.responseURL || error.config?.url,
+            method: error.config?.method,
+          }
+        : null,
+    });
     if (error.code === "ECONNABORTED") {
-      console.error("API request timed out after", timeout, "ms");
+      console.error("[api.js] Request timed out after", timeout, "ms");
       throw new Error("Request timed out");
     }
     if (error.response && error.response.data && error.response.data.error) {
       throw new Error(error.response.data.error);
     }
-    console.error("API request error:", error);
     throw error;
   }
 }
@@ -221,6 +250,13 @@ export const reviews = {
  * UserInfo API calls
  */
 export const userInfo = {
+  async getUserInfo() {
+    const sessionStore = useSessionStore();
+    return await apiRequest("/UserInfo/_getUserInfo", {
+      session: sessionStore.token,
+    });
+  },
+
   async setInfo(user, age, affiliation, gender, emailAddress) {
     const sessionStore = useSessionStore();
     return await apiRequest("/UserInfo/setInfo", {
