@@ -9,6 +9,7 @@
             <router-link to="/find-roommates">Find Roommates</router-link>
           </li>
           <li><router-link to="/favorites">Favorites</router-link></li>
+          <li><router-link to="/my-postings">My Postings</router-link></li>
         </ul>
 
         <!-- Profile Circle -->
@@ -420,24 +421,19 @@ export default {
 
     const handleLogout = async () => {
       console.log('Logout button clicked');
-      try {
-        console.log('Calling auth.logout()...');
-        await auth.logout();
-        console.log('Logout API call successful');
-        sessionStore.clearToken();
-        sessionStore.clearUser();
-        console.log('Session cleared, redirecting to login...');
-        showProfileDropdown.value = false;
-        alert('You have been logged out.');
-        router.push('/login');
-      } catch (error) {
-        console.error("Logout failed:", error);
-        sessionStore.clearToken();
-        sessionStore.clearUser();
-        showProfileDropdown.value = false;
-        alert('Logout failed, but you have been redirected to login.');
-        router.push('/login');
-      }
+      
+      // Clear session immediately for better UX
+      sessionStore.clearToken();
+      sessionStore.clearUser();
+      showProfileDropdown.value = false;
+      
+      // Call logout API in background (don't wait for it)
+      auth.logout().catch(error => {
+        console.warn('Logout API call failed (ignoring):', error);
+      });
+      
+      console.log('Session cleared, redirecting to login...');
+      router.push('/login');
     };
 
     // Close dropdown when clicking outside

@@ -45,6 +45,15 @@
                 </li>
               </ul>
             </div>
+
+            <button 
+              v-if="!isOwner(listing)"
+              @click="sendInterest(listing._id)" 
+              class="interest-btn"
+              :disabled="isSendingInterest"
+            >
+              {{ isSendingInterest ? 'Sending...' : 'Send Interest' }}
+            </button>
           </div>
 
           <div v-if="isOwner(listing)" class="listing-actions">
@@ -172,6 +181,7 @@ export default {
     const creating = ref(false);
     const createError = ref('');
     const currentUser = ref(null);
+    const isSendingInterest = ref(false);
 
     const newListing = ref({
       title: '',
@@ -366,6 +376,27 @@ export default {
       alert('Edit functionality coming soon!');
     };
 
+    const sendInterest = async (listingId) => {
+      if (!sessionStore.user || !sessionStore.user.id) {
+        alert('Please log in to send interest');
+        return;
+      }
+
+      isSendingInterest.value = true;
+
+      try {
+        console.log('Sending interest for listing:', listingId);
+        const result = await listings.sendInterest(listingId);
+        console.log('Interest sent successfully:', result);
+        alert('Your interest has been sent to the listing owner!');
+      } catch (err) {
+        console.error('Error sending interest:', err);
+        alert('Failed to send interest: ' + (err.message || 'Unknown error'));
+      } finally {
+        isSendingInterest.value = false;
+      }
+    };
+
     const closeCreateModal = () => {
       showCreateModal.value = false;
       createError.value = '';
@@ -412,6 +443,8 @@ export default {
       formatDate,
       isSaved,
       toggleSavedItem,
+      sendInterest,
+      isSendingInterest,
     };
   }
 };
@@ -581,6 +614,29 @@ export default {
 .amenities li {
   padding: 0.25rem 0;
   color: #666;
+}
+
+.interest-btn {
+  width: 100%;
+  background: #1e5a2e;
+  color: white;
+  border: none;
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-top: 1rem;
+  transition: background 0.2s, opacity 0.2s;
+}
+
+.interest-btn:hover:not(:disabled) {
+  background: #123619;
+}
+
+.interest-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .listing-actions {

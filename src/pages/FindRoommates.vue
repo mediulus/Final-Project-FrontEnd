@@ -30,6 +30,13 @@
           <div class="listing-details">
             <p class="info"><strong>👤</strong> {{ posting.gender }}, {{ posting.age }} years old</p>
             <p class="description">{{ posting.description }}</p>
+            <button 
+              @click="contactPoster(posting._id)" 
+              class="contact-btn"
+              :disabled="isContacting"
+            >
+              {{ isContacting ? 'Sending...' : 'Contact Me' }}
+            </button>
           </div>
         </div>
       </div>
@@ -128,6 +135,7 @@ export default {
     const localModal = ref(false);
     const isCreating = ref(false);
     const createError = ref('');
+    const isContacting = ref(false);
 
     const modalVisible = computed(() => localModal.value);
 
@@ -240,6 +248,27 @@ export default {
       createError.value = '';
     };
 
+    const contactPoster = async (postingId) => {
+      if (!sessionStore.user || !sessionStore.user.id) {
+        alert('Please log in to contact posters');
+        return;
+      }
+
+      isContacting.value = true;
+
+      try {
+        console.log('Contacting poster for posting:', postingId);
+        const result = await roommatePostings.contact(postingId);
+        console.log('Contact sent successfully:', result);
+        alert('Your interest has been sent to the posting owner!');
+      } catch (err) {
+        console.error('Error contacting poster:', err);
+        alert('Failed to send contact request: ' + (err.message || 'Unknown error'));
+      } finally {
+        isContacting.value = false;
+      }
+    };
+
     const emitCreatePosting = async () => {
       isCreating.value = true;
       createError.value = '';
@@ -300,7 +329,9 @@ export default {
       closeModal,
       modalVisible,
       isSaved,
-      toggleSavedItem
+      toggleSavedItem,
+      contactPoster,
+      isContacting
     };
   }
 };
@@ -440,6 +471,29 @@ export default {
   padding: 1rem;
   background: #f8f9fa;
   border-radius: 6px;
+}
+
+.contact-btn {
+  width: 100%;
+  background: #1e5a2e;
+  color: white;
+  border: none;
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-top: 1rem;
+  transition: background 0.2s, opacity 0.2s;
+}
+
+.contact-btn:hover:not(:disabled) {
+  background: #123619;
+}
+
+.contact-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 .modal-overlay {

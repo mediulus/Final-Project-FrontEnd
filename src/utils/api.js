@@ -119,7 +119,7 @@ export const auth = {
 
   async logout() {
     const sessionStore = useSessionStore();
-    return await apiRequest("/Sessioning/delete", {
+    return await apiRequest("/logout", {
       session: sessionStore.token,
     });
   },
@@ -440,6 +440,14 @@ export const listings = {
       session: sessionStore.token,
     });
   },
+
+  async sendInterest(listingId) {
+    const sessionStore = useSessionStore();
+    return await apiRequest("/Listing/interest", {
+      listingId,
+      session: sessionStore.token,
+    });
+  },
 };
 
 /**
@@ -465,6 +473,22 @@ export const roommatePostings = {
   async getAll() {
     const sessionStore = useSessionStore();
     return await apiRequest("/RoommatePosting/getAllPostings", {
+      session: sessionStore.token,
+    });
+  },
+
+  async getByPosterId(posterId) {
+    const sessionStore = useSessionStore();
+    return await apiRequest("/RoommatePosting/getPostingByPosterId", {
+      posterId,
+      session: sessionStore.token,
+    });
+  },
+
+  async contact(postingId) {
+    const sessionStore = useSessionStore();
+    return await apiRequest("/RoommatePosting/contact", {
+      postingId,
       session: sessionStore.token,
     });
   },

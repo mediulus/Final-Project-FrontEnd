@@ -5,6 +5,7 @@ import Login from '../pages/Login.vue'
 import FindHousing from '../pages/FindHousing.vue'
 import FindRoommates from '../pages/FindRoommates.vue'
 import Favorites from '../pages/Favorites.vue'
+import MyPostings from '../pages/MyPostings.vue'
 import Profile from '../pages/Profile.vue'
 
 const router = createRouter({
@@ -42,6 +43,12 @@ const router = createRouter({
       path: '/favorites',
       name: 'Favorites',
       component: Favorites,
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/my-postings',
+      name: 'MyPostings',
+      component: MyPostings,
       meta: { requiresAuth: true }
     },
     {
