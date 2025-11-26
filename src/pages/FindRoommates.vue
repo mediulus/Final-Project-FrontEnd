@@ -33,9 +33,9 @@
             <button 
               @click="contactPoster(posting._id)" 
               class="contact-btn"
-              :disabled="isContacting"
+              :disabled="isContacting[posting._id]"
             >
-              {{ isContacting ? 'Sending...' : 'Contact Me' }}
+              {{ isContacting[posting._id] ? 'Sending...' : 'Contact Me' }}
             </button>
           </div>
         </div>
@@ -135,7 +135,7 @@ export default {
     const localModal = ref(false);
     const isCreating = ref(false);
     const createError = ref('');
-    const isContacting = ref(false);
+    const isContacting = ref({}); // Track loading state per posting ID
 
     const modalVisible = computed(() => localModal.value);
 
@@ -254,7 +254,8 @@ export default {
         return;
       }
 
-      isContacting.value = true;
+      // Set loading state for this specific posting
+      isContacting.value[postingId] = true;
 
       try {
         console.log('Contacting poster for posting:', postingId);
@@ -268,7 +269,8 @@ export default {
         console.error('Error contacting poster:', err);
         alert('Failed to send contact request: ' + (err.message || 'Unknown error'));
       } finally {
-        isContacting.value = false;
+        // Clear loading state for this specific posting
+        isContacting.value[postingId] = false;
       }
     };
 

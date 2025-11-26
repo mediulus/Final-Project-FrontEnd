@@ -37,9 +37,9 @@
                 <button 
                   @click="contactPoster(posting._id)" 
                   class="contact-btn"
-                  :disabled="isContacting"
+                  :disabled="isContacting[posting._id]"
                 >
-                  {{ isContacting ? 'Sending...' : 'Contact Me' }}
+                  {{ isContacting[posting._id] ? 'Sending...' : 'Contact Me' }}
                 </button>
               </div>
             </div>
@@ -74,9 +74,9 @@
                 <button 
                   @click="sendInterest(listing._id)" 
                   class="interest-btn"
-                  :disabled="isSendingInterest"
+                  :disabled="isSendingInterest[listing._id]"
                 >
-                  {{ isSendingInterest ? 'Sending...' : 'Send Interest' }}
+                  {{ isSendingInterest[listing._id] ? 'Sending...' : 'Send Interest' }}
                 </button>
               </div>
             </div>
@@ -105,8 +105,8 @@ export default {
     const allHousingListings = ref([]);
     const isLoading = ref(false);
     const error = ref('');
-    const isContacting = ref(false);
-    const isSendingInterest = ref(false);
+    const isContacting = ref({}); // Track loading state per posting ID
+    const isSendingInterest = ref({}); // Track loading state per listing ID
 
     const savedItems = computed(() => {
       return savedItems_data.value;
@@ -223,7 +223,8 @@ export default {
         return;
       }
 
-      isContacting.value = true;
+      // Set loading state for this specific posting
+      isContacting.value[postingId] = true;
 
       try {
         console.log('Contacting poster for posting:', postingId);
@@ -238,7 +239,8 @@ export default {
         console.error('Error contacting poster:', err);
         alert('Failed to send contact request: ' + (err.message || 'Unknown error'));
       } finally {
-        isContacting.value = false;
+        // Clear loading state for this specific posting
+        isContacting.value[postingId] = false;
       }
     };
 
@@ -248,7 +250,8 @@ export default {
         return;
       }
 
-      isSendingInterest.value = true;
+      // Set loading state for this specific listing
+      isSendingInterest.value[listingId] = true;
 
       try {
         console.log('Sending interest for listing:', listingId);
@@ -263,7 +266,8 @@ export default {
         console.error('Error sending interest:', err);
         alert('Failed to send interest: ' + (err.message || 'Unknown error'));
       } finally {
-        isSendingInterest.value = false;
+        // Clear loading state for this specific listing
+        isSendingInterest.value[listingId] = false;
       }
     };
 

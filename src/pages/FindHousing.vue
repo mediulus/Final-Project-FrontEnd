@@ -3,7 +3,9 @@
     <section class="hero">
       <h2>Find Your Perfect Summer Housing</h2>
       <p>Browse available listings or create your own</p>
-      <button @click="showCreateModal = true" class="create-btn">+ Create New Listing</button>
+      <button @click="showCreateModal = true" class="create-btn">
+        + Create New Listing
+      </button>
     </section>
 
     <section class="listings-section">
@@ -13,31 +15,45 @@
         No listings available yet. Be the first to create one!
       </div>
       <div v-else class="listings-grid">
-        <div v-for="listing in listings" :key="listing._id" class="listing-card">
+        <div
+          v-for="listing in listings"
+          :key="listing._id"
+          class="listing-card"
+        >
           <div class="listing-header">
             <h3>{{ listing.title }}</h3>
             <div class="header-actions">
-              <button 
-                @click="toggleSavedItem(listing._id)" 
+              <button
+                @click="toggleSavedItem(listing._id)"
                 class="favorite-btn"
                 :class="{ 'is-saved': isSaved(listing._id) }"
-                :title="isSaved(listing._id) ? 'Remove from favorites' : 'Add to favorites'"
+                :title="
+                  isSaved(listing._id)
+                    ? 'Remove from favorites'
+                    : 'Add to favorites'
+                "
               >
                 <span v-if="isSaved(listing._id)">❤️</span>
                 <span v-else>🤍</span>
               </button>
-              <div v-if="isOwner(listing)" class="owner-badge">Your Listing</div>
+              <div v-if="isOwner(listing)" class="owner-badge">
+                Your Listing
+              </div>
             </div>
           </div>
 
           <div class="listing-details">
             <p class="address"><strong>📍</strong> {{ listing.address }}</p>
             <p class="dates">
-              <strong>📅</strong> {{ formatDate(listing.startDate) }} - {{ formatDate(listing.endDate) }}
+              <strong>📅</strong> {{ formatDate(listing.startDate) }} -
+              {{ formatDate(listing.endDate) }}
             </p>
             <p class="price"><strong>💵</strong> ${{ listing.price }}/month</p>
 
-            <div v-if="listing.amenities && listing.amenities.length > 0" class="amenities">
+            <div
+              v-if="listing.amenities && listing.amenities.length > 0"
+              class="amenities"
+            >
               <strong>Amenities:</strong>
               <ul>
                 <li v-for="amenity in listing.amenities" :key="amenity._id">
@@ -46,19 +62,23 @@
               </ul>
             </div>
 
-            <button 
+            <button
               v-if="!isOwner(listing)"
-              @click="sendInterest(listing._id)" 
+              @click="sendInterest(listing._id)"
               class="interest-btn"
-              :disabled="isSendingInterest"
+              :disabled="isSendingInterest[listing._id]"
             >
-              {{ isSendingInterest ? 'Sending...' : 'Send Interest' }}
+              {{
+                isSendingInterest[listing._id] ? "Sending..." : "Send Interest"
+              }}
             </button>
           </div>
 
           <div v-if="isOwner(listing)" class="listing-actions">
             <button @click="editListing(listing)" class="edit-btn">Edit</button>
-            <button @click="deleteListing(listing._id)" class="delete-btn">Delete</button>
+            <button @click="deleteListing(listing._id)" class="delete-btn">
+              Delete
+            </button>
           </div>
         </div>
       </div>
@@ -128,7 +148,11 @@
           <div class="form-group">
             <label>Amenities</label>
             <div class="amenities-list">
-              <div v-for="(amenity, index) in newListing.amenities" :key="index" class="amenity-item">
+              <div
+                v-for="(amenity, index) in newListing.amenities"
+                :key="index"
+                class="amenity-item"
+              >
                 <input
                   type="text"
                   v-model="amenity.title"
@@ -143,18 +167,28 @@
                   step="0.1"
                   class="amenity-distance"
                 />
-                <button type="button" @click="removeAmenity(index)" class="remove-amenity-btn">×</button>
+                <button
+                  type="button"
+                  @click="removeAmenity(index)"
+                  class="remove-amenity-btn"
+                >
+                  ×
+                </button>
               </div>
             </div>
-            <button type="button" @click="addAmenity" class="add-amenity-btn">+ Add Amenity</button>
+            <button type="button" @click="addAmenity" class="add-amenity-btn">
+              + Add Amenity
+            </button>
           </div>
 
           <div v-if="createError" class="error-message">{{ createError }}</div>
 
           <div class="modal-actions">
-            <button type="button" @click="closeCreateModal" class="cancel-btn">Cancel</button>
+            <button type="button" @click="closeCreateModal" class="cancel-btn">
+              Cancel
+            </button>
             <button type="submit" class="submit-btn" :disabled="creating">
-              {{ creating ? 'Creating...' : 'Create Listing' }}
+              {{ creating ? "Creating..." : "Create Listing" }}
             </button>
           </div>
         </form>
@@ -164,38 +198,38 @@
 </template>
 
 <script>
-import { ref, onMounted, watch } from 'vue';
-import { useRoute } from 'vue-router';
-import { listings, auth, savedItems } from '../utils/api.js';
-import { useSessionStore } from '../stores/session.js';
+import { ref, onMounted, watch } from "vue";
+import { useRoute } from "vue-router";
+import { listings, auth, savedItems } from "../utils/api.js";
+import { useSessionStore } from "../stores/session.js";
 
 export default {
-  name: 'FindHousing',
+  name: "FindHousing",
   setup() {
     const sessionStore = useSessionStore();
     const listingsData = ref([]);
     const savedItemIds = ref(new Set());
     const loading = ref(true);
-    const error = ref('');
+    const error = ref("");
     const showCreateModal = ref(false);
     const creating = ref(false);
-    const createError = ref('');
+    const createError = ref("");
     const currentUser = ref(null);
-    const isSendingInterest = ref(false);
+    const isSendingInterest = ref({}); // Track loading state per listing ID
 
     const newListing = ref({
-      title: '',
-      address: '',
-      startDate: '',
-      endDate: '',
-      price: '',
+      title: "",
+      address: "",
+      startDate: "",
+      endDate: "",
+      price: "",
       amenities: [],
     });
 
     const addAmenity = () => {
       newListing.value.amenities.push({
-        title: '',
-        distance: ''
+        title: "",
+        distance: "",
       });
     };
 
@@ -205,12 +239,12 @@ export default {
 
     const fetchListings = async () => {
       loading.value = true;
-      error.value = '';
+      error.value = "";
       try {
         const result = await listings.getAll();
         listingsData.value = result;
       } catch (err) {
-        error.value = err.message || 'Failed to load listings';
+        error.value = err.message || "Failed to load listings";
       } finally {
         loading.value = false;
       }
@@ -218,78 +252,103 @@ export default {
 
     const fetchSavedItems = async () => {
       if (!sessionStore.user || !sessionStore.user.id) {
-        console.log('No user logged in, skipping fetchSavedItems');
+        console.log("No user logged in, skipping fetchSavedItems");
         return;
       }
-      
+
       try {
-        console.log('Fetching saved items for user:', sessionStore.user.id);
+        console.log("Fetching saved items for user:", sessionStore.user.id);
         const result = await savedItems.getSavedItems(sessionStore.user.id);
-        console.log('Raw saved items result:', result);
+        console.log("Raw saved items result:", result);
         const items = result?.results || result;
-        console.log('Items to process:', items, 'Is array:', Array.isArray(items));
-        
+        console.log(
+          "Items to process:",
+          items,
+          "Is array:",
+          Array.isArray(items)
+        );
+
         if (items && Array.isArray(items)) {
           // API might return nested structure: {item: {item: "id", tags: []}} or direct objects with _id
-          const ids = items.map(saved => {
-            console.log('Processing saved item:', JSON.stringify(saved, null, 2));
-            // API returns: {user: "...", savedItem: {item: "id", tags: [...]}}
-            if (saved.savedItem && saved.savedItem.item) {
-              console.log('Using saved.savedItem.item:', saved.savedItem.item);
-              return saved.savedItem.item;
-            } else if (saved._id) {
-              console.log('Using saved._id:', saved._id);
-              return saved._id;
-            } else if (saved.item && saved.item.item) {
-              console.log('Using saved.item.item:', saved.item.item);
-              return saved.item.item;
-            }
-            console.log('No ID found for this item');
-            return null;
-          }).filter(id => id !== null);
+          const ids = items
+            .map((saved) => {
+              console.log(
+                "Processing saved item:",
+                JSON.stringify(saved, null, 2)
+              );
+              // API returns: {user: "...", savedItem: {item: "id", tags: [...]}}
+              if (saved.savedItem && saved.savedItem.item) {
+                console.log(
+                  "Using saved.savedItem.item:",
+                  saved.savedItem.item
+                );
+                return saved.savedItem.item;
+              } else if (saved._id) {
+                console.log("Using saved._id:", saved._id);
+                return saved._id;
+              } else if (saved.item && saved.item.item) {
+                console.log("Using saved.item.item:", saved.item.item);
+                return saved.item.item;
+              }
+              console.log("No ID found for this item");
+              return null;
+            })
+            .filter((id) => id !== null);
           savedItemIds.value = new Set(ids);
-          console.log('Saved item IDs set to:', Array.from(savedItemIds.value));
+          console.log("Saved item IDs set to:", Array.from(savedItemIds.value));
         } else {
-          console.log('Result is not an array, clearing saved items');
+          console.log("Result is not an array, clearing saved items");
           savedItemIds.value = new Set();
         }
       } catch (err) {
-        console.error('Error fetching saved items:', err);
+        console.error("Error fetching saved items:", err);
       }
     };
 
     const isSaved = (itemId) => {
       const saved = savedItemIds.value.has(itemId);
-      console.log(`isSaved(${itemId}):`, saved, 'Current saved IDs:', Array.from(savedItemIds.value));
+      console.log(
+        `isSaved(${itemId}):`,
+        saved,
+        "Current saved IDs:",
+        Array.from(savedItemIds.value)
+      );
       return saved;
     };
 
     const toggleSavedItem = async (itemId) => {
       if (!sessionStore.user || !sessionStore.user.id) {
-        alert('Please log in to save items');
+        alert("Please log in to save items");
         return;
       }
 
       const userId = sessionStore.user.id;
-      console.log('toggleSavedItem called for:', itemId, 'User:', userId);
+      console.log("toggleSavedItem called for:", itemId, "User:", userId);
 
       try {
         if (isSaved(itemId)) {
           // Remove from saved items
-          console.log('Removing item from saved items via API');
+          console.log("Removing item from saved items via API");
           await savedItems.removeItem(userId, itemId);
           savedItemIds.value.delete(itemId);
-          console.log('Removed from saved items:', itemId);
+          console.log("Removed from saved items:", itemId);
         } else {
           // Add to saved items with "Favorite" tag
-          console.log('Adding item to saved items via API');
-          await savedItems.addTag(userId, itemId, 'Favorite');
+          console.log("Adding item to saved items via API");
+          await savedItems.addTag(userId, itemId, "Favorite");
           savedItemIds.value.add(itemId);
-          console.log('Added to saved items:', itemId, 'Updated set:', Array.from(savedItemIds.value));
+          console.log(
+            "Added to saved items:",
+            itemId,
+            "Updated set:",
+            Array.from(savedItemIds.value)
+          );
         }
       } catch (err) {
-        console.error('Error toggling saved item:', err);
-        alert('Failed to update favorites: ' + (err.message || 'Unknown error'));
+        console.error("Error toggling saved item:", err);
+        alert(
+          "Failed to update favorites: " + (err.message || "Unknown error")
+        );
       }
     };
 
@@ -301,29 +360,29 @@ export default {
 
     const formatDate = (dateString) => {
       const date = new Date(dateString);
-      return date.toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric'
+      return date.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
       });
     };
 
     const handleCreateListing = async () => {
       creating.value = true;
-      createError.value = '';
+      createError.value = "";
 
-      console.log('Creating listing with data:', newListing.value);
+      console.log("Creating listing with data:", newListing.value);
 
       try {
         // Filter out empty amenities and format them properly
         const validAmenities = newListing.value.amenities
-          .filter(a => a.title && a.distance !== '')
-          .map(a => ({
+          .filter((a) => a.title && a.distance !== "")
+          .map((a) => ({
             title: a.title,
-            distance: Number(a.distance)
+            distance: Number(a.distance),
           }));
 
-        console.log('Valid amenities:', validAmenities);
+        console.log("Valid amenities:", validAmenities);
 
         const result = await listings.create(
           newListing.value.title,
@@ -335,15 +394,15 @@ export default {
           newListing.value.price
         );
 
-        console.log('Listing created successfully:', result);
+        console.log("Listing created successfully:", result);
 
         // Reset form and close modal
         newListing.value = {
-          title: '',
-          address: '',
-          startDate: '',
-          endDate: '',
-          price: '',
+          title: "",
+          address: "",
+          startDate: "",
+          endDate: "",
+          price: "",
           amenities: [],
         };
         showCreateModal.value = false;
@@ -351,15 +410,15 @@ export default {
         // Refresh listings
         await fetchListings();
       } catch (err) {
-        console.error('Create listing error:', err);
-        createError.value = err.message || 'Failed to create listing';
+        console.error("Create listing error:", err);
+        createError.value = err.message || "Failed to create listing";
       } finally {
         creating.value = false;
       }
     };
 
     const deleteListing = async (listingId) => {
-      if (!confirm('Are you sure you want to delete this listing?')) {
+      if (!confirm("Are you sure you want to delete this listing?")) {
         return;
       }
 
@@ -367,48 +426,50 @@ export default {
         await listings.delete(listingId);
         await fetchListings();
       } catch (err) {
-        alert('Failed to delete listing: ' + (err.message || 'Unknown error'));
+        alert("Failed to delete listing: " + (err.message || "Unknown error"));
       }
     };
 
     const editListing = (listing) => {
       // TODO: Implement edit functionality
-      alert('Edit functionality coming soon!');
+      alert("Edit functionality coming soon!");
     };
 
     const sendInterest = async (listingId) => {
       if (!sessionStore.user || !sessionStore.user.id) {
-        alert('Please log in to send interest');
+        alert("Please log in to send interest");
         return;
       }
 
-      isSendingInterest.value = true;
+      // Set loading state for this specific listing
+      isSendingInterest.value[listingId] = true;
 
       try {
-        console.log('Sending interest for listing:', listingId);
+        console.log("Sending interest for listing:", listingId);
         const result = await listings.sendInterest(listingId);
-        console.log('Interest sent successfully:', result);
-        alert('Your interest has been sent to the listing owner!');
-        
+        console.log("Interest sent successfully:", result);
+        alert("Your interest has been sent to the listing owner!");
+
         // Refetch saved items to update local state
         await fetchSavedItems();
       } catch (err) {
-        console.error('Error sending interest:', err);
-        alert('Failed to send interest: ' + (err.message || 'Unknown error'));
+        console.error("Error sending interest:", err);
+        alert("Failed to send interest: " + (err.message || "Unknown error"));
       } finally {
-        isSendingInterest.value = false;
+        // Clear loading state for this specific listing
+        isSendingInterest.value[listingId] = false;
       }
     };
 
     const closeCreateModal = () => {
       showCreateModal.value = false;
-      createError.value = '';
+      createError.value = "";
       newListing.value = {
-        title: '',
-        address: '',
-        startDate: '',
-        endDate: '',
-        price: '',
+        title: "",
+        address: "",
+        startDate: "",
+        endDate: "",
+        price: "",
         amenities: [],
       };
     };
@@ -421,12 +482,15 @@ export default {
     });
 
     // Watch for route changes to refetch saved items when returning to this page
-    watch(() => route.path, (newPath) => {
-      if (newPath === '/home') {
-        console.log('Navigated to Find Housing - refetching saved items');
-        fetchSavedItems();
+    watch(
+      () => route.path,
+      (newPath) => {
+        if (newPath === "/home") {
+          console.log("Navigated to Find Housing - refetching saved items");
+          fetchSavedItems();
+        }
       }
-    });
+    );
 
     return {
       listings: listingsData,
@@ -449,7 +513,7 @@ export default {
       sendInterest,
       isSendingInterest,
     };
-  }
+  },
 };
 </script>
 
@@ -577,8 +641,13 @@ export default {
 }
 
 @keyframes heartbeat {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.2); }
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.2);
+  }
 }
 
 .owner-badge {
