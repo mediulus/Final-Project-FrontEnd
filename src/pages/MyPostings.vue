@@ -8,7 +8,12 @@
     <section class="listings-section">
       <div v-if="isLoading" class="loading">Loading your postings...</div>
       <div v-else-if="error" class="error-message">{{ error }}</div>
-      <div v-else-if="roommatePostings.length === 0 && housingListings.length === 0" class="no-listings">
+      <div
+        v-else-if="
+          roommatePostings.length === 0 && housingListings.length === 0
+        "
+        class="no-listings"
+      >
         No postings yet. Start creating listings or roommate postings!
       </div>
       <div v-else>
@@ -16,21 +21,30 @@
         <div v-if="roommatePostings.length > 0">
           <h3 class="section-title">My Roommate Postings</h3>
           <div class="listings-grid">
-            <div v-for="posting in roommatePostings" :key="posting?._id || posting" class="listing-card">
+            <div
+              v-for="posting in roommatePostings"
+              :key="posting?._id || posting"
+              class="listing-card"
+            >
               <div class="listing-header">
                 <h3>{{ posting.city }}</h3>
-                <button 
-                  @click="deleteRoommatePosting(posting._id)" 
-                  class="delete-btn-header"
-                  title="Delete posting"
-                >
-                  <span>🗑️</span>
-                </button>
               </div>
 
               <div class="listing-details">
-                <p class="info"><strong>👤</strong> {{ posting.gender }}, {{ posting.age }} years old</p>
+                <p class="info">
+                  <strong>👤</strong> {{ posting.gender }},
+                  {{ posting.age }} years old
+                </p>
                 <p class="description">{{ posting.description }}</p>
+              </div>
+
+              <div class="listing-actions">
+                <button
+                  @click="deleteRoommatePosting(posting._id)"
+                  class="delete-btn"
+                >
+                  Delete
+                </button>
               </div>
             </div>
           </div>
@@ -40,7 +54,11 @@
         <div v-if="housingListings.length > 0" class="section">
           <h3 class="section-title">My Housing Listings</h3>
           <div class="listings-grid">
-            <div v-for="listing in housingListings" :key="listing?._id || listing" class="listing-card">
+            <div
+              v-for="listing in housingListings"
+              :key="listing?._id || listing"
+              class="listing-card"
+            >
               <div class="listing-header">
                 <h3>{{ listing.title }}</h3>
                 <div class="header-actions">
@@ -51,9 +69,12 @@
               <div class="listing-details">
                 <p class="address"><strong>📍</strong> {{ listing.address }}</p>
                 <p class="dates">
-                  <strong>📅</strong> {{ formatDate(listing.startDate) }} - {{ formatDate(listing.endDate) }}
+                  <strong>📅</strong> {{ formatDate(listing.startDate) }} -
+                  {{ formatDate(listing.endDate) }}
                 </p>
-                <p class="price"><strong>💵</strong> ${{ listing.price }}/month</p>
+                <p class="price">
+                  <strong>💵</strong> ${{ listing.price }}/month
+                </p>
 
                 <div
                   v-if="listing.amenities && listing.amenities.length > 0"
@@ -69,8 +90,13 @@
               </div>
 
               <div class="listing-actions">
-                <button @click="editListing(listing)" class="edit-btn">Edit</button>
-                <button @click="deleteHousingListing(listing._id)" class="delete-btn">
+                <button @click="editListing(listing)" class="edit-btn">
+                  Edit
+                </button>
+                <button
+                  @click="deleteHousingListing(listing._id)"
+                  class="delete-btn"
+                >
                   Delete
                 </button>
               </div>
@@ -172,7 +198,11 @@
                 </button>
               </div>
             </div>
-            <button type="button" @click="addEditAmenity" class="add-amenity-btn">
+            <button
+              type="button"
+              @click="addEditAmenity"
+              class="add-amenity-btn"
+            >
               + Add Amenity
             </button>
           </div>
@@ -194,139 +224,155 @@
 </template>
 
 <script>
-import { ref, onMounted } from 'vue';
-import { useSessionStore } from '../stores/session.js';
-import { roommatePostings as roommatePostingsApi, listings as listingsApi } from '../utils/api.js';
+import { ref, onMounted } from "vue";
+import { useSessionStore } from "../stores/session.js";
+import {
+  roommatePostings as roommatePostingsApi,
+  listings as listingsApi,
+} from "../utils/api.js";
 
 export default {
-  name: 'MyPostings',
+  name: "MyPostings",
   setup() {
     const sessionStore = useSessionStore();
     const roommatePostings = ref([]);
     const housingListings = ref([]);
     const isLoading = ref(false);
-    const error = ref('');
+    const error = ref("");
     const showEditModal = ref(false);
     const isEditing = ref(false);
-    const editError = ref('');
+    const editError = ref("");
     const editingListingId = ref(null);
     const editForm = ref({
-      title: '',
-      address: '',
-      startDate: '',
-      endDate: '',
-      price: '',
+      title: "",
+      address: "",
+      startDate: "",
+      endDate: "",
+      price: "",
       amenities: [],
     });
 
     const formatDate = (dateString) => {
       const date = new Date(dateString);
-      return date.toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric'
+      return date.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
       });
     };
 
     const fetchMyPostings = async () => {
       if (!sessionStore.user || !sessionStore.user.id) {
-        error.value = 'Please log in to view your postings';
+        error.value = "Please log in to view your postings";
         return;
       }
 
       isLoading.value = true;
-      error.value = '';
+      error.value = "";
 
       try {
         const userId = sessionStore.user.id || sessionStore.user.user;
-        console.log('[MyPostings] Fetching postings for user:', userId);
+        console.log("[MyPostings] Fetching postings for user:", userId);
 
-        // Fetch roommate postings by poster ID
-        const roommateResult = await roommatePostingsApi.getByPosterId(userId);
-        console.log('[MyPostings] Roommate postings:', roommateResult);
-        const roommateArray = Array.isArray(roommateResult) ? roommateResult : (roommateResult ? [roommateResult] : []);
-        // Filter out null/undefined items and ensure _id exists
-        roommatePostings.value = roommateArray.filter(posting => posting && posting._id);
+        // Fetch all roommate postings and filter by poster (consistent with listings approach)
+        const allRoommatePostings = await roommatePostingsApi.getAll();
+        console.log("[MyPostings] All roommate postings:", allRoommatePostings);
+        const allRoommateArray = Array.isArray(allRoommatePostings)
+          ? allRoommatePostings
+          : [];
+        // Filter by poster ID and ensure valid items
+        roommatePostings.value = allRoommateArray.filter(
+          (posting) => posting && posting._id && posting.poster === userId
+        );
+        console.log(
+          "[MyPostings] Filtered roommate postings:",
+          roommatePostings.value
+        );
 
         // Fetch all housing listings and filter by lister
         const allListings = await listingsApi.getAll();
-        console.log('[MyPostings] All listings:', allListings);
+        console.log("[MyPostings] All listings:", allListings);
         const allListingsArray = Array.isArray(allListings) ? allListings : [];
         // Filter out null/undefined items, ensure _id exists, and match lister
-        housingListings.value = allListingsArray.filter(listing => 
-          listing && 
-          listing._id && 
-          listing.lister === userId
+        housingListings.value = allListingsArray.filter(
+          (listing) => listing && listing._id && listing.lister === userId
         );
-        console.log('[MyPostings] Filtered housing listings:', housingListings.value);
+        console.log(
+          "[MyPostings] Filtered housing listings:",
+          housingListings.value
+        );
       } catch (err) {
-        console.error('[MyPostings] Error fetching postings:', err);
-        error.value = err.message || 'Failed to load your postings';
+        console.error("[MyPostings] Error fetching postings:", err);
+        error.value = err.message || "Failed to load your postings";
       } finally {
         isLoading.value = false;
       }
     };
 
     const deleteRoommatePosting = async (postingId) => {
-      if (!confirm('Are you sure you want to delete this roommate posting?')) {
+      if (!confirm("Are you sure you want to delete this roommate posting?")) {
         return;
       }
 
       try {
         await roommatePostingsApi.delete(postingId);
-        roommatePostings.value = roommatePostings.value.filter(p => p._id !== postingId);
-        console.log('[MyPostings] Deleted roommate posting:', postingId);
+        roommatePostings.value = roommatePostings.value.filter(
+          (p) => p._id !== postingId
+        );
+        console.log("[MyPostings] Deleted roommate posting:", postingId);
       } catch (err) {
-        console.error('[MyPostings] Error deleting roommate posting:', err);
-        alert('Failed to delete posting: ' + (err.message || 'Unknown error'));
+        console.error("[MyPostings] Error deleting roommate posting:", err);
+        alert("Failed to delete posting: " + (err.message || "Unknown error"));
       }
     };
 
     const formatDateForInput = (dateString) => {
-      if (!dateString) return '';
+      if (!dateString) return "";
       const date = new Date(dateString);
       const year = date.getFullYear();
-      const month = String(date.getMonth() + 1).padStart(2, '0');
-      const day = String(date.getDate()).padStart(2, '0');
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
       return `${year}-${month}-${day}`;
     };
 
     const editListing = (listing) => {
       editingListingId.value = listing._id;
       editForm.value = {
-        title: listing.title || '',
-        address: listing.address || '',
+        title: listing.title || "",
+        address: listing.address || "",
         startDate: formatDateForInput(listing.startDate),
         endDate: formatDateForInput(listing.endDate),
-        price: listing.price || '',
-        amenities: listing.amenities ? listing.amenities.map(a => ({
-          _id: a._id,
-          title: a.title || '',
-          distance: a.distance || ''
-        })) : []
+        price: listing.price || "",
+        amenities: listing.amenities
+          ? listing.amenities.map((a) => ({
+              _id: a._id,
+              title: a.title || "",
+              distance: a.distance || "",
+            }))
+          : [],
       };
-      editError.value = '';
+      editError.value = "";
       showEditModal.value = true;
     };
 
     const closeEditModal = () => {
       showEditModal.value = false;
-      editError.value = '';
+      editError.value = "";
       editingListingId.value = null;
       editForm.value = {
-        title: '',
-        address: '',
-        startDate: '',
-        endDate: '',
-        price: '',
+        title: "",
+        address: "",
+        startDate: "",
+        endDate: "",
+        price: "",
         amenities: [],
       };
     };
 
     const addEditAmenity = () => {
       editForm.value.amenities.push({
-        title: '',
-        distance: '',
+        title: "",
+        distance: "",
       });
     };
 
@@ -338,13 +384,13 @@ export default {
       if (!editingListingId.value) return;
 
       isEditing.value = true;
-      editError.value = '';
+      editError.value = "";
 
       try {
         const listingId = editingListingId.value;
-        const listing = housingListings.value.find(l => l._id === listingId);
+        const listing = housingListings.value.find((l) => l._id === listingId);
         if (!listing) {
-          editError.value = 'Listing not found';
+          editError.value = "Listing not found";
           return;
         }
 
@@ -384,9 +430,10 @@ export default {
         // Delete amenities that were removed
         for (const oldAmenity of oldAmenities) {
           const stillExists = newAmenities.some(
-            newA => newA._id === oldAmenity._id &&
-            newA.title === oldAmenity.title &&
-            newA.distance === oldAmenity.distance
+            (newA) =>
+              newA._id === oldAmenity._id &&
+              newA.title === oldAmenity.title &&
+              newA.distance === oldAmenity.distance
           );
           if (!stillExists && oldAmenity._id) {
             await listingsApi.deleteAmenity(listingId, oldAmenity._id);
@@ -396,19 +443,34 @@ export default {
         // Add new amenities
         for (const newAmenity of newAmenities) {
           // If it doesn't have an _id, it's a new amenity
-          if (!newAmenity._id && newAmenity.title && newAmenity.distance !== '') {
-            await listingsApi.addAmenity(listingId, newAmenity.title, newAmenity.distance);
+          if (
+            !newAmenity._id &&
+            newAmenity.title &&
+            newAmenity.distance !== ""
+          ) {
+            await listingsApi.addAmenity(
+              listingId,
+              newAmenity.title,
+              newAmenity.distance
+            );
           }
           // If it has an _id but values changed, delete old and add new
           else if (newAmenity._id) {
-            const oldAmenity = oldAmenities.find(a => a._id === newAmenity._id);
-            if (oldAmenity && (
-              oldAmenity.title !== newAmenity.title ||
-              oldAmenity.distance !== newAmenity.distance
-            )) {
+            const oldAmenity = oldAmenities.find(
+              (a) => a._id === newAmenity._id
+            );
+            if (
+              oldAmenity &&
+              (oldAmenity.title !== newAmenity.title ||
+                oldAmenity.distance !== newAmenity.distance)
+            ) {
               await listingsApi.deleteAmenity(listingId, newAmenity._id);
-              if (newAmenity.title && newAmenity.distance !== '') {
-                await listingsApi.addAmenity(listingId, newAmenity.title, newAmenity.distance);
+              if (newAmenity.title && newAmenity.distance !== "") {
+                await listingsApi.addAmenity(
+                  listingId,
+                  newAmenity.title,
+                  newAmenity.distance
+                );
               }
             }
           }
@@ -417,27 +479,29 @@ export default {
         // Refresh listings to get updated data
         await fetchMyPostings();
         closeEditModal();
-        alert('Listing updated successfully!');
+        alert("Listing updated successfully!");
       } catch (err) {
-        console.error('[MyPostings] Error editing listing:', err);
-        editError.value = err.message || 'Failed to update listing';
+        console.error("[MyPostings] Error editing listing:", err);
+        editError.value = err.message || "Failed to update listing";
       } finally {
         isEditing.value = false;
       }
     };
 
     const deleteHousingListing = async (listingId) => {
-      if (!confirm('Are you sure you want to delete this housing listing?')) {
+      if (!confirm("Are you sure you want to delete this housing listing?")) {
         return;
       }
 
       try {
         await listingsApi.delete(listingId);
-        housingListings.value = housingListings.value.filter(l => l._id !== listingId);
-        console.log('[MyPostings] Deleted housing listing:', listingId);
+        housingListings.value = housingListings.value.filter(
+          (l) => l._id !== listingId
+        );
+        console.log("[MyPostings] Deleted housing listing:", listingId);
       } catch (err) {
-        console.error('[MyPostings] Error deleting housing listing:', err);
-        alert('Failed to delete listing: ' + (err.message || 'Unknown error'));
+        console.error("[MyPostings] Error deleting housing listing:", err);
+        alert("Failed to delete listing: " + (err.message || "Unknown error"));
       }
     };
 
@@ -461,9 +525,9 @@ export default {
       closeEditModal,
       addEditAmenity,
       removeEditAmenity,
-      handleEditListing
+      handleEditListing,
     };
-  }
+  },
 };
 </script>
 
