@@ -80,6 +80,17 @@
               Delete
             </button>
           </div>
+          <!-- Debug: Always show if isOwner check -->
+          <div
+            v-if="false"
+            style="background: yellow; padding: 10px; margin-top: 10px"
+          >
+            <strong>DEBUG:</strong> isOwner(listing) = {{ isOwner(listing)
+            }}<br />
+            Listing Lister: {{ listing.lister }}<br />
+            User ID: {{ sessionStore.user?.id }}<br />
+            User Object: {{ JSON.stringify(sessionStore.user) }}
+          </div>
         </div>
       </div>
     </section>
@@ -194,13 +205,133 @@
         </form>
       </div>
     </div>
+
+    <!-- Edit Listing Modal -->
+    <div v-if="showEditModal" class="modal-overlay" @click="closeEditModal">
+      <div class="modal-content" @click.stop>
+        <h2>Edit Listing</h2>
+        <form @submit.prevent="handleEditListing">
+          <div class="form-group">
+            <label for="edit-title">Title *</label>
+            <input
+              type="text"
+              id="edit-title"
+              v-model="editForm.title"
+              required
+              placeholder="e.g., Cozy Studio Near MIT"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="edit-address">Address *</label>
+            <input
+              type="text"
+              id="edit-address"
+              v-model="editForm.address"
+              required
+              placeholder="e.g., 123 Main St, Cambridge, MA"
+            />
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="edit-startDate">Start Date *</label>
+              <input
+                type="date"
+                id="edit-startDate"
+                v-model="editForm.startDate"
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="edit-endDate">End Date *</label>
+              <input
+                type="date"
+                id="edit-endDate"
+                v-model="editForm.endDate"
+                required
+              />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="edit-price">Price ($/month) *</label>
+            <input
+              type="number"
+              id="edit-price"
+              v-model.number="editForm.price"
+              required
+              min="0"
+              placeholder="e.g., 1500"
+            />
+          </div>
+
+          <div class="form-group">
+            <label>Amenities</label>
+            <div class="amenities-list">
+              <div
+                v-for="(amenity, index) in editForm.amenities"
+                :key="index"
+                class="amenity-item"
+              >
+                <input
+                  type="text"
+                  v-model="amenity.title"
+                  placeholder="e.g., T Stop"
+                  class="amenity-title"
+                />
+                <input
+                  type="number"
+                  v-model.number="amenity.distance"
+                  placeholder="Miles"
+                  min="0"
+                  step="0.1"
+                  class="amenity-distance"
+                />
+                <button
+                  type="button"
+                  @click="removeEditAmenity(index)"
+                  class="remove-amenity-btn"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+            <button
+              type="button"
+              @click="addEditAmenity"
+              class="add-amenity-btn"
+            >
+              + Add Amenity
+            </button>
+          </div>
+
+          <div v-if="editError" class="error-message">{{ editError }}</div>
+
+          <div class="modal-actions">
+            <button type="button" @click="closeEditModal" class="cancel-btn">
+              Cancel
+            </button>
+            <button type="submit" class="submit-btn" :disabled="isEditing">
+              {{ isEditing ? "Saving..." : "Save Changes" }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   </main>
 </template>
 
 <script>
 import { ref, onMounted, watch } from "vue";
 import { useRoute } from "vue-router";
-import { listings, auth, savedItems } from "../utils/api.js";
+import {
+  listings,
+  auth,
+  savedItems,
+  userInfo as userInfoApi,
+} from "../utils/api.js";
 import { useSessionStore } from "../stores/session.js";
 
 export default {
@@ -214,8 +345,80 @@ export default {
     const showCreateModal = ref(false);
     const creating = ref(false);
     const createError = ref("");
-    const currentUser = ref(null);
     const isSendingInterest = ref({}); // Track loading state per listing ID
+    const showEditModal = ref(false);
+    const isEditing = ref(false);
+    const editError = ref("");
+    const editingListingId = ref(null);
+    const editForm = ref({
+      title: "",
+      address: "",
+      startDate: "",
+      endDate: "",
+      price: "",
+      amenities: [],
+    });
+
+    // Helper function to check if a string looks like a UUID (not a username)
+    const isUUID = (str) => {
+      if (!str || typeof str !== "string") return false;
+      // UUID format: 8-4-4-4-12 hex digits
+      return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        str
+      );
+    };
+
+    // Fetch real user ID if current one looks like a username
+    const ensureValidUserId = async () => {
+      if (!sessionStore.token || !sessionStore.user) {
+        console.log("[FindHousing] No token or user, skipping user ID fetch");
+        return;
+      }
+
+      const currentUserId = sessionStore.user?.id;
+      if (!currentUserId || !isUUID(currentUserId)) {
+        console.log(
+          "[FindHousing] User ID looks invalid (username?), fetching real ID:",
+          currentUserId
+        );
+        try {
+          const userInfoResult = await userInfoApi.getUserInfo();
+          console.log("[FindHousing] Fetched user info:", userInfoResult);
+          if (
+            userInfoResult &&
+            userInfoResult.user &&
+            isUUID(userInfoResult.user)
+          ) {
+            console.log(
+              "[FindHousing] Updating session store with real user ID:",
+              userInfoResult.user
+            );
+            sessionStore.setUser({
+              ...sessionStore.user,
+              id: userInfoResult.user,
+              age: userInfoResult.age,
+              gender: userInfoResult.gender,
+              affiliation: userInfoResult.affiliation,
+              emailAddress: userInfoResult.emailAddress,
+            });
+          }
+        } catch (err) {
+          console.error("[FindHousing] Failed to fetch user info:", err);
+        }
+      } else {
+        console.log("[FindHousing] User ID looks valid (UUID):", currentUserId);
+      }
+    };
+
+    // Debug: Log session store state on setup
+    console.log("[FindHousing] Setup - Session Store State:", {
+      hasToken: !!sessionStore.token,
+      token: sessionStore.token,
+      hasUser: !!sessionStore.user,
+      user: sessionStore.user,
+      userId: sessionStore.user?.id,
+      userType: typeof sessionStore.user?.id,
+    });
 
     const newListing = ref({
       title: "",
@@ -242,7 +445,37 @@ export default {
       error.value = "";
       try {
         const result = await listings.getAll();
+        console.log("[FindHousing] Fetched listings:", result);
+        console.log("[FindHousing] Number of listings:", result?.length || 0);
+
+        // Debug: Log each listing's lister ID
+        if (result && Array.isArray(result)) {
+          result.forEach((listing, index) => {
+            console.log(`[FindHousing] Listing ${index}:`, {
+              _id: listing._id,
+              title: listing.title,
+              lister: listing.lister,
+              listerType: typeof listing.lister,
+            });
+          });
+        }
+
         listingsData.value = result;
+
+        // Debug: After setting listings, check ownership
+        console.log(
+          "[FindHousing] Current user ID from session:",
+          sessionStore.user?.id
+        );
+        if (result && Array.isArray(result) && sessionStore.user?.id) {
+          result.forEach((listing) => {
+            const isOwnerResult = isOwner(listing);
+            console.log(
+              `[FindHousing] Listing "${listing.title}" (${listing._id}) isOwner:`,
+              isOwnerResult
+            );
+          });
+        }
       } catch (err) {
         error.value = err.message || "Failed to load listings";
       } finally {
@@ -355,7 +588,42 @@ export default {
     // Removed incorrect getCurrentUser implementation. Use PasswordAuth endpoints for user info.
 
     const isOwner = (listing) => {
-      return currentUser.value && listing.lister === currentUser.value;
+      console.log("[FindHousing] isOwner called for listing:", {
+        listingId: listing._id,
+        listingTitle: listing.title,
+        listingLister: listing.lister,
+        listingListerType: typeof listing.lister,
+      });
+
+      console.log("[FindHousing] Session store user:", {
+        hasUser: !!sessionStore.user,
+        user: sessionStore.user,
+        userId: sessionStore.user?.id,
+        userIdType: typeof sessionStore.user?.id,
+        userUser: sessionStore.user?.user,
+      });
+
+      if (!sessionStore.user || !sessionStore.user.id) {
+        console.log(
+          "[FindHousing] isOwner: No user in session store - returning false"
+        );
+        return false;
+      }
+
+      const userId = sessionStore.user.id || sessionStore.user.user;
+      console.log("[FindHousing] Comparing IDs:", {
+        listingLister: listing.lister,
+        listingListerType: typeof listing.lister,
+        userId: userId,
+        userIdType: typeof userId,
+        areEqual: listing.lister === userId,
+        strictEqual: listing.lister === userId,
+      });
+
+      const isOwnerResult = listing.lister === userId;
+      console.log("[FindHousing] isOwner result:", isOwnerResult);
+
+      return isOwnerResult;
     };
 
     const formatDate = (dateString) => {
@@ -430,9 +698,160 @@ export default {
       }
     };
 
+    const formatDateForInput = (dateString) => {
+      if (!dateString) return "";
+      const date = new Date(dateString);
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    };
+
     const editListing = (listing) => {
-      // TODO: Implement edit functionality
-      alert("Edit functionality coming soon!");
+      editingListingId.value = listing._id;
+      editForm.value = {
+        title: listing.title || "",
+        address: listing.address || "",
+        startDate: formatDateForInput(listing.startDate),
+        endDate: formatDateForInput(listing.endDate),
+        price: listing.price || "",
+        amenities: listing.amenities
+          ? listing.amenities.map((a) => ({
+              _id: a._id,
+              title: a.title || "",
+              distance: a.distance || "",
+            }))
+          : [],
+      };
+      editError.value = "";
+      showEditModal.value = true;
+    };
+
+    const closeEditModal = () => {
+      showEditModal.value = false;
+      editError.value = "";
+      editingListingId.value = null;
+      editForm.value = {
+        title: "",
+        address: "",
+        startDate: "",
+        endDate: "",
+        price: "",
+        amenities: [],
+      };
+    };
+
+    const addEditAmenity = () => {
+      editForm.value.amenities.push({
+        title: "",
+        distance: "",
+      });
+    };
+
+    const removeEditAmenity = (index) => {
+      editForm.value.amenities.splice(index, 1);
+    };
+
+    const handleEditListing = async () => {
+      if (!editingListingId.value) {
+        editError.value = "No listing selected for editing.";
+        return;
+      }
+
+      isEditing.value = true;
+      editError.value = "";
+
+      try {
+        const listingId = editingListingId.value;
+        const listing = listingsData.value.find((l) => l._id === listingId);
+        if (!listing) {
+          editError.value = "Listing not found";
+          return;
+        }
+
+        // Compare current form data with original listing data and send updates only for changed fields
+        if (editForm.value.title !== listing.title) {
+          await listings.editTitle(listingId, editForm.value.title);
+        }
+        if (editForm.value.address !== listing.address) {
+          await listings.editAddress(listingId, editForm.value.address);
+        }
+        if (
+          formatDateForInput(listing.startDate) !== editForm.value.startDate
+        ) {
+          await listings.editStartDate(listingId, editForm.value.startDate);
+        }
+        if (formatDateForInput(listing.endDate) !== editForm.value.endDate) {
+          await listings.editEndDate(listingId, editForm.value.endDate);
+        }
+        if (editForm.value.price !== listing.price) {
+          await listings.editPrice(listingId, editForm.value.price);
+        }
+
+        // Handle amenities: deleted, new, and updated
+        const oldAmenities = listing.amenities || [];
+        const newAmenities = editForm.value.amenities.filter(
+          (a) => a.title && a.distance !== ""
+        );
+
+        // Delete amenities that were removed
+        for (const oldAmenity of oldAmenities) {
+          const stillExists = newAmenities.some(
+            (newA) =>
+              newA._id === oldAmenity._id &&
+              newA.title === oldAmenity.title &&
+              newA.distance === oldAmenity.distance
+          );
+          if (!stillExists && oldAmenity._id) {
+            await listings.deleteAmenity(listingId, oldAmenity._id);
+          }
+        }
+
+        // Add new amenities or update existing ones if changed
+        for (const newAmenity of newAmenities) {
+          // If it doesn't have an _id, it's a new amenity
+          if (
+            !newAmenity._id &&
+            newAmenity.title &&
+            newAmenity.distance !== ""
+          ) {
+            await listings.addAmenity(
+              listingId,
+              newAmenity.title,
+              newAmenity.distance
+            );
+          }
+          // If it has an _id but values changed, delete old and add new
+          else if (newAmenity._id) {
+            const oldAmenity = oldAmenities.find(
+              (a) => a._id === newAmenity._id
+            );
+            if (
+              oldAmenity &&
+              (oldAmenity.title !== newAmenity.title ||
+                oldAmenity.distance !== newAmenity.distance)
+            ) {
+              await listings.deleteAmenity(listingId, newAmenity._id);
+              if (newAmenity.title && newAmenity.distance !== "") {
+                await listings.addAmenity(
+                  listingId,
+                  newAmenity.title,
+                  newAmenity.distance
+                );
+              }
+            }
+          }
+        }
+
+        // Refresh listings to get updated data
+        await fetchListings();
+        closeEditModal();
+      } catch (err) {
+        console.error("[FindHousing] Error editing listing:", err);
+        editError.value = err.message || "Failed to update listing";
+      } finally {
+        isEditing.value = false;
+      }
     };
 
     const sendInterest = async (listingId) => {
@@ -476,7 +895,17 @@ export default {
 
     const route = useRoute();
 
-    onMounted(() => {
+    onMounted(async () => {
+      console.log("[FindHousing] Component mounted");
+      console.log("[FindHousing] Session store on mount:", {
+        token: sessionStore.token,
+        user: sessionStore.user,
+        userId: sessionStore.user?.id,
+      });
+
+      // Ensure we have a valid user ID before fetching listings
+      await ensureValidUserId();
+
       fetchListings();
       fetchSavedItems();
     });
@@ -512,6 +941,14 @@ export default {
       toggleSavedItem,
       sendInterest,
       isSendingInterest,
+      showEditModal,
+      isEditing,
+      editError,
+      editForm,
+      closeEditModal,
+      addEditAmenity,
+      removeEditAmenity,
+      handleEditListing,
     };
   },
 };

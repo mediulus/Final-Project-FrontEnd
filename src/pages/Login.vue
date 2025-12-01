@@ -30,11 +30,12 @@
         </div>
 
         <button type="submit" class="submit-btn" :disabled="isLoading">
-          {{ isLoading ? 'Logging in...' : 'Login' }}
+          {{ isLoading ? "Logging in..." : "Login" }}
         </button>
 
         <p class="register-link">
-          Don't have an account? <router-link to="/register">Register here</router-link>
+          Don't have an account?
+          <router-link to="/register">Register here</router-link>
         </p>
       </form>
     </div>
@@ -42,91 +43,123 @@
 </template>
 
 <script>
-import { ref } from 'vue';
-import { useRouter } from 'vue-router';
-import { auth } from '../utils/api.js';
-import { useSessionStore } from '../stores/session.js';
+import { ref } from "vue";
+import { useRouter } from "vue-router";
+import { auth, userInfo as userInfoApi } from "../utils/api.js";
+import { useSessionStore } from "../stores/session.js";
 
 export default {
-  name: 'Login',
+  name: "Login",
   setup() {
     const router = useRouter();
     const isLoading = ref(false);
-    const errorMessage = ref('');
+    const errorMessage = ref("");
     const sessionStore = useSessionStore();
 
     const formData = ref({
-      username: '',
-      password: ''
+      username: "",
+      password: "",
     });
 
     const handleLogin = async () => {
       isLoading.value = true;
-      errorMessage.value = '';
+      errorMessage.value = "";
 
       try {
         // Authenticate user
-        console.log('Attempting login with username:', formData.value.username);
-        const authResult = await auth.login(formData.value.username, formData.value.password);
-        console.log('Auth result:', authResult);
-        console.log('Auth result type:', typeof authResult);
-        console.log('Auth result keys:', authResult ? Object.keys(authResult) : 'null');
-        
+        console.log("Attempting login with username:", formData.value.username);
+        const authResult = await auth.login(
+          formData.value.username,
+          formData.value.password
+        );
+        console.log("Auth result:", authResult);
+        console.log("Auth result type:", typeof authResult);
+        console.log(
+          "Auth result keys:",
+          authResult ? Object.keys(authResult) : "null"
+        );
+
         if (!authResult) {
-          throw new Error('Authentication failed - no response');
+          throw new Error("Authentication failed - no response");
         }
 
         // Backend returns session directly from authenticate endpoint
         let sessionToken;
         let userId;
-        
+
         if (authResult.session) {
           // Backend creates session automatically during authentication
           sessionToken = authResult.session;
-          console.log('Session token from auth:', sessionToken);
-          
+          console.log("Session token from auth:", sessionToken);
+
           // We can get user ID from session token or use username as fallback
           userId = authResult.user || formData.value.username;
         } else if (authResult.user) {
           // Old flow: get user ID, then create session
           userId = authResult.user;
-          console.log('User ID:', userId);
-          
+          console.log("User ID:", userId);
+
           // Create session
-          console.log('Creating session for user:', userId);
+          console.log("Creating session for user:", userId);
           const sessionResult = await auth.createSession(userId);
-          console.log('Session result:', sessionResult);
-          
+          console.log("Session result:", sessionResult);
+
           if (!sessionResult || !sessionResult.session) {
-            throw new Error('Failed to create session');
+            throw new Error("Failed to create session");
           }
-          
+
           sessionToken = sessionResult.session;
-          console.log('Session token:', sessionToken);
+          console.log("Session token:", sessionToken);
         } else {
-          console.error('Unexpected auth result format:', authResult);
-          throw new Error('Authentication failed - invalid response format');
+          console.error("Unexpected auth result format:", authResult);
+          throw new Error("Authentication failed - invalid response format");
         }
 
         // Store session token
         sessionStore.setToken(sessionToken);
-        
-        // Store user info (id and username for now)
-        sessionStore.setUser({ 
-          id: userId, 
-          username: formData.value.username 
-        });
-        
-        console.log('Session store after login:', {
+
+        // Fetch full user info using the session to get the actual user ID
+        try {
+          const userInfoResult = await userInfoApi.getUserInfo();
+          console.log("[Login] User info result:", userInfoResult);
+
+          if (userInfoResult && userInfoResult.user) {
+            // Store user info with the actual user ID from the backend
+            sessionStore.setUser({
+              id: userInfoResult.user,
+              username: formData.value.username,
+              age: userInfoResult.age,
+              gender: userInfoResult.gender,
+              affiliation: userInfoResult.affiliation,
+              emailAddress: userInfoResult.emailAddress,
+            });
+          } else {
+            // Fallback: store basic info if getUserInfo fails
+            sessionStore.setUser({
+              id: userId,
+              username: formData.value.username,
+            });
+          }
+        } catch (err) {
+          console.error("[Login] Failed to fetch user info:", err);
+          // Fallback: store basic info if getUserInfo fails
+          sessionStore.setUser({
+            id: userId,
+            username: formData.value.username,
+          });
+        }
+
+        console.log("Session store after login:", {
           token: sessionStore.token,
-          user: sessionStore.user
+          user: sessionStore.user,
         });
-        
+
         // Redirect to home page (Find Housing)
-        router.push('/home');
+        router.push("/home");
       } catch (error) {
-        console.error('Login error:', error);
-        errorMessage.value = error.message || 'Login failed. Please check your credentials.';
+        console.error("Login error:", error);
+        errorMessage.value =
+          error.message || "Login failed. Please check your credentials.";
       } finally {
         isLoading.value = false;
       }
@@ -136,9 +169,9 @@ export default {
       formData,
       isLoading,
       errorMessage,
-      handleLogin
+      handleLogin,
     };
-  }
+  },
 };
 </script>
 

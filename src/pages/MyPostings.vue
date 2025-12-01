@@ -479,7 +479,6 @@ export default {
         // Refresh listings to get updated data
         await fetchMyPostings();
         closeEditModal();
-        alert("Listing updated successfully!");
       } catch (err) {
         console.error("[MyPostings] Error editing listing:", err);
         editError.value = err.message || "Failed to update listing";

@@ -3,7 +3,9 @@
     <section class="hero">
       <h2>Find Your Perfect Roommate</h2>
       <p>Browse roommate postings or create your own</p>
-      <button @click="openModal" class="create-btn">+ Create New Posting</button>
+      <button @click="openModal" class="create-btn">
+        + Create New Posting
+      </button>
     </section>
 
     <section class="listings-section">
@@ -13,14 +15,22 @@
         No roommate postings yet. Be the first to create one!
       </div>
       <div v-else class="listings-grid">
-        <div v-for="posting in sortedPostings" :key="posting._id" class="listing-card">
+        <div
+          v-for="posting in sortedPostings"
+          :key="posting._id"
+          class="listing-card"
+        >
           <div class="listing-header">
             <h3>{{ posting.city }}</h3>
-            <button 
-              @click="toggleSavedItem(posting._id)" 
+            <button
+              @click="toggleSavedItem(posting._id)"
               class="favorite-btn"
               :class="{ 'is-saved': isSaved(posting._id) }"
-              :title="isSaved(posting._id) ? 'Remove from favorites' : 'Add to favorites'"
+              :title="
+                isSaved(posting._id)
+                  ? 'Remove from favorites'
+                  : 'Add to favorites'
+              "
             >
               <span v-if="isSaved(posting._id)">❤️</span>
               <span v-else>🤍</span>
@@ -28,15 +38,36 @@
           </div>
 
           <div class="listing-details">
-            <p class="info"><strong>👤</strong> {{ posting.gender }}, {{ posting.age }} years old</p>
+            <p class="info">
+              <strong>👤</strong> {{ posting.gender }}, {{ posting.age }} years
+              old
+            </p>
             <p class="description">{{ posting.description }}</p>
-            <button 
-              @click="contactPoster(posting._id)" 
+            <button
+              v-if="!isPoster(posting)"
+              @click="contactPoster(posting._id)"
               class="contact-btn"
               :disabled="isContacting[posting._id]"
             >
-              {{ isContacting[posting._id] ? 'Sending...' : 'Contact Me' }}
+              {{ isContacting[posting._id] ? "Sending..." : "Contact Me" }}
             </button>
+          </div>
+
+          <div v-if="isPoster(posting)" class="listing-actions">
+            <button @click="deletePosting(posting._id)" class="delete-btn">
+              Delete
+            </button>
+          </div>
+          <!-- Debug: Always show if isPoster check -->
+          <div
+            v-if="false"
+            style="background: yellow; padding: 10px; margin-top: 10px"
+          >
+            <strong>DEBUG:</strong> isPoster(posting) = {{ isPoster(posting)
+            }}<br />
+            Posting Poster: {{ posting.poster }}<br />
+            User ID: {{ sessionStore.user?.id }}<br />
+            User Object: {{ JSON.stringify(sessionStore.user) }}
           </div>
         </div>
       </div>
@@ -60,11 +91,7 @@
 
           <div class="form-group">
             <label for="gender">Gender *</label>
-            <select
-              id="gender"
-              v-model="form.gender"
-              required
-            >
+            <select id="gender" v-model="form.gender" required>
               <option value="" disabled>Select your gender</option>
               <option value="Female">Female</option>
               <option value="Male">Male</option>
@@ -100,9 +127,11 @@
           <div v-if="createError" class="error-message">{{ createError }}</div>
 
           <div class="modal-actions">
-            <button type="button" @click="closeModal" class="cancel-btn">Cancel</button>
+            <button type="button" @click="closeModal" class="cancel-btn">
+              Cancel
+            </button>
             <button type="submit" class="submit-btn" :disabled="isCreating">
-              {{ isCreating ? 'Creating...' : 'Create Posting' }}
+              {{ isCreating ? "Creating..." : "Create Posting" }}
             </button>
           </div>
         </form>
@@ -111,52 +140,172 @@
   </main>
 </template>
 
-
 <script>
-import { ref, computed, onMounted, watch } from 'vue';
-import { useRoute } from 'vue-router';
-import { useSessionStore } from '../stores/session.js';
-import { roommatePostings, savedItems } from '../utils/api.js';
+import { ref, computed, onMounted, watch } from "vue";
+import { useRoute } from "vue-router";
+import { useSessionStore } from "../stores/session.js";
+import {
+  roommatePostings,
+  savedItems,
+  userInfo as userInfoApi,
+} from "../utils/api.js";
 
 export default {
-  name: 'FindRoommates',
+  name: "FindRoommates",
   setup() {
     const form = ref({
-      city: '',
-      gender: '',
-      age: '',
-      description: ''
+      city: "",
+      gender: "",
+      age: "",
+      description: "",
     });
     const sessionStore = useSessionStore();
     const postings = ref([]);
     const savedItemIds = ref(new Set());
     const isLoading = ref(false);
-    const error = ref('');
+    const error = ref("");
     const localModal = ref(false);
     const isCreating = ref(false);
-    const createError = ref('');
+    const createError = ref("");
     const isContacting = ref({}); // Track loading state per posting ID
+
+    // Helper function to check if a string looks like a UUID (not a username)
+    const isUUID = (str) => {
+      if (!str || typeof str !== "string") return false;
+      // UUID format: 8-4-4-4-12 hex digits
+      return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        str
+      );
+    };
+
+    // Fetch real user ID if current one looks like a username
+    const ensureValidUserId = async () => {
+      if (!sessionStore.token || !sessionStore.user) {
+        console.log("[FindRoommates] No token or user, skipping user ID fetch");
+        return false; // Return false if no update needed
+      }
+
+      const currentUserId = sessionStore.user?.id;
+      if (!currentUserId || !isUUID(currentUserId)) {
+        console.log(
+          "[FindRoommates] User ID looks invalid (username?), fetching real ID:",
+          currentUserId
+        );
+        try {
+          const userInfoResult = await userInfoApi.getUserInfo();
+          console.log("[FindRoommates] Fetched user info:", userInfoResult);
+          if (
+            userInfoResult &&
+            userInfoResult.user &&
+            isUUID(userInfoResult.user)
+          ) {
+            console.log(
+              "[FindRoommates] Updating session store with real user ID:",
+              userInfoResult.user
+            );
+            sessionStore.setUser({
+              ...sessionStore.user,
+              id: userInfoResult.user,
+              age: userInfoResult.age,
+              gender: userInfoResult.gender,
+              affiliation: userInfoResult.affiliation,
+              emailAddress: userInfoResult.emailAddress,
+            });
+            console.log(
+              "[FindRoommates] Session store updated. New user ID:",
+              sessionStore.user?.id
+            );
+            return true; // Return true if update happened
+          }
+        } catch (err) {
+          console.error("[FindRoommates] Failed to fetch user info:", err);
+        }
+      } else {
+        console.log(
+          "[FindRoommates] User ID looks valid (UUID):",
+          currentUserId
+        );
+      }
+      return false; // Return false if no update needed
+    };
+
+    // Debug: Log session store state on setup
+    console.log("[FindRoommates] Setup - Session Store State:", {
+      hasToken: !!sessionStore.token,
+      token: sessionStore.token,
+      hasUser: !!sessionStore.user,
+      user: sessionStore.user,
+      userId: sessionStore.user?.id,
+      userType: typeof sessionStore.user?.id,
+    });
 
     const modalVisible = computed(() => localModal.value);
 
     const sortedPostings = computed(() => {
       return [...postings.value].sort((a, b) => {
-        const cityA = (a.city || '').toLowerCase();
-        const cityB = (b.city || '').toLowerCase();
+        const cityA = (a.city || "").toLowerCase();
+        const cityB = (b.city || "").toLowerCase();
         return cityA.localeCompare(cityB);
       });
     });
 
     const fetchPostings = async () => {
       isLoading.value = true;
-      error.value = '';
+      error.value = "";
       try {
+        // Ensure user ID is valid before fetching
+        const userIdUpdated = await ensureValidUserId();
+
+        // If user ID was updated, wait a moment for reactivity
+        if (userIdUpdated) {
+          await new Promise((resolve) => setTimeout(resolve, 100));
+        }
+
         const result = await roommatePostings.getAll();
+        console.log("[FindRoommates] Fetched postings:", result);
+        console.log("[FindRoommates] Number of postings:", result?.length || 0);
+
+        // Debug: Log each posting's poster ID
+        if (result && Array.isArray(result)) {
+          result.forEach((posting, index) => {
+            console.log(`[FindRoommates] Posting ${index}:`, {
+              _id: posting._id,
+              city: posting.city,
+              poster: posting.poster,
+              posterType: typeof posting.poster,
+            });
+          });
+        }
+
         postings.value = result || [];
-        console.log('Fetched roommate postings:', postings.value);
+
+        // Debug: After setting postings, check ownership
+        console.log(
+          "[FindRoommates] Current user ID from session:",
+          sessionStore.user?.id
+        );
+        console.log(
+          "[FindRoommates] User ID type:",
+          typeof sessionStore.user?.id,
+          "Is UUID:",
+          sessionStore.user?.id && isUUID(sessionStore.user.id)
+        );
+        if (result && Array.isArray(result) && sessionStore.user?.id) {
+          result.forEach((posting) => {
+            const isPosterResult = isPoster(posting);
+            console.log(
+              `[FindRoommates] Posting "${posting.city}" (${posting._id}) isPoster:`,
+              isPosterResult,
+              "Poster ID:",
+              posting.poster,
+              "User ID:",
+              sessionStore.user?.id
+            );
+          });
+        }
       } catch (err) {
-        console.error('Error fetching postings:', err);
-        error.value = err.message || 'Failed to load roommate postings';
+        console.error("Error fetching postings:", err);
+        error.value = err.message || "Failed to load roommate postings";
       } finally {
         isLoading.value = false;
       }
@@ -164,78 +313,103 @@ export default {
 
     const fetchSavedItems = async () => {
       if (!sessionStore.user || !sessionStore.user.id) {
-        console.log('No user logged in, skipping fetchSavedItems');
+        console.log("No user logged in, skipping fetchSavedItems");
         return;
       }
-      
+
       try {
-        console.log('Fetching saved items for user:', sessionStore.user.id);
+        console.log("Fetching saved items for user:", sessionStore.user.id);
         const result = await savedItems.getSavedItems(sessionStore.user.id);
-        console.log('Raw saved items result:', result);
+        console.log("Raw saved items result:", result);
         const items = result?.results || result;
-        console.log('Items to process:', items, 'Is array:', Array.isArray(items));
-        
+        console.log(
+          "Items to process:",
+          items,
+          "Is array:",
+          Array.isArray(items)
+        );
+
         if (items && Array.isArray(items)) {
           // API might return nested structure: {item: {item: "id", tags: []}} or direct objects with _id
-          const ids = items.map(saved => {
-            console.log('Processing saved item:', JSON.stringify(saved, null, 2));
-            // API returns: {user: "...", savedItem: {item: "id", tags: [...]}}
-            if (saved.savedItem && saved.savedItem.item) {
-              console.log('Using saved.savedItem.item:', saved.savedItem.item);
-              return saved.savedItem.item;
-            } else if (saved._id) {
-              console.log('Using saved._id:', saved._id);
-              return saved._id;
-            } else if (saved.item && saved.item.item) {
-              console.log('Using saved.item.item:', saved.item.item);
-              return saved.item.item;
-            }
-            console.log('No ID found for this item');
-            return null;
-          }).filter(id => id !== null);
+          const ids = items
+            .map((saved) => {
+              console.log(
+                "Processing saved item:",
+                JSON.stringify(saved, null, 2)
+              );
+              // API returns: {user: "...", savedItem: {item: "id", tags: [...]}}
+              if (saved.savedItem && saved.savedItem.item) {
+                console.log(
+                  "Using saved.savedItem.item:",
+                  saved.savedItem.item
+                );
+                return saved.savedItem.item;
+              } else if (saved._id) {
+                console.log("Using saved._id:", saved._id);
+                return saved._id;
+              } else if (saved.item && saved.item.item) {
+                console.log("Using saved.item.item:", saved.item.item);
+                return saved.item.item;
+              }
+              console.log("No ID found for this item");
+              return null;
+            })
+            .filter((id) => id !== null);
           savedItemIds.value = new Set(ids);
-          console.log('Saved item IDs set to:', Array.from(savedItemIds.value));
+          console.log("Saved item IDs set to:", Array.from(savedItemIds.value));
         } else {
-          console.log('Result is not an array, clearing saved items');
+          console.log("Result is not an array, clearing saved items");
           savedItemIds.value = new Set();
         }
       } catch (err) {
-        console.error('Error fetching saved items:', err);
+        console.error("Error fetching saved items:", err);
       }
     };
 
     const isSaved = (itemId) => {
       const saved = savedItemIds.value.has(itemId);
-      console.log(`isSaved(${itemId}):`, saved, 'Current saved IDs:', Array.from(savedItemIds.value));
+      console.log(
+        `isSaved(${itemId}):`,
+        saved,
+        "Current saved IDs:",
+        Array.from(savedItemIds.value)
+      );
       return saved;
     };
 
     const toggleSavedItem = async (itemId) => {
       if (!sessionStore.user || !sessionStore.user.id) {
-        alert('Please log in to save items');
+        alert("Please log in to save items");
         return;
       }
 
       const userId = sessionStore.user.id;
-      console.log('toggleSavedItem called for:', itemId, 'User:', userId);
+      console.log("toggleSavedItem called for:", itemId, "User:", userId);
 
       try {
         if (isSaved(itemId)) {
           // Remove from saved items
-          console.log('Removing item from saved items via API');
+          console.log("Removing item from saved items via API");
           await savedItems.removeItem(userId, itemId);
           savedItemIds.value.delete(itemId);
-          console.log('Removed from saved items:', itemId);
+          console.log("Removed from saved items:", itemId);
         } else {
           // Add to saved items with "Favorite" tag
-          console.log('Adding item to saved items via API');
-          await savedItems.addTag(userId, itemId, 'Favorite');
+          console.log("Adding item to saved items via API");
+          await savedItems.addTag(userId, itemId, "Favorite");
           savedItemIds.value.add(itemId);
-          console.log('Added to saved items:', itemId, 'Updated set:', Array.from(savedItemIds.value));
+          console.log(
+            "Added to saved items:",
+            itemId,
+            "Updated set:",
+            Array.from(savedItemIds.value)
+          );
         }
       } catch (err) {
-        console.error('Error toggling saved item:', err);
-        alert('Failed to update favorites: ' + (err.message || 'Unknown error'));
+        console.error("Error toggling saved item:", err);
+        alert(
+          "Failed to update favorites: " + (err.message || "Unknown error")
+        );
       }
     };
 
@@ -245,12 +419,66 @@ export default {
 
     const closeModal = () => {
       localModal.value = false;
-      createError.value = '';
+      createError.value = "";
+    };
+
+    const isPoster = (posting) => {
+      console.log("[FindRoommates] isPoster called for posting:", {
+        postingId: posting._id,
+        postingCity: posting.city,
+        postingPoster: posting.poster,
+        postingPosterType: typeof posting.poster,
+      });
+
+      console.log("[FindRoommates] Session store user:", {
+        hasUser: !!sessionStore.user,
+        user: sessionStore.user,
+        userId: sessionStore.user?.id,
+        userIdType: typeof sessionStore.user?.id,
+        userUser: sessionStore.user?.user,
+      });
+
+      if (!sessionStore.user || !sessionStore.user.id) {
+        console.log(
+          "[FindRoommates] isPoster: No user in session store - returning false"
+        );
+        return false;
+      }
+
+      const userId = sessionStore.user.id || sessionStore.user.user;
+      console.log("[FindRoommates] Comparing IDs:", {
+        postingPoster: posting.poster,
+        postingPosterType: typeof posting.poster,
+        userId: userId,
+        userIdType: typeof userId,
+        areEqual: posting.poster === userId,
+        strictEqual: posting.poster === userId,
+      });
+
+      const isPosterResult = posting.poster === userId;
+      console.log("[FindRoommates] isPoster result:", isPosterResult);
+
+      return isPosterResult;
+    };
+
+    const deletePosting = async (postingId) => {
+      if (!confirm("Are you sure you want to delete this roommate posting?")) {
+        return;
+      }
+
+      try {
+        await roommatePostings.delete(postingId);
+        await fetchPostings();
+        alert("Posting deleted successfully");
+      } catch (err) {
+        console.error("Error deleting posting:", err);
+        alert("Failed to delete posting: " + (err.message || "Unknown error"));
+      }
     };
 
     const contactPoster = async (postingId) => {
       if (!sessionStore.user || !sessionStore.user.id) {
-        alert('Please log in to contact posters');
+        alert("Please log in to contact posters");
         return;
       }
 
@@ -258,16 +486,18 @@ export default {
       isContacting.value[postingId] = true;
 
       try {
-        console.log('Contacting poster for posting:', postingId);
+        console.log("Contacting poster for posting:", postingId);
         const result = await roommatePostings.contact(postingId);
-        console.log('Contact sent successfully:', result);
-        alert('Your interest has been sent to the posting owner!');
-        
+        console.log("Contact sent successfully:", result);
+        alert("Your interest has been sent to the posting owner!");
+
         // Refetch saved items to update local state
         await fetchSavedItems();
       } catch (err) {
-        console.error('Error contacting poster:', err);
-        alert('Failed to send contact request: ' + (err.message || 'Unknown error'));
+        console.error("Error contacting poster:", err);
+        alert(
+          "Failed to send contact request: " + (err.message || "Unknown error")
+        );
       } finally {
         // Clear loading state for this specific posting
         isContacting.value[postingId] = false;
@@ -276,30 +506,30 @@ export default {
 
     const emitCreatePosting = async () => {
       isCreating.value = true;
-      createError.value = '';
+      createError.value = "";
 
       try {
-        console.log('Creating roommate posting with data:', form.value);
-        
+        console.log("Creating roommate posting with data:", form.value);
+
         const postingData = {
           city: form.value.city,
           gender: form.value.gender,
           age: form.value.age,
-          description: form.value.description
+          description: form.value.description,
         };
 
         const result = await roommatePostings.create(postingData);
-        console.log('Posting created successfully:', result);
+        console.log("Posting created successfully:", result);
 
         // Clear form and close modal
-        form.value = { city: '', gender: '', age: '', description: '' };
+        form.value = { city: "", gender: "", age: "", description: "" };
         closeModal();
 
         // Refresh postings
         await fetchPostings();
       } catch (err) {
-        console.error('Error creating posting:', err);
-        createError.value = err.message || 'Failed to create posting';
+        console.error("Error creating posting:", err);
+        createError.value = err.message || "Failed to create posting";
       } finally {
         isCreating.value = false;
       }
@@ -307,18 +537,31 @@ export default {
 
     const route = useRoute();
 
-    onMounted(() => {
+    onMounted(async () => {
+      console.log("[FindRoommates] Component mounted");
+      console.log("[FindRoommates] Session store on mount:", {
+        token: sessionStore.token,
+        user: sessionStore.user,
+        userId: sessionStore.user?.id,
+      });
+
+      // Ensure we have a valid user ID before fetching postings
+      await ensureValidUserId();
+
       fetchPostings();
       fetchSavedItems();
     });
 
     // Watch for route changes to refetch saved items when returning to this page
-    watch(() => route.path, (newPath) => {
-      if (newPath === '/find-roommates') {
-        console.log('Navigated to Find Roommates - refetching saved items');
-        fetchSavedItems();
+    watch(
+      () => route.path,
+      (newPath) => {
+        if (newPath === "/find-roommates") {
+          console.log("Navigated to Find Roommates - refetching saved items");
+          fetchSavedItems();
+        }
       }
-    });
+    );
 
     return {
       form,
@@ -336,9 +579,11 @@ export default {
       isSaved,
       toggleSavedItem,
       contactPoster,
-      isContacting
+      isContacting,
+      isPoster,
+      deletePosting,
     };
-  }
+  },
 };
 </script>
 
@@ -499,6 +744,30 @@ export default {
 .contact-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+.listing-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #f0f0f0;
+}
+
+.delete-btn {
+  flex: 1;
+  padding: 0.625rem;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  background: #dc3545;
+  color: white;
+}
+
+.delete-btn:hover {
+  opacity: 0.85;
 }
 
 .modal-overlay {
