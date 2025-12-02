@@ -175,6 +175,67 @@
               </div>
             </div>
 
+            <!-- Change Password Section -->
+            <div v-if="showChangePassword" class="change-password-section">
+              <div class="change-password-form">
+                <h4>Change Password</h4>
+                <div class="password-field">
+                  <label>Current Password</label>
+                  <div class="password-input-wrapper">
+                    <input
+                      :type="showCurrentPassword ? 'text' : 'password'"
+                      v-model="currentPassword"
+                      placeholder="Enter current password"
+                      class="password-input"
+                    />
+                    <button
+                      type="button"
+                      class="password-toggle-btn"
+                      @click="showCurrentPassword = !showCurrentPassword"
+                      :title="showCurrentPassword ? 'Hide password' : 'Show password'"
+                    >
+                      {{ showCurrentPassword ? 'Hide' : 'Show' }}
+                    </button>
+                  </div>
+                </div>
+                <div class="password-field">
+                  <label>New Password</label>
+                  <div class="password-input-wrapper">
+                    <input
+                      :type="showNewPassword ? 'text' : 'password'"
+                      v-model="newPassword"
+                      placeholder="Enter new password"
+                      class="password-input"
+                    />
+                    <button
+                      type="button"
+                      class="password-toggle-btn"
+                      @click="showNewPassword = !showNewPassword"
+                      :title="showNewPassword ? 'Hide password' : 'Show password'"
+                    >
+                      {{ showNewPassword ? 'Hide' : 'Show' }}
+                    </button>
+                  </div>
+                </div>
+                <div class="change-password-buttons">
+                  <button
+                    @click="handleChangePassword"
+                    :disabled="isChangingPassword || !currentPassword || !newPassword"
+                    class="confirm-change-btn"
+                  >
+                    {{ isChangingPassword ? 'Changing...' : 'Change Password' }}
+                  </button>
+                  <button
+                    @click="cancelChangePassword"
+                    :disabled="isChangingPassword"
+                    class="cancel-change-btn"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+
             <!-- Delete Account Section -->
             <div v-if="showDeleteConfirm" class="delete-confirm-section">
               <div class="delete-warning">
@@ -219,7 +280,14 @@
 
             <div class="dropdown-footer">
               <button
-                v-if="!showDeleteConfirm"
+                v-if="!showDeleteConfirm && !showChangePassword"
+                @click="showChangePassword = true"
+                class="change-password-btn"
+              >
+                Change Password
+              </button>
+              <button
+                v-if="!showDeleteConfirm && !showChangePassword"
                 @click="showDeleteConfirm = true"
                 class="delete-account-btn"
               >
@@ -263,6 +331,14 @@ export default {
     const isDeleting = ref(false);
     const showDeletePassword = ref(false);
 
+    // Change password variables
+    const showChangePassword = ref(false);
+    const currentPassword = ref('');
+    const newPassword = ref('');
+    const isChangingPassword = ref(false);
+    const showCurrentPassword = ref(false);
+    const showNewPassword = ref(false);
+
     // Hide navbar on register and login pages
     watch(
       () => route.path,
@@ -272,11 +348,12 @@ export default {
       { immediate: true }
     );
 
-    // Reset delete account state when user changes (login/logout)
+    // Reset delete account and change password state when user changes (login/logout)
     watch(
       () => sessionStore.user,
       () => {
         cancelDelete();
+        cancelChangePassword();
       }
     );
 
@@ -311,9 +388,10 @@ export default {
       const wasOpen = showProfileDropdown.value;
       showProfileDropdown.value = !showProfileDropdown.value;
 
-      // Reset delete account state when opening dropdown
+      // Reset delete account and change password state when opening dropdown
       if (!wasOpen && showProfileDropdown.value) {
         cancelDelete();
+        cancelChangePassword();
       }
 
       // If opening the dropdown and we don't have full user info, fetch it
@@ -539,6 +617,36 @@ export default {
       showDeletePassword.value = false;
     };
 
+    const handleChangePassword = async () => {
+      if (!currentPassword.value || !newPassword.value) {
+        alert('Please enter both current and new passwords');
+        return;
+      }
+
+      isChangingPassword.value = true;
+
+      try {
+        await auth.changePassword(currentPassword.value, newPassword.value);
+        
+        alert('Password changed successfully');
+        cancelChangePassword();
+      } catch (error) {
+        console.error('Change password error:', error);
+        const errorMessage = error.message || 'Failed to change password. Please check your current password and try again.';
+        alert(errorMessage);
+        isChangingPassword.value = false;
+      }
+    };
+
+    const cancelChangePassword = () => {
+      showChangePassword.value = false;
+      currentPassword.value = '';
+      newPassword.value = '';
+      showCurrentPassword.value = false;
+      showNewPassword.value = false;
+      isChangingPassword.value = false;
+    };
+
     // Close dropdown when clicking outside
     const handleClickOutside = (event) => {
       if (
@@ -572,6 +680,15 @@ export default {
       showDeletePassword,
       handleDeleteAccount,
       cancelDelete,
+      // Change password functionality
+      showChangePassword,
+      currentPassword,
+      newPassword,
+      isChangingPassword,
+      showCurrentPassword,
+      showNewPassword,
+      handleChangePassword,
+      cancelChangePassword,
     };
   },
 };

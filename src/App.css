@@ -373,6 +373,118 @@
   cursor: not-allowed;
 }
 
+/* Change Password Styles */
+.change-password-btn {
+  width: 100%;
+  padding: 0.75rem;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.2s;
+  margin-bottom: 0.5rem;
+}
+
+.change-password-btn:hover {
+  background: #0056b3;
+}
+
+.change-password-section {
+  padding: 1rem 1.25rem;
+  border-top: 1px solid #eee;
+  background: #f8f9fa;
+}
+
+.change-password-form {
+  text-align: left;
+}
+
+.change-password-form h4 {
+  margin: 0 0 1rem 0;
+  color: #007bff;
+  font-size: 1rem;
+}
+
+.password-field {
+  margin-bottom: 1rem;
+}
+
+.password-field label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.password-input {
+  width: 100%;
+  padding: 0.5rem;
+  padding-right: 60px;
+  border: 2px solid #ddd;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  box-sizing: border-box;
+}
+
+.password-input:focus {
+  outline: none;
+  border-color: #007bff;
+}
+
+.change-password-buttons {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.confirm-change-btn {
+  flex: 1;
+  padding: 0.6rem;
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.confirm-change-btn:hover:not(:disabled) {
+  background: #0056b3;
+}
+
+.confirm-change-btn:disabled {
+  background: #adb5bd;
+  cursor: not-allowed;
+}
+
+.cancel-change-btn {
+  flex: 1;
+  padding: 0.6rem;
+  background: #6c757d;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.cancel-change-btn:hover:not(:disabled) {
+  background: #5a6268;
+}
+
+.cancel-change-btn:disabled {
+  background: #adb5bd;
+  cursor: not-allowed;
+}
+
 /* Page styles */
 .page {
   flex: 1;
