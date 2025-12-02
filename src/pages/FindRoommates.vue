@@ -8,17 +8,72 @@
       </button>
     </section>
 
+    <!-- Filter Bar -->
+    <section class="filter-bar">
+      <div class="filter-container">
+        <div class="filter-group">
+          <label for="minAge">Min Age</label>
+          <input
+            type="number"
+            id="minAge"
+            v-model.number="filters.minAge"
+            placeholder="18"
+            min="18"
+            max="120"
+          />
+        </div>
+
+        <div class="filter-group">
+          <label for="maxAge">Max Age</label>
+          <input
+            type="number"
+            id="maxAge"
+            v-model.number="filters.maxAge"
+            placeholder="Any"
+            min="18"
+            max="120"
+          />
+        </div>
+
+        <div class="filter-group">
+          <label for="filterGender">Gender</label>
+          <select id="filterGender" v-model="filters.gender">
+            <option value="">Any</option>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+            <option value="Non-binary">Non-binary</option>
+            <option value="Other">Other</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label for="filterCity">City</label>
+          <input
+            type="text"
+            id="filterCity"
+            v-model="filters.city"
+            placeholder="e.g., Cambridge"
+          />
+        </div>
+
+        <div class="filter-actions">
+          <button @click="applyFilters" class="search-btn">Search</button>
+          <button @click="clearFilters" class="clear-btn">Clear</button>
+        </div>
+      </div>
+    </section>
+
     <section class="listings-section">
       <div v-if="isLoading" class="loading">Loading roommate postings...</div>
       <div v-else-if="error" class="error-message">{{ error }}</div>
-      <div v-else-if="postings.length === 0" class="no-listings">
-        No roommate postings yet. Be the first to create one!
+      <div v-else-if="filteredPostings.length === 0" class="no-listings">
+        No roommate postings match your filters. Try adjusting your search criteria.
       </div>
       <div v-else class="listings-container">
         <!-- Compact Card View -->
         <div class="listings-grid">
           <div
-            v-for="posting in sortedPostings"
+            v-for="posting in filteredPostings"
             :key="posting._id"
             class="posting-card"
             :class="{ 'expanded': expandedPosting === posting._id }"
@@ -601,6 +656,21 @@ export default {
     // New data for expanded view
     const expandedPosting = ref(null);
 
+    // Filter state
+    const filters = ref({
+      minAge: null,
+      maxAge: null,
+      gender: "",
+      city: "",
+    });
+
+    const appliedFilters = ref({
+      minAge: null,
+      maxAge: null,
+      gender: "",
+      city: "",
+    });
+
     // Helper function to check if a string looks like a UUID (not a username)
     const isUUID = (str) => {
       if (!str || typeof str !== "string") return false;
@@ -672,6 +742,76 @@ export default {
     });
 
     const modalVisible = computed(() => localModal.value);
+
+    // Computed property for filtered and sorted postings
+    const filteredPostings = computed(() => {
+      let result = [...postings.value];
+
+      // Apply age filters
+      if (
+        appliedFilters.value.minAge !== null &&
+        appliedFilters.value.minAge !== ""
+      ) {
+        result = result.filter(
+          (posting) => posting.age >= appliedFilters.value.minAge
+        );
+      }
+
+      if (
+        appliedFilters.value.maxAge !== null &&
+        appliedFilters.value.maxAge !== ""
+      ) {
+        result = result.filter(
+          (posting) => posting.age <= appliedFilters.value.maxAge
+        );
+      }
+
+      // Apply gender filter
+      if (appliedFilters.value.gender) {
+        result = result.filter(
+          (posting) => posting.gender === appliedFilters.value.gender
+        );
+      }
+
+      // Apply city filter (case-insensitive partial match)
+      if (appliedFilters.value.city) {
+        const cityFilter = appliedFilters.value.city.toLowerCase();
+        result = result.filter((posting) =>
+          (posting.city || "").toLowerCase().includes(cityFilter)
+        );
+      }
+
+      // Sort by city
+      return result.sort((a, b) => {
+        const cityA = (a.city || "").toLowerCase();
+        const cityB = (b.city || "").toLowerCase();
+        return cityA.localeCompare(cityB);
+      });
+    });
+
+    const applyFilters = () => {
+      appliedFilters.value = {
+        minAge: filters.value.minAge,
+        maxAge: filters.value.maxAge,
+        gender: filters.value.gender,
+        city: filters.value.city,
+      };
+    };
+
+    const clearFilters = () => {
+      filters.value = {
+        minAge: null,
+        maxAge: null,
+        gender: "",
+        city: "",
+      };
+      appliedFilters.value = {
+        minAge: null,
+        maxAge: null,
+        gender: "",
+        city: "",
+      };
+    };
 
     const sortedPostings = computed(() => {
       return [...postings.value].sort((a, b) => {
@@ -1252,6 +1392,10 @@ export default {
       sessionStore,
       postings,
       sortedPostings,
+      filteredPostings,
+      filters,
+      applyFilters,
+      clearFilters,
       isLoading,
       error,
       isCreating,
@@ -1326,6 +1470,91 @@ export default {
 .create-btn:hover {
   transform: translateY(-2px);
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+/* Filter Bar Styles */
+.filter-bar {
+  background: rgba(37, 62, 53, 1);
+  border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.filter-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1.5rem 2rem;
+  display: flex;
+  gap: 1rem;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 1;
+  min-width: 150px;
+}
+
+.filter-group label {
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.9rem;
+}
+
+.filter-group input,
+.filter-group select {
+  padding: 0.625rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  font-size: 1rem;
+  transition: border-color 0.2s, background 0.2s;
+  background: rgba(255, 255, 255, 0.95);
+  color: #333;
+}
+
+.filter-group input:focus,
+.filter-group select:focus {
+  outline: none;
+  border-color: rgba(255, 255, 255, 0.5);
+  background: white;
+}
+
+.filter-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.search-btn,
+.clear-btn {
+  padding: 0.625rem 1.5rem;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.2s, background 0.2s;
+  font-size: 1rem;
+}
+
+.search-btn {
+  background: rgb(22, 53, 27);
+  color: white;
+}
+
+.search-btn:hover {
+  background: rgb(15, 38, 19);
+  transform: translateY(-1px);
+}
+
+.clear-btn {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.clear-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-1px);
 }
 
 .listings-section {

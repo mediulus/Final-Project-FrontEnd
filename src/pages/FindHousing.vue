@@ -1317,14 +1317,14 @@ export default {
 
 /* Filter Bar Styles */
 .filter-bar {
-  background: rgb(47, 71, 62);
+  background: rgba(37, 62, 53, 1);
   border-bottom: 2px solid rgba(255, 255, 255, 0.1);
-  padding: 1.5rem 2rem;
 }
 
 .filter-container {
   max-width: 1200px;
   margin: 0 auto;
+  padding: 1.5rem 2rem;
   display: flex;
   gap: 1rem;
   align-items: flex-end;
