@@ -15,13 +15,14 @@
   transition: margin-left 0.3s ease, width 0.3s ease;
 }
 
-.main-content:not(.sidebar-open) {
+/* Main content always has sidebar margin - removed collapse behavior */
+/* .main-content:not(.sidebar-open) {
   margin-left: 0;
   width: 100%;
-}
+} */
 
-/* Sidebar Overlay - hidden on desktop, shown on mobile */
-.sidebar-overlay {
+/* Sidebar Overlay - removed since sidebar always stays open */
+/* .sidebar-overlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -39,10 +40,10 @@
     display: block;
     pointer-events: auto;
   }
-}
+} */
 
-/* Sidebar Toggle Button */
-.sidebar-toggle {
+/* Sidebar Toggle Button - removed since sidebar always stays open */
+/* .sidebar-toggle {
   position: fixed;
   top: 1rem;
   left: 296px;
@@ -90,7 +91,7 @@
 
 .sidebar-toggle.open .hamburger-line:nth-child(3) {
   transform: rotate(-45deg) translate(5px, -5px);
-}
+} */
 
 /* Sidebar */
 .sidebar {
@@ -107,9 +108,10 @@
   box-shadow: 4px 0 12px rgba(0, 0, 0, 0.2);
 }
 
-.sidebar:not(.open) {
+/* Sidebar always visible - removed hide behavior */
+/* .sidebar:not(.open) {
   left: -300px;
-}
+} */
 
 .sidebar-header {
   padding: 2rem 1.5rem;
@@ -773,27 +775,24 @@
 
 /* Responsive Design */
 @media (max-width: 768px) {
-  /* On mobile, sidebar overlays content like before */
+  /* On mobile, sidebar still always visible */
   .sidebar {
-    left: -300px;
-  }
-
-  .sidebar.open {
-    left: 0;
+    left: 0; /* Always visible */
   }
 
   .main-content {
-    margin-left: 0 !important;
-    width: 100% !important;
+    margin-left: 280px; /* Always account for sidebar */
+    width: calc(100% - 280px);
   }
 
-  .sidebar-toggle {
+  /* Remove toggle button styles since not needed */
+  /* .sidebar-toggle {
     left: 1rem !important;
   }
 
   .sidebar-toggle.open {
     left: 246px !important;
-  }
+  } */
 
   .nav-container {
     flex-direction: column;

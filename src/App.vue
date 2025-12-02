@@ -1,11 +1,6 @@
 <template>
   <div class="app">
-    <!-- Sidebar Toggle Button -->
-    <button v-if="showNavbar" @click="toggleSidebar" class="sidebar-toggle" :class="{ open: sidebarOpen }">
-      <span class="hamburger-line"></span>
-      <span class="hamburger-line"></span>
-      <span class="hamburger-line"></span>
-    </button>
+    <!-- Sidebar Toggle Button removed - sidebar always visible -->
 
     <!-- Sidebar Navigation -->
     <nav v-if="showNavbar" class="sidebar" :class="{ open: sidebarOpen }">
@@ -60,8 +55,7 @@
       </div>
     </nav>
 
-    <!-- Overlay for sidebar (only on mobile when sidebar is open) -->
-    <div v-if="isMobile && sidebarOpen && showNavbar" class="sidebar-overlay" @click="toggleSidebar"></div>
+    <!-- Overlay for sidebar removed - sidebar always visible -->
 
     <!-- Profile Dropdown Backdrop -->
     <div v-if="showProfileDropdown && sessionStore.user" class="profile-backdrop" @click="toggleProfileDropdown"></div>
@@ -364,7 +358,7 @@ export default {
     const route = useRoute();
     const router = useRouter();
     const showNavbar = ref(true);
-    // Sidebar starts open by default
+    // Sidebar always stays open
     const sidebarOpen = ref(true);
     const showProfileDropdown = ref(false);
     const sessionStore = useSessionStore();
@@ -406,10 +400,8 @@ export default {
       () => route.path,
       (newPath) => {
         showNavbar.value = newPath !== "/register" && newPath !== "/login";
-        // Keep sidebar open on desktop, close on mobile when navigating
-        if (window.innerWidth <= 768) {
-          sidebarOpen.value = false;
-        }
+        // Sidebar always stays open
+        // No longer closing sidebar on mobile navigation
       },
       { immediate: true }
     );
@@ -423,8 +415,9 @@ export default {
       }
     );
 
+    // Sidebar toggle removed - sidebar always stays open
     const toggleSidebar = () => {
-      sidebarOpen.value = !sidebarOpen.value;
+      // No longer toggling - sidebar stays open
     };
 
     const userInitial = computed(() => {
