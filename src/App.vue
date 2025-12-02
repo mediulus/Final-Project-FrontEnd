@@ -175,7 +175,56 @@
               </div>
             </div>
 
+            <!-- Delete Account Section -->
+            <div v-if="showDeleteConfirm" class="delete-confirm-section">
+              <div class="delete-warning">
+                <h4>Delete Account</h4>
+                <p><strong>This action cannot be undone.</strong></p>
+                <p>Enter your password to confirm:</p>
+                <div class="password-input-wrapper">
+                  <input
+                    :type="showDeletePassword ? 'text' : 'password'"
+                    v-model="deletePassword"
+                    placeholder="Enter your password"
+                    class="delete-password-input"
+                    @keyup.enter="handleDeleteAccount"
+                  />
+                  <button
+                    type="button"
+                    class="password-toggle-btn"
+                    @click="showDeletePassword = !showDeletePassword"
+                    :title="showDeletePassword ? 'Hide password' : 'Show password'"
+                  >
+                    {{ showDeletePassword ? 'Hide' : 'Show' }}
+                  </button>
+                </div>
+                <div class="delete-buttons">
+                  <button
+                    @click="handleDeleteAccount"
+                    :disabled="isDeleting || !deletePassword"
+                    class="confirm-delete-btn"
+                  >
+                    {{ isDeleting ? 'Deleting...' : 'Delete Account' }}
+                  </button>
+                  <button
+                    @click="cancelDelete"
+                    :disabled="isDeleting"
+                    class="cancel-delete-btn"
+                  >
+                    Cancel
+                  </button>
+                </div>
+              </div>
+            </div>
+
             <div class="dropdown-footer">
+              <button
+                v-if="!showDeleteConfirm"
+                @click="showDeleteConfirm = true"
+                class="delete-account-btn"
+              >
+                Delete Account
+              </button>
               <button @click.stop="handleLogout" class="logout-btn-dropdown">Logout</button>
             </div>
           </div>
@@ -208,6 +257,12 @@ export default {
       affiliation: false,
     });
 
+    // Delete account variables
+    const showDeleteConfirm = ref(false);
+    const deletePassword = ref('');
+    const isDeleting = ref(false);
+    const showDeletePassword = ref(false);
+
     // Hide navbar on register and login pages
     watch(
       () => route.path,
@@ -215,6 +270,14 @@ export default {
         showNavbar.value = newPath !== "/register" && newPath !== "/login";
       },
       { immediate: true }
+    );
+
+    // Reset delete account state when user changes (login/logout)
+    watch(
+      () => sessionStore.user,
+      () => {
+        cancelDelete();
+      }
     );
 
     const userInitial = computed(() => {
@@ -247,6 +310,11 @@ export default {
     const toggleProfileDropdown = async () => {
       const wasOpen = showProfileDropdown.value;
       showProfileDropdown.value = !showProfileDropdown.value;
+
+      // Reset delete account state when opening dropdown
+      if (!wasOpen && showProfileDropdown.value) {
+        cancelDelete();
+      }
 
       // If opening the dropdown and we don't have full user info, fetch it
       if (
@@ -421,19 +489,54 @@ export default {
 
     const handleLogout = async () => {
       console.log('Logout button clicked');
-      
+
       // Clear session immediately for better UX
       sessionStore.clearToken();
       sessionStore.clearUser();
       showProfileDropdown.value = false;
-      
+
       // Call logout API in background (don't wait for it)
       auth.logout().catch(error => {
         console.warn('Logout API call failed (ignoring):', error);
       });
-      
+
       console.log('Session cleared, redirecting to login...');
       router.push('/login');
+    };    const handleDeleteAccount = async () => {
+      if (!deletePassword.value) {
+        alert('Please enter your password to confirm deletion');
+        return;
+      }
+
+      isDeleting.value = true;
+
+      try {
+        await auth.deleteAccount(deletePassword.value);
+
+        // Only execute success flow if API call succeeds
+        sessionStore.clearToken();
+        sessionStore.clearUser();
+        showProfileDropdown.value = false;
+        cancelDelete(); // Reset form on success
+
+        alert('Account deleted successfully');
+        router.push('/');
+      } catch (error) {
+        console.error('Delete account error:', error);
+
+        // Show specific error message if available
+        const errorMessage = error.message || 'Failed to delete account. Please check your password and try again.';
+        alert(errorMessage);
+
+        // Don't reset form on error so user can try again
+        isDeleting.value = false;
+      }
+    };
+
+    const cancelDelete = () => {
+      showDeleteConfirm.value = false;
+      deletePassword.value = '';
+      showDeletePassword.value = false;
     };
 
     // Close dropdown when clicking outside
@@ -462,6 +565,13 @@ export default {
       saveField,
       handleLogout,
       sessionStore,
+      // Delete account functionality
+      showDeleteConfirm,
+      deletePassword,
+      isDeleting,
+      showDeletePassword,
+      handleDeleteAccount,
+      cancelDelete,
     };
   },
 };

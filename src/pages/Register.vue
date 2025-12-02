@@ -16,8 +16,7 @@
 
         <div class="form-group">
           <label for="password">Password *</label>
-          <input
-            type="password"
+          <PasswordInput
             id="password"
             v-model="formData.password"
             required
@@ -92,15 +91,19 @@ import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { auth } from '../utils/api.js';
 import { useSessionStore } from '../stores/session.js';
+import PasswordInput from '../components/PasswordInput.vue';
 
 export default {
   name: 'Register',
+  components: {
+    PasswordInput
+  },
   setup() {
     const router = useRouter();
     const sessionStore = useSessionStore();
     const isLoading = ref(false);
     const errorMessage = ref('');
-    
+
     const formData = ref({
       username: '',
       password: '',
@@ -123,7 +126,7 @@ export default {
           formData.value.affiliation,
           formData.value.emailAddress
         );
-        
+
         // Registration successful, redirect to login
         router.push('/login');
       } catch (error) {

@@ -16,8 +16,7 @@
 
         <div class="form-group">
           <label for="password">Password</label>
-          <input
-            type="password"
+          <PasswordInput
             id="password"
             v-model="formData.password"
             required
@@ -47,9 +46,13 @@ import { ref } from "vue";
 import { useRouter } from "vue-router";
 import { auth, userInfo as userInfoApi } from "../utils/api.js";
 import { useSessionStore } from "../stores/session.js";
+import PasswordInput from "../components/PasswordInput.vue";
 
 export default {
   name: "Login",
+  components: {
+    PasswordInput
+  },
   setup() {
     const router = useRouter();
     const isLoading = ref(false);
