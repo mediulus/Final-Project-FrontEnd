@@ -63,7 +63,7 @@ const router = createRouter({
 // Navigation guard to check authentication
 router.beforeEach((to, from, next) => {
   const sessionStore = useSessionStore()
-  
+
   console.log('Navigation Guard:', {
     to: to.path,
     hasToken: !!sessionStore.token,
@@ -71,7 +71,7 @@ router.beforeEach((to, from, next) => {
     token: sessionStore.token,
     user: sessionStore.user
   })
-  
+
   if (to.meta.requiresAuth && !sessionStore.token) {
     console.log('Redirecting to login - no session token')
     next('/login')

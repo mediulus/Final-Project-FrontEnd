@@ -52,6 +52,9 @@
                   >
                     <span>♥</span>
                   </button>
+                  <div v-if="isPoster(posting)" class="owner-badge">
+                    Your Posting
+                  </div>
                 </div>
               </div>
 
@@ -113,6 +116,21 @@
                   >
                     <span>♥</span>
                   </button>
+                  <div v-if="isOwner(listing)" class="owner-badge">
+                    Your Listing
+                  </div>
+                </div>
+              </div>
+
+              <!-- Photo Preview Section -->
+              <div v-if="listing.photos && listing.photos.length > 0" class="photo-preview-section">
+                <img
+                  :src="getPhotoUrl(listing.photos[0])"
+                  :alt="listing.title"
+                  class="card-photo-preview"
+                />
+                <div v-if="listing.photos.length > 1" class="photo-count">
+                  +{{ listing.photos.length - 1 }} more
                 </div>
               </div>
 
@@ -225,15 +243,20 @@
             <!-- Action Buttons -->
             <div class="detail-actions">
               <button
-                v-if="!getItemTags(getExpandedPosting()._id).includes('Contacted')"
+                v-if="!isPoster(getExpandedPosting()) && !getItemTags(getExpandedPosting()._id).includes('Contacted')"
                 @click="contactPoster(getExpandedPosting()._id)"
                 class="contact-btn"
                 :disabled="isContacting[getExpandedPosting()._id]"
               >
                 {{ isContacting[getExpandedPosting()._id] ? "Sending..." : "Contact Me" }}
               </button>
-              <div v-else class="contacted-message">
+
+              <div v-if="!isPoster(getExpandedPosting()) && getItemTags(getExpandedPosting()._id).includes('Contacted')" class="contacted-message">
                 Already contacted
+              </div>
+
+              <div v-if="isPoster(getExpandedPosting())" class="owner-message">
+                This is your own posting
               </div>
             </div>
           </div>
@@ -248,6 +271,20 @@
             </div>
 
             <div class="detail-content">
+              <!-- Photo Gallery Section -->
+              <div class="info-section" v-if="getExpandedListing().photos && getExpandedListing().photos.length > 0">
+                <h3>Photos</h3>
+                <div class="photo-gallery">
+                  <div
+                    v-for="(photo, index) in getExpandedListing().photos"
+                    :key="index"
+                    class="photo-item"
+                  >
+                    <img :src="getPhotoUrl(photo)" :alt="'Photo ' + (index + 1)" class="photo-preview" />
+                  </div>
+                </div>
+              </div>
+
               <!-- Property Information -->
               <div class="info-section">
                 <h3>Property Information</h3>
@@ -315,15 +352,20 @@
             <!-- Action Buttons -->
             <div class="detail-actions">
               <button
-                v-if="!getItemTags(getExpandedListing()._id).includes('Contacted')"
+                v-if="!isOwner(getExpandedListing()) && !getItemTags(getExpandedListing()._id).includes('Contacted')"
                 @click="sendInterest(getExpandedListing()._id)"
                 class="contact-btn"
                 :disabled="isSendingInterest[getExpandedListing()._id]"
               >
                 {{ isSendingInterest[getExpandedListing()._id] ? "Sending..." : "Send Interest" }}
               </button>
-              <div v-else class="contacted-message">
+
+              <div v-if="!isOwner(getExpandedListing()) && getItemTags(getExpandedListing()._id).includes('Contacted')" class="contacted-message">
                 Already contacted
+              </div>
+
+              <div v-if="isOwner(getExpandedListing())" class="owner-message">
+                This is your own listing
               </div>
             </div>
           </div>
@@ -440,9 +482,91 @@ export default {
       return text.substring(0, maxLength) + '...';
     };
 
+    const getPhotoUrl = (photo) => {
+      if (!photo) return '';
+      // Handle both old format (string) and new format (object with url property)
+      return typeof photo === 'string' ? photo : photo.url || photo.thumbUrl || '';
+    };
+
+    const isOwner = (listing) => {
+      console.log("[Favorites] isOwner called for listing:", {
+        listingId: listing._id,
+        listingTitle: listing.title,
+        listingLister: listing.lister,
+        listingListerType: typeof listing.lister,
+      });
+
+      console.log("[Favorites] Session store user:", {
+        hasUser: !!sessionStore.user,
+        user: sessionStore.user,
+        userId: sessionStore.user?.id,
+        userIdType: typeof sessionStore.user?.id,
+      });
+
+      if (!sessionStore.user || !sessionStore.user.id) {
+        console.log("[Favorites] isOwner: No user in session store - returning false");
+        return false;
+      }
+
+      const userId = sessionStore.user.id || sessionStore.user.user;
+      console.log("[Favorites] Comparing IDs:", {
+        listingLister: listing.lister,
+        listingListerType: typeof listing.lister,
+        userId: userId,
+        userIdType: typeof userId,
+        areEqual: listing.lister === userId,
+      });
+
+      const isOwnerResult = listing.lister === userId;
+      console.log("[Favorites] isOwner result:", isOwnerResult);
+
+      return isOwnerResult;
+    };
+
+    const isPoster = (posting) => {
+      console.log("[Favorites] isPoster called for posting:", {
+        postingId: posting._id,
+        postingCity: posting.city,
+        postingPoster: posting.poster,
+        postingPosterType: typeof posting.poster,
+      });
+
+      console.log("[Favorites] Session store user:", {
+        hasUser: !!sessionStore.user,
+        user: sessionStore.user,
+        userId: sessionStore.user?.id,
+        userIdType: typeof sessionStore.user?.id,
+      });
+
+      if (!sessionStore.user || !sessionStore.user.id) {
+        console.log("[Favorites] isPoster: No user in session store - returning false");
+        return false;
+      }
+
+      const userId = sessionStore.user.id || sessionStore.user.user;
+      console.log("[Favorites] Comparing IDs:", {
+        postingPoster: posting.poster,
+        postingPosterType: typeof posting.poster,
+        userId: userId,
+        userIdType: typeof userId,
+        areEqual: posting.poster === userId,
+      });
+
+      const isPosterResult = posting.poster === userId;
+      console.log("[Favorites] isPoster result:", isPosterResult);
+
+      return isPosterResult;
+    };
+
     const fetchSavedItems = async () => {
+      console.log("Starting fetchSavedItems, user:", sessionStore.user);
+      console.log("Session store:", sessionStore);
+      console.log("User ID:", sessionStore.user?.id);
+      console.log("Session token:", sessionStore.token);
+
       if (!sessionStore.user || !sessionStore.user.id) {
         error.value = "Please log in to view your favorites";
+        isLoading.value = false;
         return;
       }
 
@@ -450,7 +574,34 @@ export default {
       error.value = "";
 
       try {
-        const result = await savedItemsApi.getSavedItems(sessionStore.user.id);
+        console.log("Calling savedItemsApi.getSavedItems with userId:", sessionStore.user.id);
+
+        // First, let's try to fetch listings to see if the backend is working at all
+        console.log("Testing if backend is reachable by fetching listings...");
+        const testTimeout = new Promise((_, reject) => {
+          setTimeout(() => reject(new Error("Backend test timeout")), 3000);
+        });
+
+        try {
+          const testResult = await Promise.race([
+            listingsApi.getAll(),
+            testTimeout
+          ]);
+          console.log("Backend test successful, got", testResult?.length || 0, "listings");
+        } catch (testErr) {
+          console.error("Backend test failed:", testErr);
+          throw new Error("Backend server is not responding. Please make sure the backend is running.");
+        }
+
+        // Add a shorter timeout to prevent hanging
+        const timeoutPromise = new Promise((_, reject) => {
+          setTimeout(() => reject(new Error("SavedItems API timeout - this endpoint may have issues")), 5000);
+        });
+
+        const result = await Promise.race([
+          savedItemsApi.getSavedItems(sessionStore.user.id),
+          timeoutPromise
+        ]);
         console.log("Fetched saved items raw result:", result);
 
         // API returns {results: [...]} structure where each item is {user: "...", savedItem: {item: "id", tags: [...]}}
@@ -463,7 +614,9 @@ export default {
         );
 
         if (!Array.isArray(items)) {
+          console.log("No items or invalid format, setting empty array");
           savedItems_data.value = [];
+          savedItemsMap.value = new Map();
           return;
         }
 
@@ -506,10 +659,20 @@ export default {
 
         // Fetch the actual postings using the IDs
         // For now, fetch all postings and filter by IDs
+        console.log("Fetching roommate postings and housing listings...");
         const [roommates, housing] = await Promise.all([
-          roommatePostingsApi.getAll(),
-          listingsApi.getAll(),
+          roommatePostingsApi.getAll().catch(err => {
+            console.error("Error fetching roommate postings:", err);
+            return [];
+          }),
+          listingsApi.getAll().catch(err => {
+            console.error("Error fetching housing listings:", err);
+            return [];
+          }),
         ]);
+
+        console.log("Roommate postings fetched:", roommates?.length || 0);
+        console.log("Housing listings fetched:", housing?.length || 0);
 
         const allPostings = [...(roommates || []), ...(housing || [])];
         console.log("All postings:", allPostings);
@@ -523,6 +686,9 @@ export default {
       } catch (err) {
         console.error("Error fetching saved items:", err);
         error.value = err.message || "Failed to load favorites";
+        // Set empty arrays so the page doesn't stay loading forever
+        savedItems_data.value = [];
+        savedItemsMap.value = new Map();
       } finally {
         isLoading.value = false;
       }
@@ -629,6 +795,9 @@ export default {
       getExpandedPosting,
       getExpandedListing,
       truncateText,
+      getPhotoUrl,
+      isOwner,
+      isPoster,
     };
   },
 };
@@ -838,6 +1007,16 @@ export default {
   font-size: 0.9rem;
 }
 
+.owner-message {
+  padding: 0.75rem 1.5rem;
+  background: rgb(47, 71, 62);
+  color: white;
+  border-radius: 8px;
+  text-align: center;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
 /* New Compact Card Design */
 .listings-container {
   position: relative;
@@ -851,6 +1030,8 @@ export default {
   border: 1px solid #e9ecef;
   cursor: pointer;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .posting-card:hover {
@@ -922,13 +1103,16 @@ export default {
 
 .card-actions {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 0.75rem;
   flex-shrink: 0;
 }
 
 .card-preview {
   padding: 0 1.25rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
 }
 
 .description-preview {
@@ -972,6 +1156,7 @@ export default {
   font-weight: 500;
   padding-top: 0.5rem;
   border-top: 1px solid #e9ecef;
+  margin-top: auto;
 }
 
 .expand-icon {
@@ -1120,6 +1305,69 @@ export default {
   border-radius: 0 0 16px 16px;
 }
 
+/* Photo Display Styles */
+.photo-preview-section {
+  position: relative;
+  margin: 0 1.25rem 1rem;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.card-photo-preview {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  display: block;
+  border-radius: 8px;
+}
+
+.photo-count {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.photo-gallery {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.photo-item {
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease;
+}
+
+.photo-item:hover {
+  transform: scale(1.02);
+}
+
+.photo-preview {
+  width: 100%;
+  height: 150px;
+  object-fit: cover;
+  display: block;
+  cursor: pointer;
+}
+
+.owner-badge {
+  background: rgb(47, 71, 62);
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
 @media (max-width: 768px) {
   .listings-grid {
     grid-template-columns: 1fr;
@@ -1127,6 +1375,26 @@ export default {
 
   .hero h2 {
     font-size: 2rem;
+  }
+
+  .card-photo-preview {
+    height: 160px;
+  }
+
+  .photo-gallery {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .detail-overlay {
+    padding: 1rem;
+  }
+
+  .detail-panel {
+    max-height: 95vh;
+  }
+
+  .detail-content {
+    padding: 1.5rem;
   }
 }
 </style>

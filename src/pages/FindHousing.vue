@@ -158,6 +158,25 @@
               </span>
               <span class="type-preview">{{ listing.type === "sublet" ? "Sublet" : "Renting" }}</span>
             </div>
+
+            <!-- Photo Preview -->
+            <div v-if="listing.photos && listing.photos.length > 0" class="card-photos">
+              <div
+                v-for="(photo, index) in listing.photos.slice(0, 2)"
+                :key="index"
+                class="card-photo-item"
+              >
+                <img
+                  :src="getPhotoUrl(photo)"
+                  :alt="listing.title + ' photo ' + (index + 1)"
+                  class="card-photo-main"
+                />
+              </div>
+              <div v-if="listing.photos.length > 2" class="photo-count-badge">
+                +{{ listing.photos.length - 2 }} more
+              </div>
+            </div>
+
             <p class="description-preview" v-if="listing.description && listing.description.trim()">
               {{ truncateText(listing.description, 100) }}
             </p>
@@ -179,6 +198,24 @@
         </div>
 
         <div class="detail-content">
+          <!-- Photos Gallery -->
+          <div v-if="getExpandedListing().photos && getExpandedListing().photos.length > 0" class="info-section">
+            <h3>Photos</h3>
+            <div class="modal-photos-gallery">
+              <div
+                v-for="(photo, index) in getExpandedListing().photos"
+                :key="index"
+                class="modal-photo-item"
+              >
+                <img
+                  :src="getPhotoUrl(photo)"
+                  :alt="getExpandedListing().title + ' photo ' + (index + 1)"
+                  class="modal-photo"
+                />
+              </div>
+            </div>
+          </div>
+
           <!-- Property Information -->
           <div class="info-section">
             <h3>Property Information</h3>
@@ -390,14 +427,71 @@
             </button>
           </div>
 
+          <!-- Photo Upload Section -->
+          <div class="form-group">
+            <label>Photos</label>
+            <div class="photo-upload-section">
+              <input
+                type="file"
+                ref="photoInput"
+                multiple
+                accept="image/*"
+                @change="handlePhotoSelect"
+                style="display: none"
+              />
+
+              <div class="photo-preview-grid" v-if="selectedPhotos.length > 0 || newListing.photos.length > 0">
+                <!-- Existing uploaded photos -->
+                <div v-for="(photo, index) in newListing.photos" :key="'uploaded-' + index" class="photo-preview-item">
+                  <img :src="getPhotoUrl(photo)" :alt="'Photo ' + (index + 1)" class="photo-preview" />
+                  <button type="button" @click="removeUploadedPhoto(index)" class="remove-photo-btn">×</button>
+                  <div class="photo-status uploaded">✓ Uploaded</div>
+                </div>
+
+                <!-- New photos being uploaded -->
+                <div v-for="(photo, index) in selectedPhotos" :key="'selected-' + index" class="photo-preview-item">
+                  <img :src="photo.preview" :alt="'Selected photo ' + (index + 1)" class="photo-preview" />
+                  <button type="button" @click="removeSelectedPhoto(index)" class="remove-photo-btn">×</button>
+                  <div class="photo-status" :class="{ uploading: photo.uploading, error: photo.error }">
+                    <span v-if="photo.uploading">Uploading...</span>
+                    <span v-else-if="photo.error">{{ photo.error }}</span>
+                    <span v-else>Ready to upload</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="photo-upload-actions">
+                <button type="button" @click="triggerPhotoSelect" class="photo-upload-btn" :disabled="uploading">
+                  📷 Add Photos ({{ newListing.photos.length + selectedPhotos.length }}/5)
+                </button>
+                <button
+                  v-if="selectedPhotos.length > 0"
+                  type="button"
+                  @click="uploadSelectedPhotos"
+                  class="upload-photos-btn"
+                  :disabled="uploading"
+                >
+                  {{ uploading ? 'Uploading...' : 'Upload Photos' }}
+                </button>
+              </div>
+
+              <div class="photo-upload-info">
+                <p>• Max 5 photos • Each photo max 10MB • JPG, PNG, GIF supported</p>
+                <button type="button" @click="testImageServiceWrapper" class="test-connection-btn" style="margin-top: 8px; font-size: 12px; padding: 4px 8px; background: #e3f2fd; color: #1976d2; border: 1px solid #1976d2;">
+                  🔧 Test Photo Upload
+                </button>
+              </div>
+            </div>
+          </div>
+
           <div v-if="createError" class="error-message">{{ createError }}</div>
 
           <div class="modal-actions">
             <button type="button" @click="closeCreateModal" class="cancel-btn">
               Cancel
             </button>
-            <button type="submit" class="submit-btn" :disabled="creating">
-              {{ creating ? "Creating..." : "Create Listing" }}
+            <button type="submit" class="submit-btn" :disabled="creating || uploading">
+              {{ creating ? "Creating..." : uploading ? "Uploading Photos..." : "Create Listing" }}
             </button>
           </div>
         </form>
@@ -539,14 +633,68 @@
             </button>
           </div>
 
+          <!-- Photo Upload Section for Edit -->
+          <div class="form-group">
+            <label>Photos</label>
+            <div class="photo-upload-section">
+              <input
+                type="file"
+                ref="editPhotoInput"
+                multiple
+                accept="image/*"
+                @change="handleEditPhotoSelect"
+                style="display: none"
+              />
+
+              <div class="photo-preview-grid" v-if="editSelectedPhotos.length > 0 || editForm.photos.length > 0">
+                <!-- Existing uploaded photos -->
+                <div v-for="(photo, index) in editForm.photos" :key="'edit-uploaded-' + index" class="photo-preview-item">
+                  <img :src="getPhotoUrl(photo)" :alt="'Photo ' + (index + 1)" class="photo-preview" />
+                  <button type="button" @click="removeEditUploadedPhoto(index)" class="remove-photo-btn">×</button>
+                  <div class="photo-status uploaded">✓ Uploaded</div>
+                </div>
+
+                <!-- New photos being uploaded -->
+                <div v-for="(photo, index) in editSelectedPhotos" :key="'edit-selected-' + index" class="photo-preview-item">
+                  <img :src="photo.preview" :alt="'Selected photo ' + (index + 1)" class="photo-preview" />
+                  <button type="button" @click="removeEditSelectedPhoto(index)" class="remove-photo-btn">×</button>
+                  <div class="photo-status" :class="{ uploading: photo.uploading, error: photo.error }">
+                    <span v-if="photo.uploading">Uploading...</span>
+                    <span v-else-if="photo.error">{{ photo.error }}</span>
+                    <span v-else>Ready to upload</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="photo-upload-actions">
+                <button type="button" @click="triggerEditPhotoSelect" class="photo-upload-btn" :disabled="editUploading">
+                  📷 Add Photos ({{ editForm.photos.length + editSelectedPhotos.length }}/5)
+                </button>
+                <button
+                  v-if="editSelectedPhotos.length > 0"
+                  type="button"
+                  @click="uploadEditSelectedPhotos"
+                  class="upload-photos-btn"
+                  :disabled="editUploading"
+                >
+                  {{ editUploading ? 'Uploading...' : 'Upload Photos' }}
+                </button>
+              </div>
+
+              <div class="photo-upload-info">
+                <p>• Max 5 photos • Each photo max 10MB • JPG, PNG, GIF supported</p>
+              </div>
+            </div>
+          </div>
+
           <div v-if="editError" class="error-message">{{ editError }}</div>
 
           <div class="modal-actions">
             <button type="button" @click="closeEditModal" class="cancel-btn">
               Cancel
             </button>
-            <button type="submit" class="submit-btn" :disabled="isEditing">
-              {{ isEditing ? "Saving..." : "Save Changes" }}
+            <button type="submit" class="submit-btn" :disabled="isEditing || editUploading">
+              {{ isEditing ? "Saving..." : editUploading ? "Uploading Photos..." : "Save Changes" }}
             </button>
           </div>
         </form>
@@ -566,6 +714,7 @@ import {
 } from "../utils/api.js";
 import { apiRequest } from "../utils/api.js";
 import { useSessionStore } from "../stores/session.js";
+import { uploadMultipleImages, testImageService } from "../services/imageService.js";
 import GoogleMap from "../components/GoogleMap.vue";
 
 export default {
@@ -597,6 +746,7 @@ export default {
       type: "",
       description: "",
       amenities: [],
+      photos: [], // Array of Imgur URLs for edit
     });
 
     // Filter state
@@ -735,19 +885,19 @@ export default {
     // Fetch real user ID if current one looks like a username
     const ensureValidUserId = async () => {
       if (!sessionStore.token || !sessionStore.user) {
-        console.log("[FindHousing] No token or user, skipping user ID fetch");
+        // console.log("[FindHousing] No token or user, skipping user ID fetch");
         return;
       }
 
       const currentUserId = sessionStore.user?.id;
       if (!currentUserId || !isUUID(currentUserId)) {
-        console.log(
-          "[FindHousing] User ID looks invalid (username?), fetching real ID:",
-          currentUserId
-        );
+        // console.log(
+        //   "[FindHousing] User ID looks invalid (username?), fetching real ID:",
+        //   currentUserId
+        // );
         try {
           const userInfoResult = await userInfoApi.getUserInfo();
-          console.log("[FindHousing] Fetched user info:", userInfoResult);
+          // console.log("[FindHousing] Fetched user info:", userInfoResult);
           if (
             userInfoResult &&
             userInfoResult.user &&
@@ -770,19 +920,19 @@ export default {
           console.error("[FindHousing] Failed to fetch user info:", err);
         }
       } else {
-        console.log("[FindHousing] User ID looks valid (UUID):", currentUserId);
+        // console.log("[FindHousing] User ID looks valid (UUID):", currentUserId);
       }
     };
 
     // Debug: Log session store state on setup
-    console.log("[FindHousing] Setup - Session Store State:", {
-      hasToken: !!sessionStore.token,
-      token: sessionStore.token,
-      hasUser: !!sessionStore.user,
-      user: sessionStore.user,
-      userId: sessionStore.user?.id,
-      userType: typeof sessionStore.user?.id,
-    });
+    // console.log("[FindHousing] Setup - Session Store State:", {
+    //   hasToken: !!sessionStore.token,
+    //   token: sessionStore.token,
+    //   hasUser: !!sessionStore.user,
+    //   user: sessionStore.user,
+    //   userId: sessionStore.user?.id,
+    //   userType: typeof sessionStore.user?.id,
+    // });
 
     const newListing = ref({
       title: "",
@@ -793,7 +943,18 @@ export default {
       type: "",
       description: "",
       amenities: [],
+      photos: [], // Array of Imgur URLs
     });
+
+    // Photo upload handling
+    const selectedPhotos = ref([]);
+    const uploading = ref(false);
+    const photoInput = ref(null);
+
+    // Edit photo upload handling
+    const editSelectedPhotos = ref([]);
+    const editUploading = ref(false);
+    const editPhotoInput = ref(null);
 
     const addAmenity = () => {
       newListing.value.amenities.push({
@@ -804,6 +965,206 @@ export default {
 
     const removeAmenity = (index) => {
       newListing.value.amenities.splice(index, 1);
+    };
+
+    // Photo handling functions
+    const triggerPhotoSelect = () => {
+      if (photoInput.value) {
+        photoInput.value.click();
+      }
+    };
+
+    const handlePhotoSelect = (event) => {
+      const files = Array.from(event.target.files);
+      const maxPhotos = 5;
+      const currentTotal = newListing.value.photos.length + selectedPhotos.value.length;
+
+      if (currentTotal + files.length > maxPhotos) {
+        alert(`You can only upload up to ${maxPhotos} photos total. Currently you have ${currentTotal} photos.`);
+        return;
+      }
+
+      files.forEach(file => {
+        // Create preview URL
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          selectedPhotos.value.push({
+            file: file,
+            preview: e.target.result,
+            uploading: false,
+            error: null
+          });
+        };
+        reader.readAsDataURL(file);
+      });
+
+      // Clear the input
+      event.target.value = '';
+    };
+
+    const removeSelectedPhoto = (index) => {
+      selectedPhotos.value.splice(index, 1);
+    };
+
+    const removeUploadedPhoto = (index) => {
+      newListing.value.photos.splice(index, 1);
+    };
+
+    const uploadSelectedPhotos = async () => {
+      if (selectedPhotos.value.length === 0) return;
+
+      uploading.value = true;
+
+      try {
+        // Mark all as uploading
+        selectedPhotos.value.forEach(photo => {
+          photo.uploading = true;
+          photo.error = null;
+        });
+
+        // Upload images to Cloudinary
+        const files = selectedPhotos.value.map(photo => photo.file);
+        console.log('Starting upload of', files.length, 'files');
+
+        const uploadedUrls = await uploadMultipleImages(files);
+        console.log('Upload completed, received URLs:', uploadedUrls);
+
+        // Convert URLs to photo objects for consistent display
+        const photoObjects = uploadedUrls.map(url => ({
+          url: url,
+          thumbUrl: url,
+          storageKey: url.split('/').pop() || 'unknown',
+          alt: "Housing listing photo",
+          width: 1200,
+          height: 800,
+          contentType: url.includes('.png') ? "image/png" : "image/jpeg",
+          bytes: 500000
+        }));
+
+        // Add photo objects to listing
+        newListing.value.photos.push(...photoObjects);
+        console.log('Photos added to listing, total photos now:', newListing.value.photos.length);
+
+        // Clear selected photos
+        selectedPhotos.value = [];
+
+      } catch (error) {
+        console.error('Photo upload error:', error);
+        // Mark error on selected photos
+        selectedPhotos.value.forEach(photo => {
+          photo.uploading = false;
+          photo.error = error.message || 'Upload failed';
+        });
+        alert(`Failed to upload photos: ${error.message || 'Unknown error'}. Please try again.`);
+      } finally {
+        uploading.value = false;
+      }
+    };
+
+    // Test image hosting connection
+    const testImageServiceWrapper = async () => {
+      try {
+        console.log('Testing image hosting services...');
+        const result = await testImageService();
+        alert(`✅ Photo upload is working!\n\nService: ${result.service}\nCloud Name: ${result.cloudName}\n\nYou can now upload photos successfully.`);
+      } catch (error) {
+        console.error('Image hosting test failed:', error);
+        alert(`❌ Photo upload test failed: ${error.message}\n\nPlease try again later or check your internet connection.`);
+      }
+    };
+
+    // Edit photo handling functions
+    const triggerEditPhotoSelect = () => {
+      if (editPhotoInput.value) {
+        editPhotoInput.value.click();
+      }
+    };
+
+    const handleEditPhotoSelect = (event) => {
+      const files = Array.from(event.target.files);
+      const maxPhotos = 5;
+      const currentTotal = editForm.value.photos.length + editSelectedPhotos.value.length;
+
+      if (currentTotal + files.length > maxPhotos) {
+        alert(`You can only upload up to ${maxPhotos} photos total. Currently you have ${currentTotal} photos.`);
+        return;
+      }
+
+      files.forEach(file => {
+        // Create preview URL
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          editSelectedPhotos.value.push({
+            file: file,
+            preview: e.target.result,
+            uploading: false,
+            error: null
+          });
+        };
+        reader.readAsDataURL(file);
+      });
+
+      // Clear the input
+      event.target.value = '';
+    };
+
+    const removeEditSelectedPhoto = (index) => {
+      editSelectedPhotos.value.splice(index, 1);
+    };
+
+    const removeEditUploadedPhoto = (index) => {
+      editForm.value.photos.splice(index, 1);
+    };
+
+    const uploadEditSelectedPhotos = async () => {
+      if (editSelectedPhotos.value.length === 0) return;
+
+      editUploading.value = true;
+
+      try {
+        // Mark all as uploading
+        editSelectedPhotos.value.forEach(photo => {
+          photo.uploading = true;
+          photo.error = null;
+        });
+
+        // Upload files
+        const files = editSelectedPhotos.value.map(photo => photo.file);
+        console.log('Starting edit upload of', files.length, 'files');
+
+        const uploadedUrls = await uploadMultipleImages(files);
+        console.log('Edit upload completed, received URLs:', uploadedUrls);
+
+        // Convert URLs to photo objects for consistent display
+        const photoObjects = uploadedUrls.map(url => ({
+          url: url,
+          thumbUrl: url,
+          storageKey: url.split('/').pop() || 'unknown',
+          alt: "Housing listing photo",
+          width: 1200,
+          height: 800,
+          contentType: url.includes('.png') ? "image/png" : "image/jpeg",
+          bytes: 500000
+        }));
+
+        // Add photo objects to edit form
+        editForm.value.photos.push(...photoObjects);
+        console.log('Photos added to edit form, total photos now:', editForm.value.photos.length);
+
+        // Clear selected photos
+        editSelectedPhotos.value = [];
+
+      } catch (error) {
+        console.error('Edit photo upload error:', error);
+        // Mark error on selected photos
+        editSelectedPhotos.value.forEach(photo => {
+          photo.uploading = false;
+          photo.error = error.message || 'Upload failed';
+        });
+        alert(`Failed to upload photos: ${error.message || 'Unknown error'}. Please try again.`);
+      } finally {
+        editUploading.value = false;
+      }
     };
 
     /**
@@ -1206,8 +1567,8 @@ export default {
       error.value = "";
       try {
         const result = await listings.getAll();
-        console.log("[FindHousing] Fetched listings:", result);
-        console.log("[FindHousing] Number of listings:", result?.length || 0);
+        // console.log("[FindHousing] Fetched listings:", result);
+        // console.log("[FindHousing] Number of listings:", result?.length || 0);
 
         // Debug: Log each listing's lister ID and coordinates
         if (result && Array.isArray(result)) {
@@ -1252,14 +1613,14 @@ export default {
 
     const fetchSavedItems = async () => {
       if (!sessionStore.user || !sessionStore.user.id) {
-        console.log("No user logged in, skipping fetchSavedItems");
+        // console.log("No user logged in, skipping fetchSavedItems");
         return;
       }
 
       try {
-        console.log("Fetching saved items for user:", sessionStore.user.id);
+        // console.log("Fetching saved items for user:", sessionStore.user.id);
         const result = await savedItems.getSavedItems(sessionStore.user.id);
-        console.log("Raw saved items result:", result);
+        // console.log("Raw saved items result:", result);
         const items = result?.results || result;
         console.log(
           "Items to process:",
@@ -1431,11 +1792,17 @@ export default {
       return isOwnerResult;
     };
 
-    // Expanded view methods
+    // Helper functions
     const truncateText = (text, maxLength) => {
       if (!text) return '';
       if (text.length <= maxLength) return text;
       return text.substring(0, maxLength) + '...';
+    };
+
+    const getPhotoUrl = (photo) => {
+      if (!photo) return '';
+      // Handle both old format (string) and new format (object with url property)
+      return typeof photo === 'string' ? photo : photo.url || photo.thumbUrl || '';
     };
 
     const toggleListingDetails = (listingId) => {
@@ -1521,6 +1888,30 @@ export default {
           return;
         }
 
+        // Ensure all photos are in object format for backend create function
+        const photoObjects = (newListing.value.photos || []).map(photo => {
+          if (typeof photo === 'string') {
+            // Convert string URL to photo object
+            return {
+              url: photo,
+              thumbUrl: photo,
+              storageKey: photo.split('/').pop() || 'unknown',
+              alt: "Housing listing photo",
+              width: 1200,
+              height: 800,
+              contentType: photo.includes('.png') ? "image/png" : "image/jpeg",
+              bytes: 500000
+            };
+          }
+          return photo; // Already an object
+        });
+
+        console.log('📷 Final photo objects for create:', {
+          totalPhotos: photoObjects.length,
+          photos: photoObjects,
+          samplePhoto: photoObjects[0]
+        });
+
         // Geocode address if not already geocoded
         let latitude = null;
         let longitude = null;
@@ -1540,7 +1931,7 @@ export default {
         const result = await listings.create(
           newListing.value.title,
           validAmenities,
-          [], // photos - empty for now
+          photoObjects, // Send photo objects to create function
           newListing.value.address,
           newListing.value.startDate,
           newListing.value.endDate,
@@ -1552,6 +1943,7 @@ export default {
         );
 
         console.log("Listing created successfully:", result);
+        console.log("📷 Photos in created listing:", result?.photos);
 
         // Reset form and close modal
         newListing.value = {
@@ -1563,7 +1955,11 @@ export default {
           type: "",
           description: "",
           amenities: [],
+          photos: [],
         };
+        // Clear photo states
+        selectedPhotos.value = [];
+        uploading.value = false;
         geocodedLocation.value = null;
         showCreateModal.value = false;
 
@@ -1616,7 +2012,10 @@ export default {
               distance: a.distance || "",
             }))
           : [],
+        photos: listing.photos ? [...listing.photos] : [], // Copy existing photos
       };
+      // Clear any pending edit photo uploads
+      editSelectedPhotos.value = [];
       editError.value = "";
       showEditModal.value = true;
     };
@@ -1634,7 +2033,11 @@ export default {
         type: "",
         description: "",
         amenities: [],
+        photos: [],
       };
+      // Clear edit photo states
+      editSelectedPhotos.value = [];
+      editUploading.value = false;
       editGeocodedLocation.value = null;
     };
 
@@ -1769,6 +2172,48 @@ export default {
           }
         }
 
+        // Handle photos: compare original with edited
+        const originalPhotos = listing.photos || [];
+        const editedPhotos = editForm.value.photos || [];
+
+        // Extract URLs for comparison (handle both string and object formats)
+        const getPhotoUrl = (photo) => typeof photo === 'string' ? photo : photo.url;
+        const originalUrls = originalPhotos.map(getPhotoUrl);
+        const editedUrls = editedPhotos.map(getPhotoUrl);
+
+        // Find photos that were removed (exist in original but not in edited)
+        for (const originalPhoto of originalPhotos) {
+          const originalUrl = getPhotoUrl(originalPhoto);
+          if (!editedUrls.includes(originalUrl)) {
+            // Photo was removed - need to delete it
+            try {
+              const photoId = typeof originalPhoto === 'string' ? null : originalPhoto._id;
+              if (photoId) {
+                console.log('🗑️ Deleting photo:', { listingId, photoId, url: originalUrl });
+                await listings.deletePhoto(listingId, photoId);
+              } else {
+                console.warn("Cannot delete photo: no photo ID available for URL:", originalUrl);
+              }
+            } catch (photoError) {
+              console.error("Could not delete photo:", originalUrl, photoError);
+            }
+          }
+        }
+
+        // Find photos that were added (exist in edited but not in original)
+        for (const editedPhoto of editedPhotos) {
+          const editedUrl = getPhotoUrl(editedPhoto);
+          if (!originalUrls.includes(editedUrl)) {
+            // Photo was added - need to add it
+            try {
+              console.log('🖼️ Adding photo to listing:', { listingId, photoUrl: editedUrl });
+              await listings.addPhoto(listingId, editedUrl);
+            } catch (photoError) {
+              console.error("Could not add photo:", editedPhoto, photoError);
+            }
+          }
+        }
+
         // Refresh listings to get updated data
         await fetchListings();
         closeEditModal();
@@ -1815,8 +2260,14 @@ export default {
         startDate: "",
         endDate: "",
         price: "",
+        type: "",
+        description: "",
         amenities: [],
+        photos: [],
       };
+      // Clear photo states
+      selectedPhotos.value = [];
+      uploading.value = false;
     };
 
     const route = useRoute();
@@ -1885,9 +2336,29 @@ export default {
       sessionStore,
       expandedListing,
       truncateText,
+      getPhotoUrl,
       toggleListingDetails,
       closeListing,
       getExpandedListing,
+      // Photo handling
+      selectedPhotos,
+      uploading,
+      photoInput,
+      triggerPhotoSelect,
+      handlePhotoSelect,
+      removeSelectedPhoto,
+      removeUploadedPhoto,
+      uploadSelectedPhotos,
+      testImageServiceWrapper,
+      // Edit photo handling
+      editSelectedPhotos,
+      editUploading,
+      editPhotoInput,
+      triggerEditPhotoSelect,
+      handleEditPhotoSelect,
+      removeEditSelectedPhoto,
+      removeEditUploadedPhoto,
+      uploadEditSelectedPhotos,
       showMapView,
       mapMarkers,
       handleMapMarkerClick,
@@ -2139,6 +2610,8 @@ export default {
   border: 1px solid #e9ecef;
   cursor: pointer;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .posting-card:hover {
@@ -2199,6 +2672,9 @@ export default {
 
 .card-preview {
   padding: 0 1.25rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
 }
 
 .listing-summary {
@@ -2242,6 +2718,7 @@ export default {
   font-weight: 500;
   padding-top: 0.5rem;
   border-top: 1px solid #e9ecef;
+  margin-top: auto;
 }
 
 .expand-icon {
@@ -2778,6 +3255,212 @@ export default {
 
 .favorite-btn.is-saved {
   color: #e74c3c;
+}
+
+/* Photo Upload Styles */
+.photo-upload-section {
+  border: 2px dashed #ddd;
+  border-radius: 8px;
+  padding: 1.5rem;
+  background: #fafafa;
+}
+
+.photo-preview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.photo-preview-item {
+  position: relative;
+  border-radius: 8px;
+  overflow: hidden;
+  background: white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.photo-preview {
+  width: 100%;
+  height: 120px;
+  object-fit: cover;
+  display: block;
+}
+
+.remove-photo-btn {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background: rgba(220, 53, 69, 0.9);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.remove-photo-btn:hover {
+  background: #dc3545;
+}
+
+.photo-status {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 4px 8px;
+  font-size: 12px;
+  text-align: center;
+}
+
+.photo-status.uploaded {
+  background: rgba(40, 167, 69, 0.9);
+}
+
+.photo-status.uploading {
+  background: rgba(255, 193, 7, 0.9);
+}
+
+.photo-status.error {
+  background: rgba(220, 53, 69, 0.9);
+}
+
+.photo-upload-actions {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.photo-upload-btn,
+.upload-photos-btn {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.photo-upload-btn {
+  background: #f8f9fa;
+  color: #495057;
+  border: 2px solid #dee2e6;
+}
+
+.photo-upload-btn:hover:not(:disabled) {
+  background: #e9ecef;
+  border-color: #adb5bd;
+}
+
+.upload-photos-btn {
+  background: rgb(22, 53, 27);
+  color: white;
+}
+
+.upload-photos-btn:hover:not(:disabled) {
+  background: rgb(15, 38, 19);
+}
+
+.photo-upload-btn:disabled,
+.upload-photos-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.photo-upload-info {
+  font-size: 14px;
+  color: #666;
+  margin: 0;
+}
+
+.photo-upload-info p {
+  margin: 0;
+}
+
+/* Photo Display Styles */
+.card-photos {
+  position: relative;
+  margin: 1rem 0;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #f8f9fa;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem;
+  padding: 0.5rem;
+}
+
+.card-photo-item {
+  border-radius: 6px;
+  overflow: hidden;
+  background: white;
+}
+
+.card-photo-main {
+  width: 100%;
+  height: 140px;
+  object-fit: cover;
+  display: block;
+}
+
+.photo-count-badge {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.modal-photos-gallery {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.modal-photo-item {
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  background: white;
+}
+
+.modal-photo {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  display: block;
+  cursor: pointer;
+  transition: transform 0.2s ease;
+}
+
+.modal-photo:hover {
+  transform: scale(1.02);
+}
+
+@media (max-width: 768px) {
+  .modal-photos-gallery {
+    grid-template-columns: 1fr;
+  }
+
+  .card-photo-main {
+    height: 120px;
+  }
+
+  .modal-photo {
+    height: 180px;
+  }
 }
 
 /* Autocomplete Suggestions Styles */
