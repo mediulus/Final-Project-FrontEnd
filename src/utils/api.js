@@ -322,7 +322,17 @@ export const userInfo = {
  * Listing API calls
  */
 export const listings = {
-  async create(title, amenities, photos, address, startDate, endDate, price) {
+  async create(
+    title,
+    amenities,
+    photos,
+    address,
+    startDate,
+    endDate,
+    price,
+    type,
+    description
+  ) {
     const sessionStore = useSessionStore();
     return await apiRequest("/Listing/create", {
       title,
@@ -332,6 +342,8 @@ export const listings = {
       startDate,
       endDate,
       price,
+      type,
+      description,
       session: sessionStore.token,
     });
   },
@@ -400,6 +412,24 @@ export const listings = {
     return await apiRequest("/Listing/editPrice", {
       listingId,
       newPrice,
+      session: sessionStore.token,
+    });
+  },
+
+  async editType(listingId, newType) {
+    const sessionStore = useSessionStore();
+    return await apiRequest("/Listing/editType", {
+      listingId,
+      newType,
+      session: sessionStore.token,
+    });
+  },
+
+  async editDescription(listingId, newDescription) {
+    const sessionStore = useSessionStore();
+    return await apiRequest("/Listing/editDescription", {
+      listingId,
+      newDescription,
       session: sessionStore.token,
     });
   },

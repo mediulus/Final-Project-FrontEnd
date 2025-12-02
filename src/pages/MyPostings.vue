@@ -97,12 +97,22 @@
 
               <div class="listing-details">
                 <p class="address"><strong>📍</strong> {{ listing.address }}</p>
+                <p class="type">
+                  <strong>🏠</strong>
+                  {{ listing.type === "sublet" ? "Sublet" : "Renting" }}
+                </p>
                 <p class="dates">
                   <strong>📅</strong> {{ formatDate(listing.startDate) }} -
                   {{ formatDate(listing.endDate) }}
                 </p>
                 <p class="price">
                   <strong>💵</strong> ${{ listing.price }}/month
+                </p>
+                <p
+                  v-if="listing.description && listing.description.trim()"
+                  class="description"
+                >
+                  {{ listing.description }}
                 </p>
 
                 <div
@@ -194,6 +204,24 @@
               min="0"
               placeholder="e.g., 1500"
             />
+          </div>
+
+          <div class="form-group">
+            <label for="edit-type">Type *</label>
+            <select id="edit-type" v-model="editForm.type" required>
+              <option value="sublet">Sublet</option>
+              <option value="renting">Renting</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="edit-description">Description</label>
+            <textarea
+              id="edit-description"
+              v-model="editForm.description"
+              rows="5"
+              placeholder="Tell potential renters about your listing... Include details about the space, location, amenities, and what makes it special."
+            ></textarea>
           </div>
 
           <div class="form-group">
@@ -504,6 +532,8 @@ export default {
       startDate: "",
       endDate: "",
       price: "",
+      type: "",
+      description: "",
       amenities: [],
     });
     const showEditRoommateModal = ref(false);
@@ -774,6 +804,8 @@ export default {
         startDate: formatDateForInput(listing.startDate),
         endDate: formatDateForInput(listing.endDate),
         price: listing.price || "",
+        type: listing.type || "",
+        description: listing.description || "",
         amenities: listing.amenities
           ? listing.amenities.map((a) => ({
               _id: a._id,
@@ -796,6 +828,8 @@ export default {
         startDate: "",
         endDate: "",
         price: "",
+        type: "",
+        description: "",
         amenities: [],
       };
     };
@@ -852,6 +886,16 @@ export default {
         // Update price if changed
         if (editForm.value.price !== listing.price) {
           await listingsApi.editPrice(listingId, editForm.value.price);
+        }
+
+        // Update type if changed
+        if (editForm.value.type !== listing.type) {
+          await listingsApi.editType(listingId, editForm.value.type);
+        }
+        const currentDescription = listing.description || "";
+        const newDescription = editForm.value.description || "";
+        if (newDescription !== currentDescription) {
+          await listingsApi.editDescription(listingId, newDescription);
         }
 
         // Handle amenities
@@ -1292,10 +1336,33 @@ export default {
   box-shadow: 0 0 0 3px rgba(30, 90, 46, 0.1);
 }
 
+.form-group select {
+  background-color: white;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23123519' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  padding-right: 2.5rem;
+}
+
+.form-group select:hover {
+  background-color: #f9f9f9;
+}
+
 .form-group textarea {
   resize: vertical;
   min-height: 120px;
   line-height: 1.6;
+}
+
+.form-group textarea::placeholder {
+  color: #999;
+  opacity: 0.8;
+}
+
+.form-group textarea:focus::placeholder {
+  opacity: 0.5;
 }
 
 .amenities-list {
