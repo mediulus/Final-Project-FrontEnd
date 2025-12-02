@@ -1,4 +1,4 @@
-import apiConfig from '../config/api.js'
+import apiConfig from "../config/api.js";
 
 /**
  * Creates a new listing
@@ -15,20 +15,20 @@ import apiConfig from '../config/api.js'
  */
 export async function createListing(listingData) {
   const response = await fetch(`${apiConfig.baseURL}/api/Listing/create`, {
-    method: 'POST',
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json'
+      "Content-Type": "application/json",
     },
-    body: JSON.stringify(listingData)
-  })
+    body: JSON.stringify(listingData),
+  });
 
-  const data = await response.json()
+  const data = await response.json();
 
   if (!response.ok) {
-    throw new Error(data.error || 'Failed to create listing')
+    throw new Error(data.error || "Failed to create listing");
   }
 
-  return data
+  return data;
 }
 
 /**
@@ -36,21 +36,24 @@ export async function createListing(listingData) {
  * @returns {Promise<Array>} Array of all listings
  */
 export async function getAllListings() {
-  const response = await fetch(`${apiConfig.baseURL}/api/Listing/getAllListings`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({})
-  })
+  const response = await fetch(
+    `${apiConfig.baseURL}/api/Listing/getAllListings`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({}),
+    }
+  );
 
-  const data = await response.json()
+  const data = await response.json();
 
   if (!response.ok) {
-    throw new Error(data.error || 'Failed to fetch listings')
+    throw new Error(data.error || "Failed to fetch listings");
   }
 
-  return data
+  return data;
 }
 
 /**
@@ -59,21 +62,24 @@ export async function getAllListings() {
  * @returns {Promise<Array>} Array containing the listing
  */
 export async function getListingById(listingId) {
-  const response = await fetch(`${apiConfig.baseURL}/api/Listing/getListingById`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ listingId })
-  })
+  const response = await fetch(
+    `${apiConfig.baseURL}/api/Listing/getListingById`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ listingId }),
+    }
+  );
 
-  const data = await response.json()
+  const data = await response.json();
 
   if (!response.ok) {
-    throw new Error(data.error || 'Failed to fetch listing')
+    throw new Error(data.error || "Failed to fetch listing");
   }
 
-  return data
+  return data;
 }
 
 /**
@@ -83,20 +89,18 @@ export async function getListingById(listingId) {
  */
 export async function deleteListing(listingId) {
   const response = await fetch(`${apiConfig.baseURL}/api/Listing/delete`, {
-    method: 'POST',
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json'
+      "Content-Type": "application/json",
     },
-    body: JSON.stringify({ listingId })
-  })
+    body: JSON.stringify({ listingId }),
+  });
 
-  const data = await response.json()
+  const data = await response.json();
 
   if (!response.ok) {
-    throw new Error(data.error || 'Failed to delete listing')
+    throw new Error(data.error || "Failed to delete listing");
   }
 
-  return data
+  return data;
 }
-
-

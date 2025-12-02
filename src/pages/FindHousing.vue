@@ -109,7 +109,7 @@
               <strong>Amenities:</strong>
               <ul>
                 <li v-for="amenity in listing.amenities" :key="amenity._id">
-                  {{ amenity.title }} ({{ amenity.distance }}mi away)
+                  {{ amenity.title }}{{ amenity.distance && amenity.distance > 0 ? ` (${amenity.distance}mi away)` : '' }}
                 </li>
               </ul>
             </div>
@@ -238,13 +238,13 @@
                 <input
                   type="text"
                   v-model="amenity.title"
-                  placeholder="e.g., T Stop"
+                  placeholder="e.g., Laundry or T Stop"
                   class="amenity-title"
                 />
                 <input
                   type="number"
                   v-model.number="amenity.distance"
-                  placeholder="Miles"
+                  placeholder="Miles (optional)"
                   min="0"
                   step="0.1"
                   class="amenity-distance"
@@ -367,13 +367,13 @@
                 <input
                   type="text"
                   v-model="amenity.title"
-                  placeholder="e.g., T Stop"
+                  placeholder="e.g., Laundry or T Stop"
                   class="amenity-title"
                 />
                 <input
                   type="number"
                   v-model.number="amenity.distance"
-                  placeholder="Miles"
+                  placeholder="Miles (optional)"
                   min="0"
                   step="0.1"
                   class="amenity-distance"
@@ -839,11 +839,14 @@ export default {
 
       try {
         // Filter out empty amenities and format them properly
+        // Only require title, distance is optional
         const validAmenities = newListing.value.amenities
-          .filter((a) => a.title && a.distance !== "")
+          .filter((a) => a.title && a.title.trim() !== "")
           .map((a) => ({
             title: a.title,
-            distance: Number(a.distance),
+            distance: a.distance !== "" && a.distance !== null && a.distance !== undefined 
+              ? Number(a.distance) 
+              : 0,
           }));
 
         console.log("Valid amenities:", validAmenities);
@@ -1014,9 +1017,10 @@ export default {
         }
 
         // Handle amenities: deleted, new, and updated
+        // Only require title, distance is optional
         const oldAmenities = listing.amenities || [];
         const newAmenities = editForm.value.amenities.filter(
-          (a) => a.title && a.distance !== ""
+          (a) => a.title && a.title.trim() !== ""
         );
 
         // Delete amenities that were removed
@@ -1035,15 +1039,16 @@ export default {
         // Add new amenities or update existing ones if changed
         for (const newAmenity of newAmenities) {
           // If it doesn't have an _id, it's a new amenity
-          if (
-            !newAmenity._id &&
-            newAmenity.title &&
-            newAmenity.distance !== ""
-          ) {
+          if (!newAmenity._id && newAmenity.title) {
+            const distance = newAmenity.distance !== "" && 
+                           newAmenity.distance !== null && 
+                           newAmenity.distance !== undefined
+              ? Number(newAmenity.distance)
+              : 0;
             await listings.addAmenity(
               listingId,
               newAmenity.title,
-              newAmenity.distance
+              distance
             );
           }
           // If it has an _id but values changed, delete old and add new
@@ -1051,17 +1056,22 @@ export default {
             const oldAmenity = oldAmenities.find(
               (a) => a._id === newAmenity._id
             );
+            const newDistance = newAmenity.distance !== "" && 
+                               newAmenity.distance !== null && 
+                               newAmenity.distance !== undefined
+              ? Number(newAmenity.distance)
+              : 0;
             if (
               oldAmenity &&
               (oldAmenity.title !== newAmenity.title ||
-                oldAmenity.distance !== newAmenity.distance)
+                oldAmenity.distance !== newDistance)
             ) {
               await listings.deleteAmenity(listingId, newAmenity._id);
-              if (newAmenity.title && newAmenity.distance !== "") {
+              if (newAmenity.title) {
                 await listings.addAmenity(
                   listingId,
                   newAmenity.title,
-                  newAmenity.distance
+                  newDistance
                 );
               }
             }
