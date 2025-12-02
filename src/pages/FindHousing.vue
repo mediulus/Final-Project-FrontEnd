@@ -35,20 +35,12 @@
 
         <div class="filter-group">
           <label for="filterStartDate">Available From</label>
-          <input
-            type="date"
-            id="filterStartDate"
-            v-model="filters.startDate"
-          />
+          <input type="date" id="filterStartDate" v-model="filters.startDate" />
         </div>
 
         <div class="filter-group">
           <label for="filterEndDate">Available Until</label>
-          <input
-            type="date"
-            id="filterEndDate"
-            v-model="filters.endDate"
-          />
+          <input type="date" id="filterEndDate" v-model="filters.endDate" />
         </div>
 
         <div class="filter-actions">
@@ -68,11 +60,20 @@
         <div
           v-for="listing in filteredListings"
           :key="listing._id"
-          class="listing-card"
+          class="posting-card"
+          :class="{ 'expanded': expandedListing === listing._id }"
+          @click="toggleListingDetails(listing._id)"
         >
-          <div class="listing-header">
-            <h3>{{ listing.title }}</h3>
-            <div class="header-actions">
+          <div class="card-header">
+            <div class="card-title">
+              <h3>{{ listing.title }}</h3>
+              <div class="quick-info">
+                <span class="address-preview">{{ listing.address }}</span>
+                <span class="price-preview">${{ listing.price }}/month</span>
+              </div>
+            </div>
+            
+            <div class="card-actions" @click.stop>
               <button
                 @click="toggleSavedItem(listing._id)"
                 class="favorite-btn"
@@ -92,58 +93,106 @@
             </div>
           </div>
 
-          <div class="listing-details">
-            <p class="address"><strong>📍</strong> {{ listing.address }}</p>
-            <p class="dates">
-              <strong>📅</strong> {{ formatDate(listing.startDate) }} -
-              {{ formatDate(listing.endDate) }}
-            </p>
-            <p class="price"><strong>💵</strong> ${{ listing.price }}/month</p>
-
-            <div
-              v-if="listing.amenities && listing.amenities.length > 0"
-              class="amenities"
-            >
-              <strong>Amenities:</strong>
-              <ul>
-                <li v-for="amenity in listing.amenities" :key="amenity._id">
-                  {{ amenity.title }} ({{ amenity.distance }}mi away)
-                </li>
-              </ul>
+          <div class="card-preview">
+            <div class="listing-summary">
+              <span class="dates-preview">{{ formatDate(listing.startDate) }} - {{ formatDate(listing.endDate) }}</span>
+              <span class="type-preview">{{ listing.type === "sublet" ? "Sublet" : "Renting" }}</span>
             </div>
-
-            <button
-              v-if="!isOwner(listing)"
-              @click="sendInterest(listing._id)"
-              class="interest-btn"
-              :disabled="isSendingInterest[listing._id]"
-            >
-              {{
-                isSendingInterest[listing._id] ? "Sending..." : "Send Interest"
-              }}
-            </button>
-          </div>
-
-          <div v-if="isOwner(listing)" class="listing-actions">
-            <button @click="editListing(listing)" class="edit-btn">Edit</button>
-            <button @click="deleteListing(listing._id)" class="delete-btn">
-              Delete
-            </button>
-          </div>
-          <!-- Debug: Always show if isOwner check -->
-          <div
-            v-if="false"
-            style="background: yellow; padding: 10px; margin-top: 10px"
-          >
-            <strong>DEBUG:</strong> isOwner(listing) = {{ isOwner(listing)
-            }}<br />
-            Listing Lister: {{ listing.lister }}<br />
-            User ID: {{ sessionStore.user?.id }}<br />
-            User Object: {{ JSON.stringify(sessionStore.user) }}
+            <p class="description-preview" v-if="listing.description && listing.description.trim()">
+              {{ truncateText(listing.description, 100) }}
+            </p>
+            <div class="expand-hint">
+              <span>{{ expandedListing === listing._id ? 'Click to collapse' : 'Click for details' }}</span>
+              <span class="expand-icon">{{ expandedListing === listing._id ? '▲' : '▼' }}</span>
+            </div>
           </div>
         </div>
       </div>
     </section>
+
+    <!-- Expanded Housing Detail Modal -->
+    <div v-if="expandedListing" class="detail-overlay" @click="closeListing">
+      <div class="detail-panel" @click.stop>
+        <div class="detail-header">
+          <h2>{{ getExpandedListing().title }} - Housing Details</h2>
+          <button @click="closeListing" class="close-btn">×</button>
+        </div>
+
+        <div class="detail-content">
+          <!-- Property Information -->
+          <div class="info-section">
+            <h3>Property Information</h3>
+            <table class="info-table">
+              <tbody>
+                <tr>
+                  <td>Address</td>
+                  <td>{{ getExpandedListing().address }}</td>
+                </tr>
+                <tr>
+                  <td>Type</td>
+                  <td>{{ getExpandedListing().type === "sublet" ? "Sublet" : "Renting" }}</td>
+                </tr>
+                <tr>
+                  <td>Price</td>
+                  <td>${{ getExpandedListing().price }}/month</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Availability -->
+          <div class="info-section">
+            <h3>Availability</h3>
+            <table class="info-table">
+              <tbody>
+                <tr>
+                  <td>Duration</td>
+                  <td>{{ formatDate(getExpandedListing().startDate) }} - {{ formatDate(getExpandedListing().endDate) }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Description -->
+          <div class="info-section" v-if="getExpandedListing().description && getExpandedListing().description.trim()">
+            <h3>About This Property</h3>
+            <div class="description-full">
+              {{ getExpandedListing().description }}
+            </div>
+          </div>
+
+          <!-- Amenities -->
+          <div class="info-section" v-if="getExpandedListing().amenities && getExpandedListing().amenities.length > 0">
+            <h3>Amenities</h3>
+            <table class="info-table">
+              <tbody>
+                <tr v-for="amenity in getExpandedListing().amenities" :key="amenity._id">
+                  <td>{{ amenity.title }}</td>
+                  <td>{{ amenity.distance && amenity.distance > 0 ? `${amenity.distance} miles away` : 'On-site' }}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="detail-actions">
+          <button
+            v-if="!isOwner(getExpandedListing())"
+            @click="sendInterest(getExpandedListing()._id)"
+            class="contact-btn"
+            :disabled="isSendingInterest[getExpandedListing()._id]"
+          >
+            {{ isSendingInterest[getExpandedListing()._id] ? "Sending..." : "Send Interest" }}
+          </button>
+
+          <div v-if="isOwner(getExpandedListing())" class="owner-actions">
+            <button @click="editListing(getExpandedListing())" class="edit-btn">Edit Listing</button>
+            <button @click="deleteListing(getExpandedListing()._id)" class="delete-btn">Delete Listing</button>
+          </div>
+        </div>
+      </div>
+    </div>
 
     <!-- Create Listing Modal -->
     <div v-if="showCreateModal" class="modal-overlay" @click="closeCreateModal">
@@ -207,6 +256,25 @@
           </div>
 
           <div class="form-group">
+            <label for="type">Type *</label>
+            <select id="type" v-model="newListing.type" required>
+              <option value="">Select type...</option>
+              <option value="sublet">Sublet</option>
+              <option value="renting">Renting</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="description">Description</label>
+            <textarea
+              id="description"
+              v-model="newListing.description"
+              rows="5"
+              placeholder="Tell potential renters about your listing... Include details about the space, location, amenities, and what makes it special."
+            ></textarea>
+          </div>
+
+          <div class="form-group">
             <label>Amenities</label>
             <div class="amenities-list">
               <div
@@ -217,13 +285,13 @@
                 <input
                   type="text"
                   v-model="amenity.title"
-                  placeholder="e.g., T Stop"
+                  placeholder="e.g., Laundry or T Stop"
                   class="amenity-title"
                 />
                 <input
                   type="number"
                   v-model.number="amenity.distance"
-                  placeholder="Miles"
+                  placeholder="Miles (optional)"
                   min="0"
                   step="0.1"
                   class="amenity-distance"
@@ -318,6 +386,24 @@
           </div>
 
           <div class="form-group">
+            <label for="edit-type">Type *</label>
+            <select id="edit-type" v-model="editForm.type" required>
+              <option value="sublet">Sublet</option>
+              <option value="renting">Renting</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="edit-description">Description</label>
+            <textarea
+              id="edit-description"
+              v-model="editForm.description"
+              rows="5"
+              placeholder="Tell potential renters about your listing... Include details about the space, location, amenities, and what makes it special."
+            ></textarea>
+          </div>
+
+          <div class="form-group">
             <label>Amenities</label>
             <div class="amenities-list">
               <div
@@ -328,13 +414,13 @@
                 <input
                   type="text"
                   v-model="amenity.title"
-                  placeholder="e.g., T Stop"
+                  placeholder="e.g., Laundry or T Stop"
                   class="amenity-title"
                 />
                 <input
                   type="number"
                   v-model.number="amenity.distance"
-                  placeholder="Miles"
+                  placeholder="Miles (optional)"
                   min="0"
                   step="0.1"
                   class="amenity-distance"
@@ -406,6 +492,8 @@ export default {
       startDate: "",
       endDate: "",
       price: "",
+      type: "",
+      description: "",
       amenities: [],
     });
 
@@ -424,23 +512,36 @@ export default {
       endDate: "",
     });
 
+    // Expanded view state
+    const expandedListing = ref(null);
+
     // Computed property for filtered listings
     const filteredListings = computed(() => {
       let result = [...listingsData.value];
 
       // Apply price filters
-      if (appliedFilters.value.minPrice !== null && appliedFilters.value.minPrice !== "") {
-        result = result.filter(listing => listing.price >= appliedFilters.value.minPrice);
+      if (
+        appliedFilters.value.minPrice !== null &&
+        appliedFilters.value.minPrice !== ""
+      ) {
+        result = result.filter(
+          (listing) => listing.price >= appliedFilters.value.minPrice
+        );
       }
 
-      if (appliedFilters.value.maxPrice !== null && appliedFilters.value.maxPrice !== "") {
-        result = result.filter(listing => listing.price <= appliedFilters.value.maxPrice);
+      if (
+        appliedFilters.value.maxPrice !== null &&
+        appliedFilters.value.maxPrice !== ""
+      ) {
+        result = result.filter(
+          (listing) => listing.price <= appliedFilters.value.maxPrice
+        );
       }
 
       // Apply date filters
       if (appliedFilters.value.startDate) {
         const filterStartDate = new Date(appliedFilters.value.startDate);
-        result = result.filter(listing => {
+        result = result.filter((listing) => {
           const listingEndDate = new Date(listing.endDate);
           // Listing should be available at or after the filter start date
           return listingEndDate >= filterStartDate;
@@ -449,7 +550,7 @@ export default {
 
       if (appliedFilters.value.endDate) {
         const filterEndDate = new Date(appliedFilters.value.endDate);
-        result = result.filter(listing => {
+        result = result.filter((listing) => {
           const listingStartDate = new Date(listing.startDate);
           // Listing should be available at or before the filter end date
           return listingStartDate <= filterEndDate;
@@ -550,6 +651,8 @@ export default {
       startDate: "",
       endDate: "",
       price: "",
+      type: "",
+      description: "",
       amenities: [],
     });
 
@@ -750,6 +853,29 @@ export default {
       return isOwnerResult;
     };
 
+    // Expanded view methods
+    const truncateText = (text, maxLength) => {
+      if (!text) return '';
+      if (text.length <= maxLength) return text;
+      return text.substring(0, maxLength) + '...';
+    };
+
+    const toggleListingDetails = (listingId) => {
+      if (expandedListing.value === listingId) {
+        expandedListing.value = null;
+      } else {
+        expandedListing.value = listingId;
+      }
+    };
+
+    const closeListing = () => {
+      expandedListing.value = null;
+    };
+
+    const getExpandedListing = () => {
+      return listingsData.value.find(listing => listing._id === expandedListing.value) || {};
+    };
+
     const formatDate = (dateString) => {
       const date = new Date(dateString);
       return date.toLocaleDateString("en-US", {
@@ -764,17 +890,52 @@ export default {
       createError.value = "";
 
       console.log("Creating listing with data:", newListing.value);
+      console.log(
+        "Full newListing object:",
+        JSON.stringify(newListing.value, null, 2)
+      );
+      console.log(
+        "Raw type:",
+        newListing.value.type,
+        "Raw description:",
+        newListing.value.description,
+        "Type of description:",
+        typeof newListing.value.description
+      );
+
+      // Validate required fields
+      if (!newListing.value.type || newListing.value.type === "") {
+        createError.value = "Please select a listing type (sublet or renting)";
+        creating.value = false;
+        return;
+      }
 
       try {
         // Filter out empty amenities and format them properly
+        // Only require title, distance is optional
         const validAmenities = newListing.value.amenities
-          .filter((a) => a.title && a.distance !== "")
+          .filter((a) => a.title && a.title.trim() !== "")
           .map((a) => ({
             title: a.title,
-            distance: Number(a.distance),
+            distance: a.distance !== "" && a.distance !== null && a.distance !== undefined 
+              ? Number(a.distance) 
+              : 0,
           }));
 
         console.log("Valid amenities:", validAmenities);
+
+        // Ensure type and description are strings, not null/undefined
+        // Convert to string explicitly to handle any edge cases
+        const typeValue = String(newListing.value.type || "").trim();
+        // Handle description the same way as edit does
+        const descriptionValue = newListing.value.description || "";
+
+        if (typeValue !== "sublet" && typeValue !== "renting") {
+          createError.value =
+            "Invalid listing type. Please select 'sublet' or 'renting'";
+          creating.value = false;
+          return;
+        }
 
         const result = await listings.create(
           newListing.value.title,
@@ -783,7 +944,9 @@ export default {
           newListing.value.address,
           newListing.value.startDate,
           newListing.value.endDate,
-          newListing.value.price
+          newListing.value.price,
+          typeValue,
+          descriptionValue
         );
 
         console.log("Listing created successfully:", result);
@@ -795,6 +958,8 @@ export default {
           startDate: "",
           endDate: "",
           price: "",
+          type: "",
+          description: "",
           amenities: [],
         };
         showCreateModal.value = false;
@@ -839,6 +1004,8 @@ export default {
         startDate: formatDateForInput(listing.startDate),
         endDate: formatDateForInput(listing.endDate),
         price: listing.price || "",
+        type: listing.type || "",
+        description: listing.description || "",
         amenities: listing.amenities
           ? listing.amenities.map((a) => ({
               _id: a._id,
@@ -861,6 +1028,8 @@ export default {
         startDate: "",
         endDate: "",
         price: "",
+        type: "",
+        description: "",
         amenities: [],
       };
     };
@@ -911,11 +1080,20 @@ export default {
         if (editForm.value.price !== listing.price) {
           await listings.editPrice(listingId, editForm.value.price);
         }
+        if (editForm.value.type !== listing.type) {
+          await listings.editType(listingId, editForm.value.type);
+        }
+        const currentDescription = listing.description || "";
+        const newDescription = editForm.value.description || "";
+        if (newDescription !== currentDescription) {
+          await listings.editDescription(listingId, newDescription);
+        }
 
         // Handle amenities: deleted, new, and updated
+        // Only require title, distance is optional
         const oldAmenities = listing.amenities || [];
         const newAmenities = editForm.value.amenities.filter(
-          (a) => a.title && a.distance !== ""
+          (a) => a.title && a.title.trim() !== ""
         );
 
         // Delete amenities that were removed
@@ -934,15 +1112,16 @@ export default {
         // Add new amenities or update existing ones if changed
         for (const newAmenity of newAmenities) {
           // If it doesn't have an _id, it's a new amenity
-          if (
-            !newAmenity._id &&
-            newAmenity.title &&
-            newAmenity.distance !== ""
-          ) {
+          if (!newAmenity._id && newAmenity.title) {
+            const distance = newAmenity.distance !== "" && 
+                           newAmenity.distance !== null && 
+                           newAmenity.distance !== undefined
+              ? Number(newAmenity.distance)
+              : 0;
             await listings.addAmenity(
               listingId,
               newAmenity.title,
-              newAmenity.distance
+              distance
             );
           }
           // If it has an _id but values changed, delete old and add new
@@ -950,17 +1129,22 @@ export default {
             const oldAmenity = oldAmenities.find(
               (a) => a._id === newAmenity._id
             );
+            const newDistance = newAmenity.distance !== "" && 
+                               newAmenity.distance !== null && 
+                               newAmenity.distance !== undefined
+              ? Number(newAmenity.distance)
+              : 0;
             if (
               oldAmenity &&
               (oldAmenity.title !== newAmenity.title ||
-                oldAmenity.distance !== newAmenity.distance)
+                oldAmenity.distance !== newDistance)
             ) {
               await listings.deleteAmenity(listingId, newAmenity._id);
-              if (newAmenity.title && newAmenity.distance !== "") {
+              if (newAmenity.title) {
                 await listings.addAmenity(
                   listingId,
                   newAmenity.title,
-                  newAmenity.distance
+                  newDistance
                 );
               }
             }
@@ -1078,6 +1262,11 @@ export default {
       removeEditAmenity,
       handleEditListing,
       sessionStore,
+      expandedListing,
+      truncateText,
+      toggleListingDetails,
+      closeListing,
+      getExpandedListing,
     };
   },
 };
@@ -1238,74 +1427,103 @@ export default {
   gap: 1.25rem;
 }
 
-.listing-card {
+.posting-card {
   background: white;
   border-radius: 12px;
-  padding: 1rem;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  transition: transform 0.2s, box-shadow 0.2s;
+  border: 2px solid #f0f0f0;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  min-height: 120px;
+  display: flex;
+  flex-direction: column;
 }
 
-.listing-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 12px rgba(0, 0, 0, 0.15);
+.posting-card:hover {
+  border-color: rgb(47, 71, 62);
+  box-shadow: 0 4px 12px rgba(47, 71, 62, 0.1);
 }
 
-.listing-header {
+.posting-card.expanded {
+  border-color: rgb(47, 71, 62);
+  box-shadow: 0 4px 12px rgba(47, 71, 62, 0.15);
+}
+
+.card-header {
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid #f0f0f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.card-title h3 {
+  color: rgb(47, 71, 62);
+  font-size: 1.25rem;
+  margin: 0 0 0.5rem 0;
+  font-weight: 600;
+}
+
+.quick-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.address-preview, .price-preview {
+  font-size: 0.85rem;
+  color: #666;
+}
+
+.card-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.card-preview {
+  padding: 0 1.25rem 1rem 1.25rem;
+  flex: 1;
+}
+
+.listing-summary {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.85rem;
+}
+
+.dates-preview, .type-preview {
+  color: #666;
+}
+
+.description-preview {
+  color: #666;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  margin: 0 0 0.75rem 0;
+}
+
+.expand-hint {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 0.75rem;
-  padding-bottom: 0.75rem;
-  border-bottom: 2px solid #f0f0f0;
-}
-
-.listing-header h3 {
+  font-size: 0.8rem;
   color: rgb(47, 71, 62);
-  font-size: 1.25rem;
-  margin: 0;
+  font-weight: 500;
+  margin-top: 0.5rem;
 }
 
-.header-actions {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.favorite-btn {
-  background: none;
-  border: none;
-  font-size: 1.5rem;
-  cursor: pointer;
-  padding: 0.25rem;
-  transition: transform 0.2s ease;
-}
-
-.favorite-btn:hover {
-  transform: scale(1.2);
-}
-
-.favorite-btn.is-saved {
-  color: #dc3545;
-  animation: heartbeat 0.3s ease;
-}
-
-@keyframes heartbeat {
-  0%,
-  100% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.2);
-  }
+.expand-icon {
+  margin-left: 0.5rem;
 }
 
 .owner-badge {
   background: rgb(47, 71, 62);
   color: white;
-  padding: 0.25rem 0.625rem;
-  border-radius: 20px;
-  font-size: 0.8rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
   font-weight: 600;
 }
 
@@ -1443,18 +1661,63 @@ export default {
   margin-bottom: 0.5rem;
 }
 
-.form-group input {
+.form-group input,
+.form-group select,
+.form-group textarea {
   width: 100%;
   padding: 0.75rem;
   border: 2px solid #e0e0e0;
   border-radius: 6px;
   font-size: 1rem;
-  transition: border-color 0.3s;
+  transition: border-color 0.3s, box-shadow 0.3s;
+  font-family: inherit;
 }
 
-.form-group input:focus {
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
   outline: none;
-  border-color: rgb(47, 71, 62);
+  border-color: #1e5a2e;
+  box-shadow: 0 0 0 3px rgba(30, 90, 46, 0.1);
+}
+
+.form-group select {
+  background-color: white;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23123519' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  padding-right: 2.5rem;
+}
+
+.form-group select:hover {
+  border-color: #1e5a2e;
+  background-color: #f9f9f9;
+}
+
+.form-group select option {
+  padding: 0.5rem;
+}
+
+.form-group select option:first-child {
+  color: #999;
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 120px;
+  line-height: 1.6;
+  font-family: inherit;
+}
+
+.form-group textarea::placeholder {
+  color: #999;
+  opacity: 0.8;
+}
+
+.form-group textarea:focus::placeholder {
+  opacity: 0.5;
 }
 
 .amenities-list {
@@ -1560,17 +1823,199 @@ export default {
   cursor: not-allowed;
 }
 
-@media (max-width: 768px) {
-  .listings-grid {
-    grid-template-columns: 1fr;
-  }
+/* Expanded Listing Detail Styles */
+.detail-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
 
-  .hero h2 {
-    font-size: 2rem;
-  }
+.detail-panel {
+  background: white;
+  border-radius: 12px;
+  max-width: 600px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+}
 
-  .form-row {
-    grid-template-columns: 1fr;
-  }
+.detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem 2rem;
+  border-bottom: 2px solid #f8f9fa;
+  background: linear-gradient(135deg, #1e5a2e, #2d7a3d);
+  color: white;
+  border-radius: 16px 16px 0 0;
+}
+
+.detail-header h2 {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 2rem;
+  cursor: pointer;
+  color: white;
+  padding: 0.25rem;
+  border-radius: 50%;
+  width: 2.5rem;
+  height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease;
+}
+
+.close-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.detail-content {
+  padding: 2rem;
+}
+
+.info-section {
+  margin-bottom: 2rem;
+}
+
+.info-section h3 {
+  color: #1e5a2e;
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin: 0 0 1rem 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #e9ecef;
+}
+
+.info-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.info-table tr {
+  border-bottom: 1px solid #f8f9fa;
+}
+
+.info-table tr:last-child {
+  border-bottom: none;
+}
+
+.info-table td {
+  padding: 0.75rem 0;
+  vertical-align: top;
+}
+
+.info-table td:first-child {
+  font-weight: 600;
+  color: #555;
+  width: 35%;
+}
+
+.info-table td:last-child {
+  color: #333;
+  padding-left: 1rem;
+}
+
+.description-full {
+  background: #f8f9fa;
+  padding: 1.25rem;
+  border-radius: 8px;
+  line-height: 1.6;
+  color: #555;
+  border-left: 4px solid #1e5a2e;
+}
+
+.detail-actions {
+  padding: 1.5rem 2rem;
+  border-top: 2px solid #f8f9fa;
+  background: #fafafa;
+  border-radius: 0 0 16px 16px;
+}
+
+.contact-btn {
+  width: 100%;
+  background: rgb(22, 53, 27);
+  color: white;
+  border: none;
+  padding: 0.625rem 1rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-top: 0.75rem;
+  transition: background 0.2s, opacity 0.2s;
+}
+
+.contact-btn:hover:not(:disabled) {
+  background: rgb(15, 38, 19);
+}
+
+.contact-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.owner-actions {
+  display: flex;
+  gap: 1rem;
+}
+
+.detail-actions .edit-btn,
+.detail-actions .delete-btn {
+  flex: 1;
+  padding: 0.5rem;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+  font-size: 0.9rem;
+}
+
+.edit-btn {
+  background: rgb(22, 53, 27);
+  color: white;
+}
+
+.delete-btn {
+  background: #dc3545;
+  color: white;
+}
+
+.edit-btn:hover,
+.delete-btn:hover {
+  opacity: 0.85;
+}
+
+.favorite-btn {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+  padding: 0.25rem;
+  transition: transform 0.2s ease;
+}
+
+.favorite-btn:hover {
+  transform: scale(1.1);
+}
+
+.favorite-btn.is-saved {
+  color: #e74c3c;
 }
 </style>

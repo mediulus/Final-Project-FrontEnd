@@ -120,14 +120,16 @@
           <div class="info-section">
             <h3>Personal Information</h3>
             <table class="info-table">
-              <tr>
-                <td>Profile</td>
-                <td>{{ getExpandedPosting().gender }}, {{ getExpandedPosting().age }} years old</td>
-              </tr>
-              <tr v-if="getExpandedPosting().numberOfRoommates">
-                <td>Looking for</td>
-                <td>{{ getExpandedPosting().numberOfRoommates }} roommate{{ getExpandedPosting().numberOfRoommates > 1 ? 's' : '' }}</td>
-              </tr>
+              <tbody>
+                <tr>
+                  <td>Profile</td>
+                  <td>{{ getExpandedPosting().gender }}, {{ getExpandedPosting().age }} years old</td>
+                </tr>
+                <tr v-if="getExpandedPosting().numberOfRoommates">
+                  <td>Looking for</td>
+                  <td>{{ getExpandedPosting().numberOfRoommates }} roommate{{ getExpandedPosting().numberOfRoommates > 1 ? 's' : '' }}</td>
+                </tr>
+              </tbody>
             </table>
           </div>
 
@@ -135,10 +137,12 @@
           <div class="info-section" v-if="getExpandedPosting().startDate || getExpandedPosting().endDate">
             <h3>Timeline</h3>
             <table class="info-table">
-              <tr v-if="getExpandedPosting().startDate && getExpandedPosting().endDate">
-                <td>Duration</td>
-                <td>{{ formatDate(getExpandedPosting().startDate) }} - {{ formatDate(getExpandedPosting().endDate) }}</td>
-              </tr>
+              <tbody>
+                <tr v-if="getExpandedPosting().startDate && getExpandedPosting().endDate">
+                  <td>Duration</td>
+                  <td>{{ formatDate(getExpandedPosting().startDate) }} - {{ formatDate(getExpandedPosting().endDate) }}</td>
+                </tr>
+              </tbody>
             </table>
           </div>
 
@@ -146,22 +150,24 @@
           <div class="info-section">
             <h3>Lifestyle & Preferences</h3>
             <table class="info-table">
-              <tr v-if="getExpandedPosting().dailyRhythm">
-                <td>Daily Rhythm</td>
-                <td>{{ getExpandedPosting().dailyRhythm }}</td>
-              </tr>
-              <tr v-if="getExpandedPosting().cleanlinessPreference">
-                <td>Cleanliness</td>
-                <td>{{ getExpandedPosting().cleanlinessPreference }}</td>
-              </tr>
-              <tr v-if="getExpandedPosting().homeEnvironment">
-                <td>Home Environment</td>
-                <td>{{ getExpandedPosting().homeEnvironment }}</td>
-              </tr>
-              <tr v-if="getExpandedPosting().guestsVisitors">
-                <td>Guests & Visitors</td>
-                <td>{{ getExpandedPosting().guestsVisitors }}</td>
-              </tr>
+              <tbody>
+                <tr v-if="getExpandedPosting().dailyRhythm">
+                  <td>Daily Rhythm</td>
+                  <td>{{ getExpandedPosting().dailyRhythm }}</td>
+                </tr>
+                <tr v-if="getExpandedPosting().cleanlinessPreference">
+                  <td>Cleanliness</td>
+                  <td>{{ getExpandedPosting().cleanlinessPreference }}</td>
+                </tr>
+                <tr v-if="getExpandedPosting().homeEnvironment">
+                  <td>Home Environment</td>
+                  <td>{{ getExpandedPosting().homeEnvironment }}</td>
+                </tr>
+                <tr v-if="getExpandedPosting().guestsVisitors">
+                  <td>Guests & Visitors</td>
+                  <td>{{ getExpandedPosting().guestsVisitors }}</td>
+                </tr>
+              </tbody>
             </table>
           </div>
 
@@ -199,14 +205,20 @@
           <div class="info-section">
             <h3>Property Information</h3>
             <table class="info-table">
-              <tr>
-                <td>Address</td>
-                <td>{{ getExpandedListing().address }}</td>
-              </tr>
-              <tr>
-                <td>Price</td>
-                <td>${{ getExpandedListing().price }}/month</td>
-              </tr>
+              <tbody>
+                <tr>
+                  <td>Address</td>
+                  <td>{{ getExpandedListing().address }}</td>
+                </tr>
+                <tr>
+                  <td>Type</td>
+                  <td>{{ getExpandedListing().type === "sublet" ? "Sublet" : "Renting" }}</td>
+                </tr>
+                <tr>
+                  <td>Price</td>
+                  <td>${{ getExpandedListing().price }}/month</td>
+                </tr>
+              </tbody>
             </table>
           </div>
 
@@ -214,21 +226,33 @@
           <div class="info-section">
             <h3>Availability</h3>
             <table class="info-table">
-              <tr>
-                <td>Duration</td>
-                <td>{{ formatDate(getExpandedListing().startDate) }} - {{ formatDate(getExpandedListing().endDate) }}</td>
-              </tr>
+              <tbody>
+                <tr>
+                  <td>Duration</td>
+                  <td>{{ formatDate(getExpandedListing().startDate) }} - {{ formatDate(getExpandedListing().endDate) }}</td>
+                </tr>
+              </tbody>
             </table>
+          </div>
+
+          <!-- Description -->
+          <div class="info-section" v-if="getExpandedListing().description && getExpandedListing().description.trim()">
+            <h3>About This Property</h3>
+            <div class="description-full">
+              {{ getExpandedListing().description }}
+            </div>
           </div>
 
           <!-- Amenities -->
           <div class="info-section" v-if="getExpandedListing().amenities && getExpandedListing().amenities.length > 0">
             <h3>Amenities</h3>
             <table class="info-table">
-              <tr v-for="amenity in getExpandedListing().amenities" :key="amenity._id">
-                <td>{{ amenity.title }}</td>
-                <td>{{ amenity.distance }} miles away</td>
-              </tr>
+              <tbody>
+                <tr v-for="amenity in getExpandedListing().amenities" :key="amenity._id">
+                  <td>{{ amenity.title }}</td>
+                  <td>{{ amenity.distance && amenity.distance > 0 ? `${amenity.distance} miles away` : 'On-site' }}</td>
+                </tr>
+              </tbody>
             </table>
           </div>
         </div>
@@ -304,6 +328,24 @@
               min="0"
               placeholder="e.g., 1500"
             />
+          </div>
+
+          <div class="form-group">
+            <label for="edit-type">Type *</label>
+            <select id="edit-type" v-model="editForm.type" required>
+              <option value="sublet">Sublet</option>
+              <option value="renting">Renting</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="edit-description">Description</label>
+            <textarea
+              id="edit-description"
+              v-model="editForm.description"
+              rows="5"
+              placeholder="Tell potential renters about your listing... Include details about the space, location, amenities, and what makes it special."
+            ></textarea>
           </div>
 
           <div class="form-group">
@@ -614,6 +656,8 @@ export default {
       startDate: "",
       endDate: "",
       price: "",
+      type: "",
+      description: "",
       amenities: [],
     });
     const showEditRoommateModal = ref(false);
@@ -886,6 +930,8 @@ export default {
         startDate: formatDateForInput(listing.startDate),
         endDate: formatDateForInput(listing.endDate),
         price: listing.price || "",
+        type: listing.type || "",
+        description: listing.description || "",
         amenities: listing.amenities
           ? listing.amenities.map((a) => ({
               _id: a._id,
@@ -908,6 +954,8 @@ export default {
         startDate: "",
         endDate: "",
         price: "",
+        type: "",
+        description: "",
         amenities: [],
       };
     };
@@ -964,6 +1012,16 @@ export default {
         // Update price if changed
         if (editForm.value.price !== listing.price) {
           await listingsApi.editPrice(listingId, editForm.value.price);
+        }
+
+        // Update type if changed
+        if (editForm.value.type !== listing.type) {
+          await listingsApi.editType(listingId, editForm.value.type);
+        }
+        const currentDescription = listing.description || "";
+        const newDescription = editForm.value.description || "";
+        if (newDescription !== currentDescription) {
+          await listingsApi.editDescription(listingId, newDescription);
         }
 
         // Handle amenities
@@ -1364,18 +1422,20 @@ export default {
 }
 
 .detail-header {
-  padding: 1.5rem 1.5rem 1rem 1.5rem;
-  border-bottom: 2px solid #f0f0f0;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding: 1.5rem 2rem;
+  border-bottom: 2px solid #f8f9fa;
+  background: linear-gradient(135deg, #1e5a2e, #2d7a3d);
+  color: white;
+  border-radius: 16px 16px 0 0;
 }
 
 .detail-header h2 {
-  color: rgb(47, 71, 62);
   margin: 0;
-  font-size: 1.5rem;
-  font-weight: 600;
+  font-size: 1.4rem;
+  font-weight: 700;
 }
 
 .close-btn {
@@ -1383,35 +1443,36 @@ export default {
   border: none;
   font-size: 2rem;
   cursor: pointer;
-  color: #666;
-  padding: 0;
-  width: 2rem;
-  height: 2rem;
+  color: white;
+  padding: 0.25rem;
+  border-radius: 50%;
+  width: 2.5rem;
+  height: 2.5rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 50%;
-  transition: all 0.2s ease;
+  transition: background 0.2s ease;
 }
 
 .close-btn:hover {
-  background-color: #f0f0f0;
-  color: rgb(47, 71, 62);
+  background: rgba(255, 255, 255, 0.2);
 }
 
 .detail-content {
-  padding: 1.5rem;
+  padding: 2rem;
 }
 
 .info-section {
-  margin-bottom: 1.5rem;
+  margin-bottom: 2rem;
 }
 
 .info-section h3 {
-  color: rgb(47, 71, 62);
+  color: #1e5a2e;
   font-size: 1.1rem;
-  margin: 0 0 0.75rem 0;
-  font-weight: 600;
+  font-weight: 700;
+  margin: 0 0 1rem 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #e9ecef;
 }
 
 .info-table {
@@ -1420,7 +1481,7 @@ export default {
 }
 
 .info-table tr {
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid #f8f9fa;
 }
 
 .info-table tr:last-child {
@@ -1428,35 +1489,35 @@ export default {
 }
 
 .info-table td {
-  padding: 0.5rem 0;
+  padding: 0.75rem 0;
   vertical-align: top;
 }
 
 .info-table td:first-child {
-  font-weight: 500;
-  color: rgb(47, 71, 62);
-  width: 30%;
+  font-weight: 600;
+  color: #555;
+  width: 35%;
 }
 
 .info-table td:last-child {
-  color: #666;
+  color: #333;
   padding-left: 1rem;
 }
 
 .description-full {
-  color: #666;
-  line-height: 1.6;
-  padding: 1rem;
   background: #f8f9fa;
+  padding: 1.25rem;
   border-radius: 8px;
+  line-height: 1.6;
+  color: #555;
+  border-left: 4px solid #1e5a2e;
 }
 
 .detail-actions {
-  padding: 1rem 1.5rem 1.5rem 1.5rem;
-  border-top: 2px solid #f0f0f0;
-  display: flex;
-  gap: 0.75rem;
-  justify-content: flex-end;
+  padding: 1.5rem 2rem;
+  border-top: 2px solid #f8f9fa;
+  background: #fafafa;
+  border-radius: 0 0 16px 16px;
 }
 
 .detail-actions .edit-btn,
@@ -1499,7 +1560,7 @@ export default {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1000;
+  z-index: 1200;
   animation: fadeIn 0.2s ease;
 }
 
@@ -1594,10 +1655,33 @@ export default {
   box-shadow: 0 0 0 3px rgba(47, 71, 62, 0.1);
 }
 
+.form-group select {
+  background-color: white;
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23123519' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  padding-right: 2.5rem;
+}
+
+.form-group select:hover {
+  background-color: #f9f9f9;
+}
+
 .form-group textarea {
   resize: vertical;
   min-height: 120px;
   line-height: 1.6;
+}
+
+.form-group textarea::placeholder {
+  color: #999;
+  opacity: 0.8;
+}
+
+.form-group textarea:focus::placeholder {
+  opacity: 0.5;
 }
 
 .amenities-list {
@@ -1744,13 +1828,18 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.5rem;
+  padding: 1.5rem 2rem;
+  border-bottom: 2px solid #f8f9fa;
+  background: linear-gradient(135deg, #1e5a2e, #2d7a3d);
+  color: white;
+  border-radius: 16px 16px 0 0;
+  margin-bottom: 0;
 }
 
 .detail-header h2 {
-  color: rgb(47, 71, 62);
-  font-size: 1.5rem;
   margin: 0;
+  font-size: 1.4rem;
+  font-weight: 700;
 }
 
 .close-btn {
@@ -1758,20 +1847,19 @@ export default {
   border: none;
   font-size: 2rem;
   cursor: pointer;
-  color: #666;
-  padding: 0;
-  width: 2rem;
-  height: 2rem;
+  color: white;
+  padding: 0.25rem;
+  border-radius: 50%;
+  width: 2.5rem;
+  height: 2.5rem;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 50%;
-  transition: all 0.2s ease;
+  transition: background 0.2s ease;
 }
 
 .close-btn:hover {
-  background-color: #f0f0f0;
-  color: rgb(47, 71, 62);
+  background: rgba(255, 255, 255, 0.2);
 }
 
 .detail-content {

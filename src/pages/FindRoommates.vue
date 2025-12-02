@@ -34,7 +34,7 @@
                   </span>
                 </div>
               </div>
-              
+
               <div class="card-actions" @click.stop>
                 <button
                   @click="toggleSavedItem(posting._id)"
@@ -73,14 +73,16 @@
               <div class="info-section">
                 <h3>Personal Information</h3>
                 <table class="info-table">
-                  <tr>
-                    <td>Profile</td>
-                    <td>{{ getExpandedPosting().gender }}, {{ getExpandedPosting().age }} years old</td>
-                  </tr>
-                  <tr v-if="getExpandedPosting().numberOfRoommates">
-                    <td>Looking for</td>
-                    <td>{{ getExpandedPosting().numberOfRoommates }} roommate{{ getExpandedPosting().numberOfRoommates > 1 ? 's' : '' }}</td>
-                  </tr>
+                  <tbody>
+                    <tr>
+                      <td>Profile</td>
+                      <td>{{ getExpandedPosting().gender }}, {{ getExpandedPosting().age }} years old</td>
+                    </tr>
+                    <tr v-if="getExpandedPosting().numberOfRoommates">
+                      <td>Looking for</td>
+                      <td>{{ getExpandedPosting().numberOfRoommates }} roommate{{ getExpandedPosting().numberOfRoommates > 1 ? 's' : '' }}</td>
+                    </tr>
+                  </tbody>
                 </table>
               </div>
 
@@ -88,10 +90,12 @@
               <div class="info-section" v-if="getExpandedPosting().startDate || getExpandedPosting().endDate">
                 <h3>Timeline</h3>
                 <table class="info-table">
-                  <tr v-if="getExpandedPosting().startDate && getExpandedPosting().endDate">
-                    <td>Duration</td>
-                    <td>{{ formatDate(getExpandedPosting().startDate) }} - {{ formatDate(getExpandedPosting().endDate) }}</td>
-                  </tr>
+                  <tbody>
+                    <tr v-if="getExpandedPosting().startDate && getExpandedPosting().endDate">
+                      <td>Duration</td>
+                      <td>{{ formatDate(getExpandedPosting().startDate) }} - {{ formatDate(getExpandedPosting().endDate) }}</td>
+                    </tr>
+                  </tbody>
                 </table>
               </div>
 
@@ -99,22 +103,24 @@
               <div class="info-section">
                 <h3>Lifestyle & Preferences</h3>
                 <table class="info-table">
-                  <tr v-if="getExpandedPosting().dailyRhythm">
-                    <td>Daily Rhythm</td>
-                    <td>{{ getExpandedPosting().dailyRhythm }}</td>
-                  </tr>
-                  <tr v-if="getExpandedPosting().cleanlinessPreference">
-                    <td>Cleanliness</td>
-                    <td>{{ getExpandedPosting().cleanlinessPreference }}</td>
-                  </tr>
-                  <tr v-if="getExpandedPosting().homeEnvironment">
-                    <td>Home Environment</td>
-                    <td>{{ getExpandedPosting().homeEnvironment }}</td>
-                  </tr>
-                  <tr v-if="getExpandedPosting().guestsVisitors">
-                    <td>Guests & Visitors</td>
-                    <td>{{ getExpandedPosting().guestsVisitors }}</td>
-                  </tr>
+                  <tbody>
+                    <tr v-if="getExpandedPosting().dailyRhythm">
+                      <td>Daily Rhythm</td>
+                      <td>{{ getExpandedPosting().dailyRhythm }}</td>
+                    </tr>
+                    <tr v-if="getExpandedPosting().cleanlinessPreference">
+                      <td>Cleanliness</td>
+                      <td>{{ getExpandedPosting().cleanlinessPreference }}</td>
+                    </tr>
+                    <tr v-if="getExpandedPosting().homeEnvironment">
+                      <td>Home Environment</td>
+                      <td>{{ getExpandedPosting().homeEnvironment }}</td>
+                    </tr>
+                    <tr v-if="getExpandedPosting().guestsVisitors">
+                      <td>Guests & Visitors</td>
+                      <td>{{ getExpandedPosting().guestsVisitors }}</td>
+                    </tr>
+                  </tbody>
                 </table>
               </div>
 
@@ -137,7 +143,7 @@
               >
                 {{ isContacting[getExpandedPosting()._id] ? "Sending..." : "Contact Me" }}
               </button>
-              
+
               <div v-if="isPoster(getExpandedPosting())" class="owner-actions">
                 <button @click="editPosting(getExpandedPosting())" class="edit-btn">Edit Posting</button>
                 <button @click="deletePosting(getExpandedPosting()._id)" class="delete-btn">Delete Posting</button>
