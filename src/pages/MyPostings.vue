@@ -110,6 +110,18 @@
                 </div>
               </div>
 
+              <!-- Photo Preview -->
+              <div v-if="listing.photos && listing.photos.length > 0" class="card-photos">
+                <img
+                  :src="getPhotoUrl(listing.photos[0])"
+                  :alt="listing.title + ' photo'"
+                  class="card-photo-main"
+                />
+                <div v-if="listing.photos.length > 1" class="photo-count-badge">
+                  +{{ listing.photos.length - 1 }} more
+                </div>
+              </div>
+
               <div class="card-preview">
                 <div class="listing-summary">
                   <span class="dates-preview">
@@ -415,6 +427,82 @@
             </button>
           </div>
 
+          <!-- Photo Management Section -->
+          <div class="form-group">
+            <label>Photos</label>
+            
+            <!-- Current Photos -->
+            <div v-if="editForm.photos && editForm.photos.length > 0" class="current-photos">
+              <div class="photos-grid-edit">
+                <div 
+                  v-for="(photo, index) in editForm.photos" 
+                  :key="index" 
+                  class="photo-item-edit"
+                >
+                  <img :src="getPhotoUrl(photo)" :alt="'Photo ' + (index + 1)" class="photo-preview" />
+                  <button 
+                    type="button" 
+                    @click="removeEditPhoto(index)" 
+                    class="remove-photo-btn"
+                    :disabled="editUploading"
+                  >
+                    ×
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Photo Upload Section -->
+            <div class="photo-upload-section">
+              <input
+                type="file"
+                ref="editPhotoInput"
+                multiple
+                accept="image/*"
+                @change="handleEditPhotoSelect"
+                style="display: none"
+              />
+              
+              <!-- Selected Photos Preview -->
+              <div v-if="editSelectedPhotos && editSelectedPhotos.length > 0" class="selected-photos-preview">
+                <h4>Selected Photos:</h4>
+                <div class="selected-photos-grid">
+                  <div v-for="(photo, index) in editSelectedPhotos" :key="index" class="selected-photo-item">
+                    <img :src="photo.preview" :alt="'New photo ' + (index + 1)" class="selected-photo-preview" />
+                    <div class="photo-status">
+                      <span v-if="photo.uploading" class="uploading">Uploading...</span>
+                      <span v-else-if="photo.error" class="error">{{ photo.error }}</span>
+                      <span v-else class="ready">Ready</span>
+                    </div>
+                    <button 
+                      type="button" 
+                      @click="removeEditSelectedPhoto(index)" 
+                      class="remove-selected-photo-btn"
+                      :disabled="photo.uploading"
+                    >
+                      ×
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="photo-upload-controls">
+                <button type="button" @click="triggerEditPhotoSelect" class="photo-upload-btn" :disabled="editUploading">
+                  📷 Select Photos
+                </button>
+                <button 
+                  type="button" 
+                  @click="uploadEditPhotos" 
+                  class="upload-photos-btn" 
+                  :disabled="!editSelectedPhotos || editSelectedPhotos.length === 0 || editUploading"
+                >
+                  {{ editUploading ? 'Uploading...' : 'Upload Photos' }}
+                </button>
+              </div>
+              <p class="photo-hint">You can upload up to 5 photos total. JPG, PNG formats supported.</p>
+            </div>
+          </div>
+
           <div v-if="editError" class="error-message">{{ editError }}</div>
 
           <div class="modal-actions">
@@ -664,6 +752,7 @@ import {
   roommatePostings as roommatePostingsApi,
   listings as listingsApi,
 } from "../utils/api.js";
+import { uploadMultipleImages } from "../services/imageService.js";
 
 export default {
   name: "MyPostings",
@@ -686,7 +775,13 @@ export default {
       type: "",
       description: "",
       amenities: [],
+      photos: [],
     });
+    
+    // Photo editing state
+    const editPhotoInput = ref(null);
+    const editSelectedPhotos = ref([]);
+    const editUploading = ref(false);
     const showEditRoommateModal = ref(false);
     const isEditingRoommate = ref(false);
     const editRoommateError = ref("");
@@ -714,6 +809,12 @@ export default {
         day: "numeric",
         year: "numeric",
       });
+    };
+
+    const getPhotoUrl = (photo) => {
+      if (!photo) return '';
+      // Handle both old format (string) and new format (object with url property)
+      return typeof photo === 'string' ? photo : photo.url || photo.thumbUrl || '';
     };
 
     const fetchMyPostings = async () => {
@@ -966,7 +1067,11 @@ export default {
               distance: a.distance || "",
             }))
           : [],
+        photos: listing.photos ? [...listing.photos] : [], // Copy existing photos
       };
+      // Reset photo upload state
+      editSelectedPhotos.value = [];
+      editUploading.value = false;
       editError.value = "";
       showEditModal.value = true;
     };
@@ -975,6 +1080,9 @@ export default {
       showEditModal.value = false;
       editError.value = "";
       editingListingId.value = null;
+      // Reset photo upload state
+      editSelectedPhotos.value = [];
+      editUploading.value = false;
       editForm.value = {
         title: "",
         address: "",
@@ -984,6 +1092,7 @@ export default {
         type: "",
         description: "",
         amenities: [],
+        photos: [],
       };
     };
 
@@ -1177,12 +1286,165 @@ export default {
       await fetchMyPostings();
     });
 
+    // Photo editing functions
+    const triggerEditPhotoSelect = () => {
+      try {
+        if (editPhotoInput.value) {
+          editPhotoInput.value.click();
+        }
+      } catch (error) {
+        console.error('Error in triggerEditPhotoSelect:', error);
+      }
+    };
+
+    const handleEditPhotoSelect = (event) => {
+      try {
+        const files = Array.from(event.target.files);
+        const maxPhotos = 5;
+        const currentTotal = editForm.value.photos.length + editSelectedPhotos.value.length;
+
+        if (currentTotal + files.length > maxPhotos) {
+          alert(`You can only upload up to ${maxPhotos} photos total. Currently you have ${currentTotal} photos.`);
+          return;
+        }
+
+        files.forEach(file => {
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            editSelectedPhotos.value.push({
+              file: file,
+              preview: e.target.result,
+              uploading: false,
+              error: null
+            });
+          };
+          reader.readAsDataURL(file);
+        });
+
+        // Clear the input
+        event.target.value = '';
+      } catch (error) {
+        console.error('Error in handleEditPhotoSelect:', error);
+      }
+    };
+
+    const removeEditSelectedPhoto = (index) => {
+      try {
+        editSelectedPhotos.value.splice(index, 1);
+      } catch (error) {
+        console.error('Error in removeEditSelectedPhoto:', error);
+      }
+    };
+
+    const removeEditPhoto = async (index) => {
+      try {
+        const photo = editForm.value.photos[index];
+        const listingId = editingListingId.value;
+        
+        if (!listingId) {
+          editForm.value.photos.splice(index, 1);
+          return;
+        }
+
+        // Extract photoId for deletion
+        let photoId = photo._id || photo.id;
+        if (!photoId && typeof photo === 'string') {
+          photoId = photo.split('/').pop() || photo;
+        } else if (!photoId && photo.url) {
+          photoId = photo.url.split('/').pop() || photo.storageKey;
+        }
+
+        console.log('🗑️ Deleting photo:', { photoId, photo, listingId });
+        
+        await listingsApi.deletePhoto(listingId, photoId);
+        editForm.value.photos.splice(index, 1);
+        console.log('✅ Photo deleted successfully');
+      } catch (error) {
+        console.error('❌ Delete photo error:', error);
+        alert('Failed to delete photo. Please try again.');
+      }
+    };
+
+    const uploadEditPhotos = async () => {
+      if (!editSelectedPhotos.value || editSelectedPhotos.value.length === 0) return;
+
+      editUploading.value = true;
+      
+      try {
+        // Mark all photos as uploading
+        editSelectedPhotos.value.forEach(photo => {
+          photo.uploading = true;
+          photo.error = null;
+        });
+
+        // Upload images to Cloudinary
+        const files = editSelectedPhotos.value.map(photo => photo.file);
+        console.log('Starting upload of', files.length, 'files for edit');
+
+        const uploadedUrls = await uploadMultipleImages(files);
+        console.log('Upload completed for edit, received URLs:', uploadedUrls);
+
+        // Add photos via API if we have a listing ID
+        if (editingListingId.value) {
+          for (const url of uploadedUrls) {
+            try {
+              const result = await listingsApi.addPhoto(editingListingId.value, url);
+              console.log('Photo added via API:', result);
+              
+              // Add the new photo to our local form state
+              const newPhoto = {
+                url: url,
+                thumbUrl: url,
+                storageKey: url.split('/').pop() || 'unknown',
+                alt: "Housing listing photo",
+                width: 1200,
+                height: 800,
+                contentType: url.includes('.png') ? "image/png" : "image/jpeg",
+                bytes: 500000,
+                _id: result?.photo?._id || result?._id || url.split('/').pop()
+              };
+              editForm.value.photos.push(newPhoto);
+            } catch (error) {
+              console.error('Error adding photo via API:', error);
+              // Still add to local state as fallback
+              const newPhoto = {
+                url: url,
+                thumbUrl: url,
+                storageKey: url.split('/').pop() || 'unknown',
+                alt: "Housing listing photo",
+                width: 1200,
+                height: 800,
+                contentType: url.includes('.png') ? "image/png" : "image/jpeg",
+                bytes: 500000
+              };
+              editForm.value.photos.push(newPhoto);
+            }
+          }
+        }
+
+        // Clear selected photos
+        editSelectedPhotos.value = [];
+        console.log('Photos added to edit form, total photos now:', editForm.value.photos.length);
+
+      } catch (error) {
+        console.error('Photo upload error in edit:', error);
+        editSelectedPhotos.value.forEach(photo => {
+          photo.uploading = false;
+          photo.error = error.message || 'Upload failed';
+        });
+        alert(`Failed to upload photos: ${error.message || 'Unknown error'}. Please try again.`);
+      } finally {
+        editUploading.value = false;
+      }
+    };
+
     return {
       roommatePostings,
       housingListings,
       isLoading,
       error,
       formatDate,
+      getPhotoUrl,
       deleteRoommatePosting,
       editRoommatePosting,
       showEditRoommateModal,
@@ -1210,6 +1472,16 @@ export default {
       getExpandedPosting,
       getExpandedListing,
       truncateText,
+      // Photo editing variables
+      editPhotoInput,
+      editSelectedPhotos,
+      editUploading,
+      // Photo editing functions
+      triggerEditPhotoSelect,
+      handleEditPhotoSelect,
+      removeEditSelectedPhoto,
+      removeEditPhoto,
+      uploadEditPhotos,
     };
   },
 };
@@ -1582,419 +1854,6 @@ export default {
   border-bottom: 1px solid #f8f9fa;
 }
 
-.info-table tr:last-child {
-  border-bottom: none;
-}
-
-.info-table td {
-  padding: 0.75rem 0;
-  vertical-align: top;
-}
-
-.info-table td:first-child {
-  font-weight: 600;
-  color: #555;
-  width: 35%;
-}
-
-.info-table td:last-child {
-  color: #333;
-  padding-left: 1rem;
-}
-
-.description-full {
-  background: #f8f9fa;
-  padding: 1.25rem;
-  border-radius: 8px;
-  line-height: 1.6;
-  color: #555;
-  border-left: 4px solid #1e5a2e;
-}
-
-.detail-actions {
-  padding: 1.5rem 2rem;
-  border-top: 2px solid #f8f9fa;
-  background: #fafafa;
-  border-radius: 0 0 16px 16px;
-}
-
-.detail-actions .edit-btn,
-.detail-actions .delete-btn {
-  padding: 0.75rem 1.5rem;
-  border-radius: 6px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  border: none;
-}
-
-.detail-actions .edit-btn {
-  background: rgb(47, 71, 62);
-  color: white;
-}
-
-.detail-actions .edit-btn:hover {
-  background: rgb(37, 61, 52);
-}
-
-.detail-actions .delete-btn {
-  background: #dc3545;
-  color: white;
-}
-
-.detail-actions .delete-btn:hover {
-  background: #c82333;
-}
-
-/* Modal Styles */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(4px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1200;
-  animation: fadeIn 0.2s ease;
-}
-
-@keyframes fadeIn {
-  from {
-    opacity: 0;
-  }
-  to {
-    opacity: 1;
-  }
-}
-
-.modal-content {
-  background: white;
-  padding: 2.5rem;
-  border-radius: 16px;
-  width: 90%;
-  max-width: 600px;
-  max-height: 90vh;
-  overflow-y: auto;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-  animation: slideUp 0.3s ease;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-@keyframes slideUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: translateY(-20px) scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-.modal-content h2 {
-  color: rgb(47, 71, 62);
-  margin-bottom: 2rem;
-  font-size: 1.875rem;
-  font-weight: 700;
-  border-bottom: 3px solid rgb(47, 71, 62);
-  padding-bottom: 0.75rem;
-}
-
-.form-group {
-  margin-bottom: 1.75rem;
-}
-
-.form-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1.25rem;
-}
-
-.form-group label {
-  display: block;
-  font-weight: 600;
-  color: rgb(47, 71, 62);
-  margin-bottom: 0.625rem;
-  font-size: 0.95rem;
-  letter-spacing: 0.3px;
-}
-
-.form-group input,
-.form-group select,
-.form-group textarea {
-  width: 100%;
-  padding: 0.875rem 1rem;
-  border: 2px solid #e0e0e0;
-  border-radius: 8px;
-  font-size: 1rem;
-  transition: all 0.2s ease;
-  box-sizing: border-box;
-  font-family: inherit;
-  background: #fafafa;
-}
-
-.form-group input:hover,
-.form-group select:hover,
-.form-group textarea:hover {
-  border-color: #c0c0c0;
-  background: white;
-}
-
-.form-group input:focus,
-.form-group select:focus,
-.form-group textarea:focus {
-  outline: none;
-  border-color: rgb(47, 71, 62);
-  background: white;
-  box-shadow: 0 0 0 3px rgba(47, 71, 62, 0.1);
-}
-
-.form-group select {
-  background-color: white;
-  cursor: pointer;
-  appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23123519' d='M6 9L1 4h10z'/%3E%3C/svg%3E");
-  background-repeat: no-repeat;
-  background-position: right 0.75rem center;
-  padding-right: 2.5rem;
-}
-
-.form-group select:hover {
-  background-color: #f9f9f9;
-}
-
-.form-group textarea {
-  resize: vertical;
-  min-height: 120px;
-  line-height: 1.6;
-}
-
-.form-group textarea::placeholder {
-  color: #999;
-  opacity: 0.8;
-}
-
-.form-group textarea:focus::placeholder {
-  opacity: 0.5;
-}
-
-.amenities-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  margin-bottom: 1rem;
-}
-
-.amenity-item {
-  display: grid;
-  grid-template-columns: 2fr 1fr auto;
-  gap: 0.5rem;
-  align-items: center;
-}
-
-.amenity-title,
-.amenity-distance {
-  padding: 0.625rem;
-  border: 2px solid #e0e0e0;
-  border-radius: 6px;
-  font-size: 0.95rem;
-  transition: border-color 0.3s;
-}
-
-.amenity-title:focus,
-.amenity-distance:focus {
-  outline: none;
-  border-color: rgb(47, 71, 62);
-}
-
-.remove-amenity-btn {
-  width: 36px;
-  height: 36px;
-  background: #dc3545;
-  color: white;
-  border: none;
-  border-radius: 6px;
-  font-size: 1.5rem;
-  cursor: pointer;
-  transition: opacity 0.2s;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  line-height: 1;
-}
-
-.remove-amenity-btn:hover {
-  opacity: 0.85;
-}
-
-.add-amenity-btn {
-  background: rgb(22, 53, 27);
-  color: white;
-  border: none;
-  padding: 0.625rem 1rem;
-  border-radius: 6px;
-  font-size: 0.95rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.add-amenity-btn:hover {
-  background: rgb(15, 38, 19);
-}
-
-.modal-actions {
-  display: flex;
-  gap: 1rem;
-  margin-top: 2.5rem;
-  padding-top: 1.5rem;
-  border-top: 2px solid #f0f0f0;
-  justify-content: flex-end;
-}
-
-.cancel-btn,
-.submit-btn {
-  padding: 0.875rem 1.5rem;
-  border: none;
-  border-radius: 8px;
-  font-size: 1.05rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-.cancel-btn {
-  background: #6c757d;
-  color: white;
-}
-
-.cancel-btn:hover {
-  background: #5a6268;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
-}
-
-.submit-btn {
-  background: rgb(22, 53, 27);
-  color: white;
-}
-
-.submit-btn:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(22, 53, 27, 0.3);
-}
-
-.submit-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-.detail-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(4px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  padding: 2rem;
-}
-
-.detail-panel {
-  background: white;
-  border-radius: 16px;
-  width: 100%;
-  max-width: 700px;
-  max-height: 90vh;
-  overflow-y: auto;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-  animation: slideIn 0.3s ease;
-}
-
-.detail-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1.5rem 2rem;
-  border-bottom: 2px solid #f8f9fa;
-  background: linear-gradient(135deg, #1e5a2e, #2d7a3d);
-  color: white;
-  border-radius: 16px 16px 0 0;
-  margin-bottom: 0;
-}
-
-.detail-header h2 {
-  margin: 0;
-  font-size: 1.4rem;
-  font-weight: 700;
-}
-
-.close-btn {
-  background: none;
-  border: none;
-  font-size: 2rem;
-  cursor: pointer;
-  color: white;
-  padding: 0.25rem;
-  border-radius: 50%;
-  width: 2.5rem;
-  height: 2.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background 0.2s ease;
-}
-
-.close-btn:hover {
-  background: rgba(255, 255, 255, 0.2);
-}
-
-.detail-content {
-  padding: 2rem;
-}
-
-.info-section {
-  margin-bottom: 2rem;
-}
-
-.info-section h3 {
-  color: #1e5a2e;
-  font-size: 1.1rem;
-  font-weight: 700;
-  margin: 0 0 1rem 0;
-  padding-bottom: 0.5rem;
-  border-bottom: 2px solid #e9ecef;
-}
-
-.info-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.info-table tr {
-  border-bottom: 1px solid #f8f9fa;
-}
-
 .info-table tr:nth-child(even) {
   background: #f8f9fa;
 }
@@ -2095,6 +1954,410 @@ export default {
   .detail-panel {
     width: 95%;
     padding: 1.5rem;
+  }
+}
+
+/* Photo display styles */
+.card-photos {
+  position: relative;
+  margin: 1rem 0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.card-photo-main {
+  width: 100%;
+  height: 200px;
+  object-fit: cover;
+  display: block;
+}
+
+.photo-count-badge {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+/* Photo editing styles */
+.photo-upload-section {
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 2px dashed #ddd;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+}
+
+.current-photos {
+  margin-bottom: 1rem;
+}
+
+.photos-grid-edit {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.photo-item-edit {
+  position: relative;
+  border-radius: 8px;
+  overflow: hidden;
+  background: white;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.photo-preview {
+  width: 100%;
+  height: 120px;
+  object-fit: cover;
+  display: block;
+}
+
+.remove-photo-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(255, 0, 0, 0.8);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+}
+
+.remove-photo-btn:hover:not(:disabled) {
+  background: rgba(255, 0, 0, 1);
+}
+
+.remove-photo-btn:disabled {
+  background: rgba(128, 128, 128, 0.5);
+  cursor: not-allowed;
+}
+
+.selected-photos-preview {
+  margin: 1rem 0;
+}
+
+.selected-photos-preview h4 {
+  margin-bottom: 0.5rem;
+  color: #333;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.selected-photos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 0.75rem;
+}
+
+.selected-photo-item {
+  position: relative;
+  border-radius: 6px;
+  overflow: hidden;
+  background: white;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.selected-photo-preview {
+  width: 100%;
+  height: 80px;
+  object-fit: cover;
+  display: block;
+}
+
+.photo-status {
+  position: absolute;
+  bottom: 4px;
+  left: 4px;
+  right: 4px;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 10px;
+  text-align: center;
+}
+
+.photo-status .uploading {
+  color: #ffeb3b;
+}
+
+.photo-status .error {
+  color: #f44336;
+}
+
+.photo-status .ready {
+  color: #4caf50;
+}
+
+.remove-selected-photo-btn {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  background: rgba(255, 0, 0, 0.8);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  font-size: 12px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.remove-selected-photo-btn:hover:not(:disabled) {
+  background: rgba(255, 0, 0, 1);
+}
+
+.remove-selected-photo-btn:disabled {
+  background: rgba(128, 128, 128, 0.5);
+  cursor: not-allowed;
+}
+
+.photo-upload-controls {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 0.5rem;
+}
+
+.photo-upload-btn,
+.upload-photos-btn {
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.photo-upload-btn {
+  background: #2196f3;
+  color: white;
+}
+
+.photo-upload-btn:hover:not(:disabled) {
+  background: #1976d2;
+}
+
+.upload-photos-btn {
+  background: #4caf50;
+  color: white;
+}
+
+.upload-photos-btn:hover:not(:disabled) {
+  background: #45a049;
+}
+
+.photo-upload-btn:disabled,
+.upload-photos-btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.photo-hint {
+  margin: 0;
+  font-size: 12px;
+  color: #666;
+  font-style: italic;
+}
+
+/* Modal styles */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 12px;
+  padding: 2rem;
+  width: 90%;
+  max-width: 600px;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+.modal-content h2 {
+  margin-top: 0;
+  margin-bottom: 1.5rem;
+  color: #333;
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+  color: #333;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 16px;
+  box-sizing: border-box;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: #007bff;
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.amenities-list {
+  margin-bottom: 1rem;
+}
+
+.amenity-item {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+  align-items: center;
+}
+
+.amenity-title {
+  flex: 2;
+}
+
+.amenity-distance {
+  flex: 1;
+}
+
+.remove-amenity-btn {
+  background: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: bold;
+}
+
+.remove-amenity-btn:hover {
+  background: #c82333;
+}
+
+.add-amenity-btn {
+  background: #28a745;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.add-amenity-btn:hover {
+  background: #218838;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid #eee;
+}
+
+.cancel-btn {
+  background: #6c757d;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 0.75rem 1.5rem;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.cancel-btn:hover {
+  background: #5a6268;
+}
+
+.submit-btn {
+  background: #007bff;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 0.75rem 1.5rem;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.submit-btn:hover:not(:disabled) {
+  background: #0056b3;
+}
+
+.submit-btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+@media (max-width: 768px) {
+  .modal-content {
+    width: 95%;
+    padding: 1rem;
+    max-height: 90vh;
+  }
+  
+  .form-row {
+    grid-template-columns: 1fr;
+  }
+  
+  .modal-actions {
+    flex-direction: column;
+  }
+  
+  .cancel-btn,
+  .submit-btn {
+    width: 100%;
   }
 }
 </style>

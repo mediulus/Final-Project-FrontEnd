@@ -28,17 +28,17 @@ export async function apiRequest(endpoint, body = {}, timeout = 30000) {
     headers["Authorization"] = `Bearer ${sessionStore.token}`;
   }
   try {
-    console.log("[api.js] Making API Request:", {
-      endpoint,
-      fullPath,
-      API_BASE,
-      body,
-      sessionToken: sessionStore.token
-        ? `${sessionStore.token.substring(0, 20)}...`
-        : null,
-      hasToken: !!sessionStore.token,
-      headers,
-    });
+    // console.log("[api.js] Making API Request:", {
+    //   endpoint,
+    //   fullPath,
+    //   API_BASE,
+    //   body,
+    //   sessionToken: sessionStore.token
+    //     ? `${sessionStore.token.substring(0, 20)}...`
+    //     : null,
+    //   hasToken: !!sessionStore.token,
+    //   headers,
+    // });
     const response = await axios.post(fullPath, body, {
       withCredentials: false,
       timeout,
@@ -373,6 +373,14 @@ export const listings = {
     description
   ) {
     const sessionStore = useSessionStore();
+
+    console.log('📡 API create listing called with photos:', {
+      photosCount: photos?.length || 0,
+      photos: photos,
+      photosType: typeof photos,
+      firstPhotoType: photos?.[0] ? typeof photos[0] : 'none'
+    });
+
     return await apiRequest("/Listing/create", {
       title,
       amenities,
@@ -475,11 +483,32 @@ export const listings = {
 
   async addPhoto(listingId, photo) {
     const sessionStore = useSessionStore();
-    return await apiRequest("/Listing/addPhoto", {
-      listingId,
-      photo,
+    console.log('📡 API addPhoto called with:', { listingId, photo, listingIdType: typeof listingId });
+
+    // Format photo object according to backend NewPhoto interface
+    const photoObject = {
+      url: photo,
+      thumbUrl: photo, // Use same URL for thumbnail (Cloudinary can generate thumbs)
+      storageKey: photo.split('/').pop() || 'unknown', // Extract filename from Cloudinary URL
+      alt: "Housing listing photo",
+      width: 1200, // Reasonable defaults for uploaded photos
+      height: 800,
+      contentType: photo.includes('.png') ? "image/png" : "image/jpeg", // Detect from URL
+      bytes: 500000 // Estimate ~500KB (actual size unknown without additional API call)
+    };
+
+    // Ensure listingId is definitely a string
+    const cleanListingId = String(listingId).trim();
+    console.log('🔧 Converted listingId:', { original: listingId, converted: cleanListingId, type: typeof cleanListingId });
+
+    const requestBody = {
+      listingId: cleanListingId,
+      photo: photoObject,
       session: sessionStore.token,
-    });
+    };
+    console.log('📤 Final request body:', JSON.stringify(requestBody, null, 2));
+
+    return await apiRequest("/Listing/addPhoto", requestBody);
   },
 
   async deletePhoto(listingId, photoId) {
