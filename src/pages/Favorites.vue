@@ -1,8 +1,8 @@
 <template>
   <main class="homepage">
     <section class="hero">
-      <h2>Your Favorites</h2>
-      <p>All your saved properties and roommates</p>
+      <h2>Favorites</h2>
+      <p>All your tagged listings and roommates</p>
     </section>
 
     <section class="listings-section">
@@ -14,7 +14,11 @@
       <div v-else>
         <!-- Roommate Postings -->
         <div v-if="roommatePostings.length > 0" class="listings-container">
-          <h3 class="section-title">Roommate Postings</h3>
+          <h3 class="section-title">
+            <span class="title-with-icon">
+              <span>Roommate Postings</span>
+            </span>
+          </h3>
           <div class="listings-grid">
             <div
               v-for="posting in roommatePostings"
@@ -27,7 +31,13 @@
                 <div class="card-title">
                   <h3>{{ posting.city }}</h3>
                   <div class="quick-info">
-                    <span class="age-gender">{{ posting.gender }}, {{ posting.age }}</span>
+                    <span class="age-gender">
+                      <svg class="info-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                      </svg>
+                      {{ posting.gender }}, {{ posting.age }}
+                    </span>
                     <span v-if="posting.numberOfRoommates" class="roommate-count">
                       Looking for {{ posting.numberOfRoommates }} roommate{{ posting.numberOfRoommates > 1 ? 's' : '' }}
                     </span>
@@ -51,8 +61,8 @@
                   <span v-for="tag in getItemTags(posting._id)" :key="tag" class="tag" :class="{ 'tag-contacted': tag === 'Contacted' }">{{ tag }}</span>
                 </div>
                 <div class="expand-hint">
-                  <span>{{ expandedPosting === posting._id ? 'Click to collapse' : 'Click for details' }}</span>
-                  <span class="expand-icon">{{ expandedPosting === posting._id ? '▲' : '▼' }}</span>
+                  <span>Click for details</span>
+                  <span class="expand-icon">+</span>
                 </div>
               </div>
             </div>
@@ -61,7 +71,11 @@
 
         <!-- Housing Listings -->
         <div v-if="housingListings.length > 0" class="section listings-container">
-          <h3 class="section-title">Housing Listings</h3>
+          <h3 class="section-title">
+            <span class="title-with-icon">
+              <span>Housing Listings</span>
+            </span>
+          </h3>
           <div class="listings-grid">
             <div
               v-for="listing in housingListings"
@@ -74,8 +88,20 @@
                 <div class="card-title">
                   <h3>{{ listing.title }}</h3>
                   <div class="quick-info">
-                    <span class="address-preview">{{ listing.address }}</span>
-                    <span class="price-preview">${{ listing.price }}/month</span>
+                    <span class="address-preview">
+                      <svg class="info-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                        <circle cx="12" cy="10" r="3"></circle>
+                      </svg>
+                      {{ listing.address }}
+                    </span>
+                    <span class="price-preview">
+                      <svg class="info-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="1" x2="12" y2="23"></line>
+                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                      </svg>
+                      ${{ listing.price }}/month
+                    </span>
                   </div>
                 </div>
 
@@ -92,14 +118,23 @@
 
               <div class="card-preview">
                 <div class="listing-summary">
-                  <span class="dates-preview">{{ formatDate(listing.startDate) }} - {{ formatDate(listing.endDate) }}</span>
+                  <span class="dates-preview">
+                    <svg class="info-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                      <line x1="16" y1="2" x2="16" y2="6"></line>
+                      <line x1="8" y1="2" x2="8" y2="6"></line>
+                      <line x1="3" y1="10" x2="21" y2="10"></line>
+                    </svg>
+                    {{ formatDate(listing.startDate) }} - {{ formatDate(listing.endDate) }}
+                  </span>
+                  <span class="type-preview">{{ listing.type === "sublet" ? "Sublet" : "Renting" }}</span>
                 </div>
                 <div class="tags" v-if="getItemTags(listing._id).length > 0">
                   <span v-for="tag in getItemTags(listing._id)" :key="tag" class="tag" :class="{ 'tag-contacted': tag === 'Contacted' }">{{ tag }}</span>
                 </div>
                 <div class="expand-hint">
-                  <span>{{ expandedListing === listing._id ? 'Click to collapse' : 'Click for details' }}</span>
-                  <span class="expand-icon">{{ expandedListing === listing._id ? '▲' : '▼' }}</span>
+                  <span>Click for details</span>
+                  <span class="expand-icon">+</span>
                 </div>
               </div>
             </div>
@@ -190,12 +225,16 @@
             <!-- Action Buttons -->
             <div class="detail-actions">
               <button
+                v-if="!getItemTags(getExpandedPosting()._id).includes('Contacted')"
                 @click="contactPoster(getExpandedPosting()._id)"
                 class="contact-btn"
                 :disabled="isContacting[getExpandedPosting()._id]"
               >
                 {{ isContacting[getExpandedPosting()._id] ? "Sending..." : "Contact Me" }}
               </button>
+              <div v-else class="contacted-message">
+                Already contacted
+              </div>
             </div>
           </div>
         </div>
@@ -276,12 +315,16 @@
             <!-- Action Buttons -->
             <div class="detail-actions">
               <button
+                v-if="!getItemTags(getExpandedListing()._id).includes('Contacted')"
                 @click="sendInterest(getExpandedListing()._id)"
                 class="contact-btn"
                 :disabled="isSendingInterest[getExpandedListing()._id]"
               >
                 {{ isSendingInterest[getExpandedListing()._id] ? "Sending..." : "Send Interest" }}
               </button>
+              <div v-else class="contacted-message">
+                Already contacted
+              </div>
             </div>
           </div>
         </div>
@@ -471,7 +514,8 @@ export default {
         const allPostings = [...(roommates || []), ...(housing || [])];
         console.log("All postings:", allPostings);
 
-        // Filter to only saved items
+        // Filter to show items that are either favorited OR contacted
+        // An item should be shown if it has any tag (Favorite, Contacted, etc.)
         savedItems_data.value = allPostings.filter((posting) =>
           itemIds.includes(posting._id)
         );
@@ -633,6 +677,18 @@ export default {
   border-bottom: 3px solid rgb(47, 71, 62);
 }
 
+.title-with-icon {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+}
+
+.heart-emoji {
+  font-size: 1.4rem;
+  line-height: 1;
+  display: inline-block;
+}
+
 .loading,
 .no-listings {
   text-align: center;
@@ -773,6 +829,15 @@ export default {
   cursor: not-allowed;
 }
 
+.contacted-message {
+  padding: 0.75rem 1.5rem;
+  background: #f5f5f5;
+  color: #666;
+  border-radius: 8px;
+  text-align: center;
+  font-size: 0.9rem;
+}
+
 /* New Compact Card Design */
 .listings-container {
   position: relative;
@@ -814,16 +879,45 @@ export default {
   gap: 0.25rem;
 }
 
-.age-gender, .address-preview {
+.age-gender {
   font-size: 0.9rem;
   color: #666;
   font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
 }
 
-.roommate-count, .price-preview {
+.address-preview {
+  font-size: 0.9rem;
+  color: #666;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.info-icon {
+  color: #888;
+  flex-shrink: 0;
+}
+
+.roommate-count {
   font-size: 0.85rem;
   color: #1e5a2e;
   font-weight: 600;
+  padding: 0.15rem 0.5rem;
+  background: #e8f5e9;
+  border-radius: 4px;
+}
+
+.price-preview {
+  font-size: 0.85rem;
+  color: #1e5a2e;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
 }
 
 .card-actions {
@@ -837,16 +931,36 @@ export default {
   padding: 0 1.25rem 1.25rem;
 }
 
-.description-preview, .listing-summary {
+.description-preview {
   color: #666;
   line-height: 1.5;
   margin: 0 0 0.75rem 0;
   font-size: 0.95rem;
 }
 
+.listing-summary {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  margin: 0 0 0.75rem 0;
+  font-size: 0.85rem;
+}
+
 .dates-preview {
   font-size: 0.85rem;
   color: #666;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.type-preview {
+  font-size: 0.85rem;
+  color: #1e5a2e;
+  font-weight: 600;
+  padding: 0.15rem 0.5rem;
+  background: #e8f5e9;
+  border-radius: 4px;
 }
 
 .expand-hint {

@@ -6,6 +6,11 @@
   background: #f5f0e8;
 }
 
+/* Global heading styles */
+h1, h2, h3, h4, h5, h6 {
+  font-family: Helvetica, Arial, sans-serif;
+}
+
 /* Main Content Area */
 .main-content {
   flex: 1;
@@ -375,7 +380,7 @@
 .logout-btn-dropdown {
   width: 100%;
   padding: 0.75rem;
-  background: #dc3545;
+  background: #6c757d;
   color: white;
   border: none;
   border-radius: 6px;
@@ -386,14 +391,14 @@
 }
 
 .logout-btn-dropdown:hover {
-  background: #c82333;
+  background: #5a6268;
 }
 
 /* Delete Account Styles */
 .delete-account-btn {
   width: 100%;
   padding: 0.75rem;
-  background: #6c757d;
+  background: #dc3545;
   color: white;
   border: none;
   border-radius: 6px;
@@ -405,7 +410,7 @@
 }
 
 .delete-account-btn:hover {
-  background: #5a6268;
+  background: #c82333;
 }
 
 .delete-confirm-section {
@@ -536,7 +541,7 @@
 .change-password-btn {
   width: 100%;
   padding: 0.75rem;
-  background: #007bff;
+  background: #6c757d;
   color: white;
   border: none;
   border-radius: 6px;
@@ -548,7 +553,7 @@
 }
 
 .change-password-btn:hover {
-  background: #0056b3;
+  background: #5a6268;
 }
 
 .change-password-section {

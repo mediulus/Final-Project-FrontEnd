@@ -1,7 +1,7 @@
 <template>
   <main class="homepage">
     <section class="hero">
-      <h2>Find Your Perfect Roommate</h2>
+      <h2>Find a Roommate</h2>
       <p>Browse roommate postings or create your own</p>
       <button @click="openModal" class="create-btn">
         + Create New Posting
@@ -83,7 +83,13 @@
               <div class="card-title">
                 <h3>{{ posting.city }}</h3>
                 <div class="quick-info">
-                  <span class="age-gender">{{ posting.gender }}, {{ posting.age }}</span>
+                  <span class="age-gender">
+                    <svg class="info-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                      <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                    {{ posting.gender }}, {{ posting.age }}
+                  </span>
                   <span v-if="posting.numberOfRoommates" class="roommate-count">
                     Looking for {{ posting.numberOfRoommates }} roommate{{ posting.numberOfRoommates > 1 ? 's' : '' }}
                   </span>
@@ -108,8 +114,8 @@
             <div class="card-preview">
               <p class="description-preview">{{ truncateText(posting.description, 100) }}</p>
               <div class="expand-hint">
-                <span>{{ expandedPosting === posting._id ? 'Click to collapse' : 'Click for details' }}</span>
-                <span class="expand-icon">{{ expandedPosting === posting._id ? '▲' : '▼' }}</span>
+                <span>Click for details</span>
+                <span class="expand-icon">+</span>
               </div>
             </div>
           </div>
@@ -191,13 +197,17 @@
             <!-- Action Buttons -->
             <div class="detail-actions">
               <button
-                v-if="!isPoster(getExpandedPosting())"
+                v-if="!isPoster(getExpandedPosting()) && !getItemTags(getExpandedPosting()._id).includes('Contacted')"
                 @click="contactPoster(getExpandedPosting()._id)"
                 class="contact-btn"
                 :disabled="isContacting[getExpandedPosting()._id]"
               >
                 {{ isContacting[getExpandedPosting()._id] ? "Sending..." : "Contact Me" }}
               </button>
+
+              <div v-if="!isPoster(getExpandedPosting()) && getItemTags(getExpandedPosting()._id).includes('Contacted')" class="contacted-message">
+                Already contacted
+              </div>
 
               <div v-if="isPoster(getExpandedPosting())" class="owner-actions">
                 <button @click="editPosting(getExpandedPosting())" class="edit-btn">Edit Posting</button>
@@ -629,6 +639,7 @@ export default {
     const sessionStore = useSessionStore();
     const postings = ref([]);
     const savedItemIds = ref(new Set());
+    const savedItemsMap = ref(new Map()); // Map of itemId -> {tags: []}
     const isLoading = ref(false);
     const error = ref("");
     const localModal = ref(false);
@@ -902,36 +913,62 @@ export default {
         );
 
         if (items && Array.isArray(items)) {
-          // API might return nested structure: {item: {item: "id", tags: []}} or direct objects with _id
-          const ids = items
-            .map((saved) => {
-              console.log(
-                "Processing saved item:",
-                JSON.stringify(saved, null, 2)
-              );
-              // API returns: {user: "...", savedItem: {item: "id", tags: [...]}}
-              if (saved.savedItem && saved.savedItem.item) {
-                console.log(
-                  "Using saved.savedItem.item:",
-                  saved.savedItem.item
-                );
-                return saved.savedItem.item;
-              } else if (saved._id) {
-                console.log("Using saved._id:", saved._id);
-                return saved._id;
-              } else if (saved.item && saved.item.item) {
-                console.log("Using saved.item.item:", saved.item.item);
-                return saved.item.item;
+          // Build both the IDs set and the tags map
+          const ids = [];
+          const tagsMap = new Map();
+
+          items.forEach((saved) => {
+            console.log(
+              "Processing saved item:",
+              JSON.stringify(saved, null, 2)
+            );
+            // API returns: {user: "...", savedItem: {item: "id", tags: [...]}}
+            if (saved.savedItem && saved.savedItem.item) {
+              const itemId = saved.savedItem.item;
+              const tags = saved.savedItem.tags || [];
+              console.log(`Found itemId: ${itemId}, tags:`, tags);
+
+              if (!ids.includes(itemId)) {
+                ids.push(itemId);
               }
-              console.log("No ID found for this item");
-              return null;
-            })
-            .filter((id) => id !== null);
+
+              // Merge tags if item already exists in map
+              if (tagsMap.has(itemId)) {
+                const existingTags = tagsMap.get(itemId).tags;
+                const mergedTags = [...new Set([...existingTags, ...tags])];
+                tagsMap.set(itemId, { tags: mergedTags });
+              } else {
+                tagsMap.set(itemId, { tags: tags });
+              }
+            } else if (saved._id) {
+              const itemId = saved._id;
+              console.log("Using saved._id:", itemId);
+              if (!ids.includes(itemId)) {
+                ids.push(itemId);
+              }
+              if (!tagsMap.has(itemId)) {
+                tagsMap.set(itemId, { tags: [] });
+              }
+            } else if (saved.item && saved.item.item) {
+              const itemId = saved.item.item;
+              console.log("Using saved.item.item:", itemId);
+              if (!ids.includes(itemId)) {
+                ids.push(itemId);
+              }
+              if (!tagsMap.has(itemId)) {
+                tagsMap.set(itemId, { tags: saved.item.tags || [] });
+              }
+            }
+          });
+
           savedItemIds.value = new Set(ids);
+          savedItemsMap.value = tagsMap;
           console.log("Saved item IDs set to:", Array.from(savedItemIds.value));
+          console.log("Tags map:", Array.from(tagsMap.entries()));
         } else {
           console.log("Result is not an array, clearing saved items");
           savedItemIds.value = new Set();
+          savedItemsMap.value = new Map();
         }
       } catch (err) {
         console.error("Error fetching saved items:", err);
@@ -947,6 +984,18 @@ export default {
         Array.from(savedItemIds.value)
       );
       return saved;
+    };
+
+    const getItemTags = (itemId) => {
+      const savedItem = savedItemsMap.value.get(itemId);
+      const tags = savedItem && savedItem.tags ? savedItem.tags : [];
+      console.log(
+        `getItemTags(${itemId}):`,
+        tags,
+        "savedItemsMap:",
+        Array.from(savedItemsMap.value.entries())
+      );
+      return tags;
     };
 
     const toggleSavedItem = async (itemId) => {
@@ -1405,6 +1454,7 @@ export default {
       closeModal,
       modalVisible,
       isSaved,
+      getItemTags,
       toggleSavedItem,
       contactPoster,
       isContacting,
@@ -1625,17 +1675,28 @@ export default {
   font-size: 0.9rem;
   color: #666;
   font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.info-icon {
+  color: #888;
+  flex-shrink: 0;
 }
 
 .roommate-count {
   font-size: 0.85rem;
   color: #1e5a2e;
   font-weight: 600;
+  padding: 0.15rem 0.5rem;
+  background: #e8f5e9;
+  border-radius: 4px;
 }
 
 .card-actions {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 0.75rem;
   flex-shrink: 0;
 }
@@ -1861,6 +1922,9 @@ export default {
   padding: 0.25rem;
   transition: transform 0.2s;
   line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .owner-badge {
@@ -1873,7 +1937,7 @@ export default {
 }
 
 .favorite-btn.is-saved {
-  color: #dc3545;
+  color: #e74c3c;
 }
 
 .favorite-btn:hover {
@@ -1924,6 +1988,15 @@ export default {
 .contact-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+.contacted-message {
+  padding: 0.75rem 1.5rem;
+  background: #f5f5f5;
+  color: #666;
+  border-radius: 8px;
+  text-align: center;
+  font-size: 0.9rem;
 }
 
 .listing-actions {

@@ -32,7 +32,13 @@
                 <div class="card-title">
                   <h3>{{ posting.city }}</h3>
                   <div class="quick-info">
-                    <span class="age-gender">{{ posting.gender }}, {{ posting.age }}</span>
+                    <span class="age-gender">
+                      <svg class="info-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                      </svg>
+                      {{ posting.gender }}, {{ posting.age }}
+                    </span>
                     <span v-if="posting.numberOfRoommates" class="roommate-count">
                       Looking for {{ posting.numberOfRoommates }} roommate{{ posting.numberOfRoommates > 1 ? 's' : '' }}
                     </span>
@@ -53,8 +59,8 @@
               <div class="card-preview">
                 <p class="description-preview">{{ truncateText(posting.description, 100) }}</p>
                 <div class="expand-hint">
-                  <span>{{ expandedPosting === posting._id ? 'Click to collapse' : 'Click for details' }}</span>
-                  <span class="expand-icon">{{ expandedPosting === posting._id ? '▲' : '▼' }}</span>
+                  <span>Click for details</span>
+                  <span class="expand-icon">+</span>
                 </div>
               </div>
             </div>
@@ -76,8 +82,20 @@
                 <div class="card-title">
                   <h3>{{ listing.title }}</h3>
                   <div class="quick-info">
-                    <span class="address-preview">{{ listing.address }}</span>
-                    <span class="price-preview">${{ listing.price }}/month</span>
+                    <span class="address-preview">
+                      <svg class="info-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                        <circle cx="12" cy="10" r="3"></circle>
+                      </svg>
+                      {{ listing.address }}
+                    </span>
+                    <span class="price-preview">
+                      <svg class="info-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="12" y1="1" x2="12" y2="23"></line>
+                        <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                      </svg>
+                      ${{ listing.price }}/month
+                    </span>
                   </div>
                 </div>
 
@@ -94,11 +112,20 @@
 
               <div class="card-preview">
                 <div class="listing-summary">
-                  <span class="dates-preview">{{ formatDate(listing.startDate) }} - {{ formatDate(listing.endDate) }}</span>
+                  <span class="dates-preview">
+                    <svg class="info-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                      <line x1="16" y1="2" x2="16" y2="6"></line>
+                      <line x1="8" y1="2" x2="8" y2="6"></line>
+                      <line x1="3" y1="10" x2="21" y2="10"></line>
+                    </svg>
+                    {{ formatDate(listing.startDate) }} - {{ formatDate(listing.endDate) }}
+                  </span>
+                  <span class="type-preview">{{ listing.type === "sublet" ? "Sublet" : "Renting" }}</span>
                 </div>
                 <div class="expand-hint">
-                  <span>{{ expandedListing === listing._id ? 'Click to collapse' : 'Click for details' }}</span>
-                  <span class="expand-icon">{{ expandedListing === listing._id ? '▲' : '▼' }}</span>
+                  <span>Click for details</span>
+                  <span class="expand-icon">+</span>
                 </div>
               </div>
             </div>
@@ -1298,9 +1325,45 @@ export default {
   gap: 0.25rem;
 }
 
-.age-gender, .roommate-count, .address-preview, .price-preview {
-  font-size: 0.85rem;
+.age-gender {
+  font-size: 0.9rem;
   color: #666;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.roommate-count {
+  font-size: 0.85rem;
+  color: #1e5a2e;
+  font-weight: 600;
+  padding: 0.15rem 0.5rem;
+  background: #e8f5e9;
+  border-radius: 4px;
+}
+
+.address-preview {
+  font-size: 0.9rem;
+  color: #666;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.price-preview {
+  font-size: 0.85rem;
+  color: #1e5a2e;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.info-icon {
+  color: #888;
+  flex-shrink: 0;
 }
 
 .card-actions {
@@ -1362,7 +1425,7 @@ export default {
 }
 
 .card-preview {
-  padding: 0 1.25rem 1rem 1.25rem;
+  padding: 0 1.25rem 1.25rem;
   flex: 1;
 }
 
@@ -1374,26 +1437,48 @@ export default {
 }
 
 .listing-summary {
-  margin-bottom: 0.75rem;
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  margin: 0 0 0.75rem 0;
+  font-size: 0.85rem;
 }
 
 .dates-preview {
   font-size: 0.85rem;
   color: #666;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.type-preview {
+  font-size: 0.85rem;
+  color: #1e5a2e;
+  font-weight: 600;
+  padding: 0.15rem 0.5rem;
+  background: #e8f5e9;
+  border-radius: 4px;
 }
 
 .expand-hint {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 0.8rem;
-  color: rgb(47, 71, 62);
+  font-size: 0.85rem;
+  color: #1e5a2e;
   font-weight: 500;
-  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid #e9ecef;
 }
 
 .expand-icon {
-  margin-left: 0.5rem;
+  font-size: 0.8rem;
+  transition: transform 0.2s ease;
+}
+
+.posting-card:hover .expand-icon {
+  transform: scale(1.2);
 }
 
 /* Detail Modal Styles */
@@ -1421,7 +1506,17 @@ export default {
   overflow-y: auto;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
   animation: slideIn 0.3s ease;
-  position: relative;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .detail-header {
@@ -1816,13 +1911,13 @@ export default {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.8);
-  backdrop-filter: blur(6px);
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1100;
-  animation: fadeIn 0.2s ease;
+  z-index: 1000;
+  padding: 2rem;
 }
 
 .detail-panel {
@@ -1833,7 +1928,7 @@ export default {
   max-height: 90vh;
   overflow-y: auto;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-  animation: slideUp 0.3s ease;
+  animation: slideIn 0.3s ease;
 }
 
 .detail-header {
@@ -1875,17 +1970,20 @@ export default {
 }
 
 .detail-content {
-  margin-bottom: 1.5rem;
+  padding: 2rem;
 }
 
 .info-section {
-  margin-bottom: 1.5rem;
+  margin-bottom: 2rem;
 }
 
 .info-section h3 {
-  font-size: 1.2rem;
-  color: rgb(47, 71, 62);
-  margin-bottom: 0.75rem;
+  color: #1e5a2e;
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin: 0 0 1rem 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #e9ecef;
 }
 
 .info-table {
@@ -1893,30 +1991,53 @@ export default {
   border-collapse: collapse;
 }
 
-.info-table td {
-  padding: 0.75rem;
-  border: 1px solid #e0e0e0;
-  font-size: 0.95rem;
-  color: #333;
+.info-table tr {
+  border-bottom: 1px solid #f8f9fa;
 }
 
-.info-table tr:nth-child(even) td {
-  background: #f9f9f9;
+.info-table tr:nth-child(even) {
+  background: #f8f9fa;
+}
+
+.info-table tr:last-child {
+  border-bottom: none;
+}
+
+.info-table td {
+  padding: 0.75rem 0;
+  vertical-align: top;
+}
+
+.info-table td:first-child {
+  font-weight: 600;
+  color: #555;
+  width: 35%;
+  padding-left: 0.5rem;
+}
+
+.info-table td:last-child {
+  color: #333;
+  padding-left: 1rem;
+  padding-right: 0.5rem;
 }
 
 .description-full {
-  font-size: 0.95rem;
-  color: #333;
-  line-height: 1.6;
-  padding: 0.75rem;
   background: #f8f9fa;
-  border-radius: 6px;
+  padding: 1.25rem;
+  border-radius: 8px;
+  line-height: 1.6;
+  color: #555;
+  border-left: 4px solid #1e5a2e;
 }
 
 .detail-actions {
+  padding: 1.5rem 2rem;
+  border-top: 2px solid #f8f9fa;
   display: flex;
   gap: 1rem;
   justify-content: flex-end;
+  background: #fafafa;
+  border-radius: 0 0 16px 16px;
 }
 
 .detail-actions .edit-btn,

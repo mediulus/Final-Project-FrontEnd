@@ -1,7 +1,7 @@
 <template>
   <main class="homepage">
     <section class="hero">
-      <h2>Find Your Perfect Summer Housing</h2>
+      <h2>Find Summer Housing</h2>
       <p>Browse available listings or create your own</p>
       <button @click="showCreateModal = true" class="create-btn">
         + Create New Listing
@@ -68,8 +68,20 @@
             <div class="card-title">
               <h3>{{ listing.title }}</h3>
               <div class="quick-info">
-                <span class="address-preview">{{ listing.address }}</span>
-                <span class="price-preview">${{ listing.price }}/month</span>
+                <span class="address-preview">
+                  <svg class="info-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                    <circle cx="12" cy="10" r="3"></circle>
+                  </svg>
+                  {{ listing.address }}
+                </span>
+                <span class="price-preview">
+                  <svg class="info-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="1" x2="12" y2="23"></line>
+                    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                  </svg>
+                  ${{ listing.price }}/month
+                </span>
               </div>
             </div>
 
@@ -95,15 +107,23 @@
 
           <div class="card-preview">
             <div class="listing-summary">
-              <span class="dates-preview">{{ formatDate(listing.startDate) }} - {{ formatDate(listing.endDate) }}</span>
+              <span class="dates-preview">
+                <svg class="info-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                  <line x1="16" y1="2" x2="16" y2="6"></line>
+                  <line x1="8" y1="2" x2="8" y2="6"></line>
+                  <line x1="3" y1="10" x2="21" y2="10"></line>
+                </svg>
+                {{ formatDate(listing.startDate) }} - {{ formatDate(listing.endDate) }}
+              </span>
               <span class="type-preview">{{ listing.type === "sublet" ? "Sublet" : "Renting" }}</span>
             </div>
             <p class="description-preview" v-if="listing.description && listing.description.trim()">
               {{ truncateText(listing.description, 100) }}
             </p>
             <div class="expand-hint">
-              <span>{{ expandedListing === listing._id ? 'Click to collapse' : 'Click for details' }}</span>
-              <span class="expand-icon">{{ expandedListing === listing._id ? '▲' : '▼' }}</span>
+              <span>Click for details</span>
+              <span class="expand-icon">+</span>
             </div>
           </div>
         </div>
@@ -178,13 +198,17 @@
         <!-- Action Buttons -->
         <div class="detail-actions">
           <button
-            v-if="!isOwner(getExpandedListing())"
+            v-if="!isOwner(getExpandedListing()) && !getItemTags(getExpandedListing()._id).includes('Contacted')"
             @click="sendInterest(getExpandedListing()._id)"
             class="contact-btn"
             :disabled="isSendingInterest[getExpandedListing()._id]"
           >
             {{ isSendingInterest[getExpandedListing()._id] ? "Sending..." : "Send Interest" }}
           </button>
+
+          <div v-if="!isOwner(getExpandedListing()) && getItemTags(getExpandedListing()._id).includes('Contacted')" class="contacted-message">
+            Already contacted
+          </div>
 
           <div v-if="isOwner(getExpandedListing())" class="owner-actions">
             <button @click="editListing(getExpandedListing())" class="edit-btn">Edit Listing</button>
@@ -476,6 +500,7 @@ export default {
     const sessionStore = useSessionStore();
     const listingsData = ref([]);
     const savedItemIds = ref(new Set());
+    const savedItemsMap = ref(new Map()); // Map of itemId -> {tags: []}
     const loading = ref(true);
     const error = ref("");
     const showCreateModal = ref(false);
@@ -729,36 +754,62 @@ export default {
         );
 
         if (items && Array.isArray(items)) {
-          // API might return nested structure: {item: {item: "id", tags: []}} or direct objects with _id
-          const ids = items
-            .map((saved) => {
-              console.log(
-                "Processing saved item:",
-                JSON.stringify(saved, null, 2)
-              );
-              // API returns: {user: "...", savedItem: {item: "id", tags: [...]}}
-              if (saved.savedItem && saved.savedItem.item) {
-                console.log(
-                  "Using saved.savedItem.item:",
-                  saved.savedItem.item
-                );
-                return saved.savedItem.item;
-              } else if (saved._id) {
-                console.log("Using saved._id:", saved._id);
-                return saved._id;
-              } else if (saved.item && saved.item.item) {
-                console.log("Using saved.item.item:", saved.item.item);
-                return saved.item.item;
+          // Build both the IDs set and the tags map
+          const ids = [];
+          const tagsMap = new Map();
+
+          items.forEach((saved) => {
+            console.log(
+              "Processing saved item:",
+              JSON.stringify(saved, null, 2)
+            );
+            // API returns: {user: "...", savedItem: {item: "id", tags: [...]}}
+            if (saved.savedItem && saved.savedItem.item) {
+              const itemId = saved.savedItem.item;
+              const tags = saved.savedItem.tags || [];
+              console.log(`Found itemId: ${itemId}, tags:`, tags);
+
+              if (!ids.includes(itemId)) {
+                ids.push(itemId);
               }
-              console.log("No ID found for this item");
-              return null;
-            })
-            .filter((id) => id !== null);
+
+              // Merge tags if item already exists in map
+              if (tagsMap.has(itemId)) {
+                const existingTags = tagsMap.get(itemId).tags;
+                const mergedTags = [...new Set([...existingTags, ...tags])];
+                tagsMap.set(itemId, { tags: mergedTags });
+              } else {
+                tagsMap.set(itemId, { tags: tags });
+              }
+            } else if (saved._id) {
+              const itemId = saved._id;
+              console.log("Using saved._id:", itemId);
+              if (!ids.includes(itemId)) {
+                ids.push(itemId);
+              }
+              if (!tagsMap.has(itemId)) {
+                tagsMap.set(itemId, { tags: [] });
+              }
+            } else if (saved.item && saved.item.item) {
+              const itemId = saved.item.item;
+              console.log("Using saved.item.item:", itemId);
+              if (!ids.includes(itemId)) {
+                ids.push(itemId);
+              }
+              if (!tagsMap.has(itemId)) {
+                tagsMap.set(itemId, { tags: saved.item.tags || [] });
+              }
+            }
+          });
+
           savedItemIds.value = new Set(ids);
+          savedItemsMap.value = tagsMap;
           console.log("Saved item IDs set to:", Array.from(savedItemIds.value));
+          console.log("Tags map:", Array.from(tagsMap.entries()));
         } else {
           console.log("Result is not an array, clearing saved items");
           savedItemIds.value = new Set();
+          savedItemsMap.value = new Map();
         }
       } catch (err) {
         console.error("Error fetching saved items:", err);
@@ -774,6 +825,18 @@ export default {
         Array.from(savedItemIds.value)
       );
       return saved;
+    };
+
+    const getItemTags = (itemId) => {
+      const savedItem = savedItemsMap.value.get(itemId);
+      const tags = savedItem && savedItem.tags ? savedItem.tags : [];
+      console.log(
+        `getItemTags(${itemId}):`,
+        tags,
+        "savedItemsMap:",
+        Array.from(savedItemsMap.value.entries())
+      );
+      return tags;
     };
 
     const toggleSavedItem = async (itemId) => {
@@ -1250,6 +1313,7 @@ export default {
       isOwner,
       formatDate,
       isSaved,
+      getItemTags,
       toggleSavedItem,
       sendInterest,
       isSendingInterest,
@@ -1430,37 +1494,31 @@ export default {
 .posting-card {
   background: white;
   border-radius: 12px;
-  border: 2px solid #f0f0f0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   transition: all 0.3s ease;
+  border: 1px solid #e9ecef;
   cursor: pointer;
-  min-height: 120px;
-  display: flex;
-  flex-direction: column;
+  overflow: hidden;
 }
 
 .posting-card:hover {
-  border-color: rgb(47, 71, 62);
-  box-shadow: 0 4px 12px rgba(47, 71, 62, 0.1);
-}
-
-.posting-card.expanded {
-  border-color: rgb(47, 71, 62);
-  box-shadow: 0 4px 12px rgba(47, 71, 62, 0.15);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  border-color: #1e5a2e;
 }
 
 .card-header {
-  padding: 1rem 1.25rem;
-  border-bottom: 1px solid #f0f0f0;
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
+  padding: 1.25rem 1.25rem 0.75rem;
 }
 
 .card-title h3 {
-  color: rgb(47, 71, 62);
-  font-size: 1.25rem;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #1e5a2e;
   margin: 0 0 0.5rem 0;
-  font-weight: 600;
 }
 
 .quick-info {
@@ -1469,53 +1527,90 @@ export default {
   gap: 0.25rem;
 }
 
-.address-preview, .price-preview {
-  font-size: 0.85rem;
+.address-preview {
+  font-size: 0.9rem;
   color: #666;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.price-preview {
+  font-size: 0.85rem;
+  color: #1e5a2e;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.info-icon {
+  color: #888;
+  flex-shrink: 0;
 }
 
 .card-actions {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.75rem;
   flex-shrink: 0;
 }
 
 .card-preview {
-  padding: 0 1.25rem 1rem 1.25rem;
-  flex: 1;
+  padding: 0 1.25rem 1.25rem;
 }
 
 .listing-summary {
   display: flex;
   gap: 1rem;
-  margin-bottom: 0.75rem;
+  align-items: center;
+  margin: 0 0 0.75rem 0;
   font-size: 0.85rem;
 }
 
-.dates-preview, .type-preview {
+.dates-preview {
+  font-size: 0.85rem;
   color: #666;
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.type-preview {
+  font-size: 0.85rem;
+  color: #1e5a2e;
+  font-weight: 600;
+  padding: 0.15rem 0.5rem;
+  background: #e8f5e9;
+  border-radius: 4px;
 }
 
 .description-preview {
   color: #666;
-  font-size: 0.9rem;
-  line-height: 1.4;
+  line-height: 1.5;
   margin: 0 0 0.75rem 0;
+  font-size: 0.95rem;
 }
 
 .expand-hint {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  font-size: 0.8rem;
-  color: rgb(47, 71, 62);
+  font-size: 0.85rem;
+  color: #1e5a2e;
   font-weight: 500;
-  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid #e9ecef;
 }
 
 .expand-icon {
-  margin-left: 0.5rem;
+  font-size: 0.8rem;
+  transition: transform 0.2s ease;
+}
+
+.posting-card:hover .expand-icon {
+  transform: scale(1.2);
 }
 
 .owner-badge {
@@ -1830,22 +1925,35 @@ export default {
   left: 0;
   right: 0;
   bottom: 0;
-  background-color: rgba(0, 0, 0, 0.7);
+  background: rgba(0, 0, 0, 0.6);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  padding: 1rem;
+  padding: 2rem;
+  backdrop-filter: blur(4px);
 }
 
 .detail-panel {
   background: white;
-  border-radius: 12px;
-  max-width: 600px;
+  border-radius: 16px;
+  max-width: 700px;
   width: 100%;
   max-height: 90vh;
   overflow-y: auto;
-  position: relative;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .detail-header {
@@ -1970,6 +2078,15 @@ export default {
   cursor: not-allowed;
 }
 
+.contacted-message {
+  padding: 0.75rem 1.5rem;
+  background: #f5f5f5;
+  color: #666;
+  border-radius: 8px;
+  text-align: center;
+  font-size: 0.9rem;
+}
+
 .owner-actions {
   display: flex;
   gap: 1rem;
@@ -2009,6 +2126,10 @@ export default {
   cursor: pointer;
   padding: 0.25rem;
   transition: transform 0.2s ease;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .favorite-btn:hover {
@@ -2018,4 +2139,5 @@ export default {
 .favorite-btn.is-saved {
   color: #e74c3c;
 }
+
 </style>
