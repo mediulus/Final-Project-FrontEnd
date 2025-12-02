@@ -42,6 +42,18 @@
                   <strong>📅</strong> {{ formatDate(posting.startDate) }} -
                   {{ formatDate(posting.endDate) }}
                 </p>
+                <p v-if="posting.dailyRhythm" class="info">
+                  <strong>🌅</strong> {{ posting.dailyRhythm }}
+                </p>
+                <p v-if="posting.cleanlinessPreference" class="info">
+                  <strong>🧹</strong> {{ posting.cleanlinessPreference }}
+                </p>
+                <p v-if="posting.homeEnvironment" class="info">
+                  <strong>🏠</strong> {{ posting.homeEnvironment }}
+                </p>
+                <p v-if="posting.guestsVisitors" class="info">
+                  <strong>👥</strong> {{ posting.guestsVisitors }}
+                </p>
                 <p class="description">{{ posting.description }}</p>
               </div>
 
@@ -302,13 +314,119 @@
           </div>
 
           <div class="form-group">
+            <label for="edit-roommate-dailyRhythm">Daily Rhythm *</label>
+            <select
+              id="edit-roommate-dailyRhythm"
+              v-model="editRoommateForm.dailyRhythm"
+              required
+            >
+              <option value="" disabled>Select your daily rhythm</option>
+              <option value="Morning-oriented (up early, asleep early)">
+                Morning-oriented (up early, asleep early)
+              </option>
+              <option value="Balanced / flexible schedule">
+                Balanced / flexible schedule
+              </option>
+              <option value="Night owl (up late, active later)">
+                Night owl (up late, active later)
+              </option>
+              <option value="Varies a lot week-to-week">
+                Varies a lot week-to-week
+              </option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="edit-roommate-cleanlinessPreference"
+              >Cleanliness Preference *</label
+            >
+            <select
+              id="edit-roommate-cleanlinessPreference"
+              v-model="editRoommateForm.cleanlinessPreference"
+              required
+            >
+              <option value="" disabled>
+                Select your cleanliness preference
+              </option>
+              <option value="Very tidy (clean daily / everything in its place)">
+                Very tidy (clean daily / everything in its place)
+              </option>
+              <option value="Moderately tidy (clean weekly; some clutter okay)">
+                Moderately tidy (clean weekly; some clutter okay)
+              </option>
+              <option
+                value="Relaxed (don't mind clutter but clean occasionally)"
+              >
+                Relaxed (don't mind clutter but clean occasionally)
+              </option>
+              <option value="Messy (minimal cleaning unless necessary)">
+                Messy (minimal cleaning unless necessary)
+              </option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="edit-roommate-homeEnvironment"
+              >Home Environment *</label
+            >
+            <select
+              id="edit-roommate-homeEnvironment"
+              v-model="editRoommateForm.homeEnvironment"
+              required
+            >
+              <option value="" disabled>
+                Select your home environment preference
+              </option>
+              <option value="Quiet (minimal noise, low visitors)">
+                Quiet (minimal noise, low visitors)
+              </option>
+              <option value="Moderate (some noise, occasional visitors)">
+                Moderate (some noise, occasional visitors)
+              </option>
+              <option value="Social / lively (friends over often)">
+                Social / lively (friends over often)
+              </option>
+              <option value="Flexible / depends on schedule">
+                Flexible / depends on schedule
+              </option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="edit-roommate-guestsVisitors"
+              >Guests & Visitors *</label
+            >
+            <select
+              id="edit-roommate-guestsVisitors"
+              v-model="editRoommateForm.guestsVisitors"
+              required
+            >
+              <option value="" disabled>
+                Select your guests & visitors preference
+              </option>
+              <option value="Prefer few or no guests">
+                Prefer few or no guests
+              </option>
+              <option value="Occasional guests okay">
+                Occasional guests okay
+              </option>
+              <option value="Comfortable with frequent guests">
+                Comfortable with frequent guests
+              </option>
+              <option value="Comfortable with overnight guests">
+                Comfortable with overnight guests
+              </option>
+            </select>
+          </div>
+
+          <div class="form-group">
             <label for="edit-roommate-description">Description *</label>
             <textarea
               id="edit-roommate-description"
               v-model="editRoommateForm.description"
               required
               rows="4"
-              placeholder="Tell others about yourself and what you're looking for..."
+              placeholder="Tell us more about yourself and what you are looking for in a roommate"
             ></textarea>
           </div>
 
@@ -377,6 +495,10 @@ export default {
       description: "",
       startDate: "",
       endDate: "",
+      dailyRhythm: "",
+      cleanlinessPreference: "",
+      homeEnvironment: "",
+      guestsVisitors: "",
     });
 
     const formatDate = (dateString) => {
@@ -471,6 +593,10 @@ export default {
         description: posting.description || "",
         startDate: formatDateForInput(posting.startDate),
         endDate: formatDateForInput(posting.endDate),
+        dailyRhythm: posting.dailyRhythm || "",
+        cleanlinessPreference: posting.cleanlinessPreference || "",
+        homeEnvironment: posting.homeEnvironment || "",
+        guestsVisitors: posting.guestsVisitors || "",
       };
       editRoommateError.value = "";
       showEditRoommateModal.value = true;
@@ -487,6 +613,10 @@ export default {
         description: "",
         startDate: "",
         endDate: "",
+        dailyRhythm: "",
+        cleanlinessPreference: "",
+        homeEnvironment: "",
+        guestsVisitors: "",
       };
     };
 
@@ -566,6 +696,37 @@ export default {
           await roommatePostingsApi.editEndDate(
             userId,
             editRoommateForm.value.endDate
+          );
+        }
+
+        // Update new fields if changed
+        if (editRoommateForm.value.dailyRhythm !== posting.dailyRhythm) {
+          await roommatePostingsApi.editDailyRhythm(
+            userId,
+            editRoommateForm.value.dailyRhythm
+          );
+        }
+        if (
+          editRoommateForm.value.cleanlinessPreference !==
+          posting.cleanlinessPreference
+        ) {
+          await roommatePostingsApi.editCleanlinessPreference(
+            userId,
+            editRoommateForm.value.cleanlinessPreference
+          );
+        }
+        if (
+          editRoommateForm.value.homeEnvironment !== posting.homeEnvironment
+        ) {
+          await roommatePostingsApi.editHomeEnvironment(
+            userId,
+            editRoommateForm.value.homeEnvironment
+          );
+        }
+        if (editRoommateForm.value.guestsVisitors !== posting.guestsVisitors) {
+          await roommatePostingsApi.editGuestsVisitors(
+            userId,
+            editRoommateForm.value.guestsVisitors
           );
         }
 
