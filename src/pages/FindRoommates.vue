@@ -14,86 +14,135 @@
       <div v-else-if="postings.length === 0" class="no-listings">
         No roommate postings yet. Be the first to create one!
       </div>
-      <div v-else class="listings-grid">
-        <div
-          v-for="posting in sortedPostings"
-          :key="posting._id"
-          class="listing-card"
-        >
-          <div class="listing-header">
-            <h3>{{ posting.city }}</h3>
-            <div class="header-actions">
-              <button
-                @click="toggleSavedItem(posting._id)"
-                class="favorite-btn"
-                :class="{ 'is-saved': isSaved(posting._id) }"
-                :title="
-                  isSaved(posting._id)
-                    ? 'Remove from favorites'
-                    : 'Add to favorites'
-                "
-              >
-                <span v-if="isSaved(posting._id)">♥</span>
-                <span v-else>♡</span>
-              </button>
-              <div v-if="isPoster(posting)" class="owner-badge">
-                Your Posting
+      <div v-else class="listings-container">
+        <!-- Compact Card View -->
+        <div class="listings-grid">
+          <div
+            v-for="posting in sortedPostings"
+            :key="posting._id"
+            class="posting-card"
+            :class="{ 'expanded': expandedPosting === posting._id }"
+            @click="togglePostingDetails(posting._id)"
+          >
+            <div class="card-header">
+              <div class="card-title">
+                <h3>{{ posting.city }}</h3>
+                <div class="quick-info">
+                  <span class="age-gender">{{ posting.gender }}, {{ posting.age }}</span>
+                  <span v-if="posting.numberOfRoommates" class="roommate-count">
+                    Looking for {{ posting.numberOfRoommates }} roommate{{ posting.numberOfRoommates > 1 ? 's' : '' }}
+                  </span>
+                </div>
+              </div>
+              
+              <div class="card-actions" @click.stop>
+                <button
+                  @click="toggleSavedItem(posting._id)"
+                  class="favorite-btn"
+                  :class="{ 'is-saved': isSaved(posting._id) }"
+                >
+                  <span v-if="isSaved(posting._id)">♥</span>
+                  <span v-else>♡</span>
+                </button>
+                <div v-if="isPoster(posting)" class="owner-badge">
+                  Your Posting
+                </div>
+              </div>
+            </div>
+
+            <div class="card-preview">
+              <p class="description-preview">{{ truncateText(posting.description, 100) }}</p>
+              <div class="expand-hint">
+                <span>{{ expandedPosting === posting._id ? 'Click to collapse' : 'Click for details' }}</span>
+                <span class="expand-icon">{{ expandedPosting === posting._id ? '▲' : '▼' }}</span>
               </div>
             </div>
           </div>
+        </div>
 
-          <div class="listing-details">
-            <p class="info">
-              <strong>👤</strong> {{ posting.gender }}, {{ posting.age }} years
-              old
-            </p>
-            <p v-if="posting.numberOfRoommates" class="info">
-              <strong>👥</strong> Looking for {{ posting.numberOfRoommates }}
-              {{ posting.numberOfRoommates === 1 ? "roommate" : "roommates" }}
-            </p>
-            <p v-if="posting.startDate && posting.endDate" class="dates">
-              <strong>📅</strong> {{ formatDate(posting.startDate) }} -
-              {{ formatDate(posting.endDate) }}
-            </p>
-            <p v-if="posting.dailyRhythm" class="info">
-              <strong>🌅</strong> {{ posting.dailyRhythm }}
-            </p>
-            <p v-if="posting.cleanlinessPreference" class="info">
-              <strong>🧹</strong> {{ posting.cleanlinessPreference }}
-            </p>
-            <p v-if="posting.homeEnvironment" class="info">
-              <strong>🏠</strong> {{ posting.homeEnvironment }}
-            </p>
-            <p v-if="posting.guestsVisitors" class="info">
-              <strong>👥</strong> {{ posting.guestsVisitors }}
-            </p>
-            <p class="description">{{ posting.description }}</p>
-            <button
-              v-if="!isPoster(posting)"
-              @click="contactPoster(posting._id)"
-              class="contact-btn"
-              :disabled="isContacting[posting._id]"
-            >
-              {{ isContacting[posting._id] ? "Sending..." : "Contact Me" }}
-            </button>
-          </div>
+        <!-- Expanded Detail Modal/Panel -->
+        <div v-if="expandedPosting" class="detail-overlay" @click="closeDetails">
+          <div class="detail-panel" @click.stop>
+            <div class="detail-header">
+              <h2>{{ getExpandedPosting().city }} - Roommate Details</h2>
+              <button @click="closeDetails" class="close-btn">×</button>
+            </div>
 
-          <div v-if="isPoster(posting)" class="listing-actions">
-            <button @click="editPosting(posting)" class="edit-btn">Edit</button>
-            <button @click="deletePosting(posting._id)" class="delete-btn">
-              Delete
-            </button>
-          </div>
-          <!-- Debug: Always show if isPoster check -->
-          <div
-            v-if="false"
-            style="background: yellow; padding: 10px; margin-top: 10px"
-          >
-            <strong>DEBUG:</strong> isPoster(posting) = {{ isPoster(posting)
-            }}<br />
-            Posting Poster: {{ posting.poster }}<br />
-            User ID: {{ sessionStore.user?.id }}<br />
-            User Object: {{ JSON.stringify(sessionStore.user) }}
+            <div class="detail-content">
+              <!-- Personal Information Table -->
+              <div class="info-section">
+                <h3>Personal Information</h3>
+                <table class="info-table">
+                  <tr>
+                    <td>Profile</td>
+                    <td>{{ getExpandedPosting().gender }}, {{ getExpandedPosting().age }} years old</td>
+                  </tr>
+                  <tr v-if="getExpandedPosting().numberOfRoommates">
+                    <td>Looking for</td>
+                    <td>{{ getExpandedPosting().numberOfRoommates }} roommate{{ getExpandedPosting().numberOfRoommates > 1 ? 's' : '' }}</td>
+                  </tr>
+                </table>
+              </div>
+
+              <!-- Dates & Timeline -->
+              <div class="info-section" v-if="getExpandedPosting().startDate || getExpandedPosting().endDate">
+                <h3>Timeline</h3>
+                <table class="info-table">
+                  <tr v-if="getExpandedPosting().startDate && getExpandedPosting().endDate">
+                    <td>Duration</td>
+                    <td>{{ formatDate(getExpandedPosting().startDate) }} - {{ formatDate(getExpandedPosting().endDate) }}</td>
+                  </tr>
+                </table>
+              </div>
+
+              <!-- Lifestyle Preferences -->
+              <div class="info-section">
+                <h3>Lifestyle & Preferences</h3>
+                <table class="info-table">
+                  <tr v-if="getExpandedPosting().dailyRhythm">
+                    <td>Daily Rhythm</td>
+                    <td>{{ getExpandedPosting().dailyRhythm }}</td>
+                  </tr>
+                  <tr v-if="getExpandedPosting().cleanlinessPreference">
+                    <td>Cleanliness</td>
+                    <td>{{ getExpandedPosting().cleanlinessPreference }}</td>
+                  </tr>
+                  <tr v-if="getExpandedPosting().homeEnvironment">
+                    <td>Home Environment</td>
+                    <td>{{ getExpandedPosting().homeEnvironment }}</td>
+                  </tr>
+                  <tr v-if="getExpandedPosting().guestsVisitors">
+                    <td>Guests & Visitors</td>
+                    <td>{{ getExpandedPosting().guestsVisitors }}</td>
+                  </tr>
+                </table>
+              </div>
+
+              <!-- Description -->
+              <div class="info-section">
+                <h3>About</h3>
+                <div class="description-full">
+                  {{ getExpandedPosting().description }}
+                </div>
+              </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="detail-actions">
+              <button
+                v-if="!isPoster(getExpandedPosting())"
+                @click="contactPoster(getExpandedPosting()._id)"
+                class="contact-btn"
+                :disabled="isContacting[getExpandedPosting()._id]"
+              >
+                {{ isContacting[getExpandedPosting()._id] ? "Sending..." : "Contact Me" }}
+              </button>
+              
+              <div v-if="isPoster(getExpandedPosting())" class="owner-actions">
+                <button @click="editPosting(getExpandedPosting())" class="edit-btn">Edit Posting</button>
+                <button @click="deletePosting(getExpandedPosting()._id)" class="delete-btn">Delete Posting</button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -543,6 +592,9 @@ export default {
       numberOfRoommates: "",
     });
 
+    // New data for expanded view
+    const expandedPosting = ref(null);
+
     // Helper function to check if a string looks like a UUID (not a username)
     const isUUID = (str) => {
       if (!str || typeof str !== "string") return false;
@@ -808,6 +860,29 @@ export default {
       const month = String(date.getMonth() + 1).padStart(2, "0");
       const day = String(date.getDate()).padStart(2, "0");
       return `${year}-${month}-${day}`;
+    };
+
+    // New methods for expanded view
+    const togglePostingDetails = (postingId) => {
+      if (expandedPosting.value === postingId) {
+        expandedPosting.value = null;
+      } else {
+        expandedPosting.value = postingId;
+      }
+    };
+
+    const closeDetails = () => {
+      expandedPosting.value = null;
+    };
+
+    const getExpandedPosting = () => {
+      return postings.value.find(p => p._id === expandedPosting.value) || {};
+    };
+
+    const truncateText = (text, maxLength) => {
+      if (!text) return '';
+      if (text.length <= maxLength) return text;
+      return text.substring(0, maxLength) + '...';
     };
 
     const closeModal = () => {
@@ -1193,6 +1268,12 @@ export default {
       editForm,
       closeEditModal,
       handleEditPosting,
+      // New expanded view functionality
+      expandedPosting,
+      togglePostingDetails,
+      closeDetails,
+      getExpandedPosting,
+      truncateText,
     };
   },
 };
@@ -1262,6 +1343,239 @@ export default {
   border-radius: 6px;
   margin-bottom: 1rem;
   border: 1px solid #fcc;
+}
+
+/* New Compact Card Design */
+.listings-container {
+  position: relative;
+}
+
+.posting-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  border: 1px solid #e9ecef;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.posting-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  border-color: #1e5a2e;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 1.25rem 1.25rem 0.75rem;
+}
+
+.card-title h3 {
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: #1e5a2e;
+  margin: 0 0 0.5rem 0;
+}
+
+.quick-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.age-gender {
+  font-size: 0.9rem;
+  color: #666;
+  font-weight: 500;
+}
+
+.roommate-count {
+  font-size: 0.85rem;
+  color: #1e5a2e;
+  font-weight: 600;
+}
+
+.card-actions {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  flex-shrink: 0;
+}
+
+.card-preview {
+  padding: 0 1.25rem 1.25rem;
+}
+
+.description-preview {
+  color: #666;
+  line-height: 1.5;
+  margin: 0 0 0.75rem 0;
+  font-size: 0.95rem;
+}
+
+.expand-hint {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.85rem;
+  color: #1e5a2e;
+  font-weight: 500;
+  padding-top: 0.5rem;
+  border-top: 1px solid #e9ecef;
+}
+
+.expand-icon {
+  font-size: 0.8rem;
+  transition: transform 0.2s ease;
+}
+
+.posting-card:hover .expand-icon {
+  transform: scale(1.2);
+}
+
+/* Detail Overlay Modal */
+.detail-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 2rem;
+  backdrop-filter: blur(4px);
+}
+
+.detail-panel {
+  background: white;
+  border-radius: 16px;
+  max-width: 700px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem 2rem;
+  border-bottom: 2px solid #f8f9fa;
+  background: linear-gradient(135deg, #1e5a2e, #2d7a3d);
+  color: white;
+  border-radius: 16px 16px 0 0;
+}
+
+.detail-header h2 {
+  margin: 0;
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 2rem;
+  cursor: pointer;
+  color: white;
+  padding: 0.25rem;
+  border-radius: 50%;
+  width: 2.5rem;
+  height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease;
+}
+
+.close-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.detail-content {
+  padding: 2rem;
+}
+
+.info-section {
+  margin-bottom: 2rem;
+}
+
+.info-section h3 {
+  color: #1e5a2e;
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin: 0 0 1rem 0;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #e9ecef;
+}
+
+.info-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.info-table tr {
+  border-bottom: 1px solid #f8f9fa;
+}
+
+.info-table tr:last-child {
+  border-bottom: none;
+}
+
+.info-table td {
+  padding: 0.75rem 0;
+  vertical-align: top;
+}
+
+.info-table td:first-child {
+  font-weight: 600;
+  color: #555;
+  width: 35%;
+}
+
+.info-table td:last-child {
+  color: #333;
+  padding-left: 1rem;
+}
+
+.description-full {
+  background: #f8f9fa;
+  padding: 1.25rem;
+  border-radius: 8px;
+  line-height: 1.6;
+  color: #555;
+  border-left: 4px solid #1e5a2e;
+}
+
+.detail-actions {
+  padding: 1.5rem 2rem;
+  border-top: 2px solid #f8f9fa;
+  background: #fafafa;
+  border-radius: 0 0 16px 16px;
+}
+
+.owner-actions {
+  display: flex;
+  gap: 1rem;
 }
 
 .listings-grid {
@@ -1579,5 +1893,183 @@ export default {
   .hero h2 {
     font-size: 2rem;
   }
+}
+
+/* Flat Icon Styles */
+[class^="icon-"] {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  margin-right: 8px;
+  vertical-align: middle;
+  position: relative;
+}
+
+/* User Icon - Simple circle with dot */
+.icon-user::before {
+  content: '';
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #1e5a2e;
+  top: 2px;
+  left: 4px;
+}
+
+.icon-user::after {
+  content: '';
+  position: absolute;
+  width: 12px;
+  height: 8px;
+  border-radius: 8px 8px 0 0;
+  background: #1e5a2e;
+  bottom: 0;
+  left: 2px;
+}
+
+/* Users Icon - Two overlapping circles */
+.icon-users {
+  width: 20px;
+}
+
+.icon-users::before {
+  content: '';
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #1e5a2e;
+  top: 2px;
+  left: 2px;
+}
+
+.icon-users::after {
+  content: '';
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #1e5a2e;
+  top: 2px;
+  left: 8px;
+}
+
+/* Calendar Icon */
+.icon-calendar::before {
+  content: '';
+  position: absolute;
+  width: 14px;
+  height: 12px;
+  border: 2px solid #1e5a2e;
+  border-radius: 2px;
+  top: 2px;
+  left: 1px;
+}
+
+.icon-calendar::after {
+  content: '';
+  position: absolute;
+  width: 8px;
+  height: 1px;
+  background: #1e5a2e;
+  top: 6px;
+  left: 4px;
+  box-shadow: 0 3px 0 #1e5a2e;
+}
+
+/* Clock Icon */
+.icon-clock::before {
+  content: '';
+  position: absolute;
+  width: 14px;
+  height: 14px;
+  border: 2px solid #1e5a2e;
+  border-radius: 50%;
+  top: 1px;
+  left: 1px;
+}
+
+.icon-clock::after {
+  content: '';
+  position: absolute;
+  width: 1px;
+  height: 5px;
+  background: #1e5a2e;
+  top: 4px;
+  left: 8px;
+  transform-origin: bottom;
+  transform: rotate(45deg);
+}
+
+/* Clean Icon - Sparkle */
+.icon-clean::before {
+  content: '';
+  position: absolute;
+  width: 2px;
+  height: 12px;
+  background: #1e5a2e;
+  top: 2px;
+  left: 7px;
+  transform: rotate(45deg);
+}
+
+.icon-clean::after {
+  content: '';
+  position: absolute;
+  width: 12px;
+  height: 2px;
+  background: #1e5a2e;
+  top: 7px;
+  left: 2px;
+  transform: rotate(45deg);
+}
+
+/* Home Icon */
+.icon-home::before {
+  content: '';
+  position: absolute;
+  width: 12px;
+  height: 8px;
+  border-left: 2px solid #1e5a2e;
+  border-right: 2px solid #1e5a2e;
+  border-bottom: 2px solid #1e5a2e;
+  bottom: 0;
+  left: 2px;
+}
+
+.icon-home::after {
+  content: '';
+  position: absolute;
+  width: 0;
+  height: 0;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-bottom: 6px solid #1e5a2e;
+  top: 0;
+  left: 0;
+}
+
+/* Visitors Icon - Door */
+.icon-visitors::before {
+  content: '';
+  position: absolute;
+  width: 10px;
+  height: 14px;
+  border: 2px solid #1e5a2e;
+  border-radius: 2px;
+  top: 1px;
+  left: 3px;
+}
+
+.icon-visitors::after {
+  content: '';
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  background: #1e5a2e;
+  border-radius: 50%;
+  top: 8px;
+  left: 6px;
 }
 </style>

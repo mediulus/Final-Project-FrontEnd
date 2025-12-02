@@ -18,122 +18,232 @@
       </div>
       <div v-else>
         <!-- Roommate Postings -->
-        <div v-if="roommatePostings.length > 0">
+        <div v-if="roommatePostings.length > 0" class="listings-container">
           <h3 class="section-title">My Roommate Postings</h3>
           <div class="listings-grid">
             <div
               v-for="posting in roommatePostings"
               :key="posting?._id || posting"
-              class="listing-card"
+              class="posting-card"
+              :class="{ 'expanded': expandedPosting === posting._id }"
+              @click="togglePostingDetails(posting._id)"
             >
-              <div class="listing-header">
-                <h3>{{ posting.city }}</h3>
-                <div class="header-actions">
+              <div class="card-header">
+                <div class="card-title">
+                  <h3>{{ posting.city }}</h3>
+                  <div class="quick-info">
+                    <span class="age-gender">{{ posting.gender }}, {{ posting.age }}</span>
+                    <span v-if="posting.numberOfRoommates" class="roommate-count">
+                      Looking for {{ posting.numberOfRoommates }} roommate{{ posting.numberOfRoommates > 1 ? 's' : '' }}
+                    </span>
+                  </div>
+                </div>
+                
+                <div class="card-actions" @click.stop>
                   <div class="owner-badge">Your Posting</div>
+                  <button @click="editRoommatePosting(posting)" class="edit-btn">
+                    Edit
+                  </button>
+                  <button @click="deleteRoommatePosting(posting._id)" class="delete-btn">
+                    Delete
+                  </button>
                 </div>
               </div>
 
-              <div class="listing-details">
-                <p class="info">
-                  <strong>👤</strong> {{ posting.gender }},
-                  {{ posting.age }} years old
-                </p>
-                <p v-if="posting.numberOfRoommates" class="info">
-                  <strong>👥</strong> Looking for
-                  {{ posting.numberOfRoommates }}
-                  {{
-                    posting.numberOfRoommates === 1 ? "roommate" : "roommates"
-                  }}
-                </p>
-                <p v-if="posting.startDate && posting.endDate" class="dates">
-                  <strong>📅</strong> {{ formatDate(posting.startDate) }} -
-                  {{ formatDate(posting.endDate) }}
-                </p>
-                <p v-if="posting.dailyRhythm" class="info">
-                  <strong>🌅</strong> {{ posting.dailyRhythm }}
-                </p>
-                <p v-if="posting.cleanlinessPreference" class="info">
-                  <strong>🧹</strong> {{ posting.cleanlinessPreference }}
-                </p>
-                <p v-if="posting.homeEnvironment" class="info">
-                  <strong>🏠</strong> {{ posting.homeEnvironment }}
-                </p>
-                <p v-if="posting.guestsVisitors" class="info">
-                  <strong>👥</strong> {{ posting.guestsVisitors }}
-                </p>
-                <p class="description">{{ posting.description }}</p>
-              </div>
-
-              <div class="listing-actions">
-                <button @click="editRoommatePosting(posting)" class="edit-btn">
-                  Edit
-                </button>
-                <button
-                  @click="deleteRoommatePosting(posting._id)"
-                  class="delete-btn"
-                >
-                  Delete
-                </button>
+              <div class="card-preview">
+                <p class="description-preview">{{ truncateText(posting.description, 100) }}</p>
+                <div class="expand-hint">
+                  <span>{{ expandedPosting === posting._id ? 'Click to collapse' : 'Click for details' }}</span>
+                  <span class="expand-icon">{{ expandedPosting === posting._id ? '▲' : '▼' }}</span>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
         <!-- Housing Listings -->
-        <div v-if="housingListings.length > 0" class="section">
+        <div v-if="housingListings.length > 0" class="section listings-container">
           <h3 class="section-title">My Housing Listings</h3>
           <div class="listings-grid">
             <div
               v-for="listing in housingListings"
               :key="listing?._id || listing"
-              class="listing-card"
+              class="posting-card"
+              :class="{ 'expanded': expandedListing === listing._id }"
+              @click="toggleListingDetails(listing._id)"
             >
-              <div class="listing-header">
-                <h3>{{ listing.title }}</h3>
-                <div class="header-actions">
+              <div class="card-header">
+                <div class="card-title">
+                  <h3>{{ listing.title }}</h3>
+                  <div class="quick-info">
+                    <span class="address-preview">{{ listing.address }}</span>
+                    <span class="price-preview">${{ listing.price }}/month</span>
+                  </div>
+                </div>
+                
+                <div class="card-actions" @click.stop>
                   <div class="owner-badge">Your Listing</div>
+                  <button @click="editListing(listing)" class="edit-btn">
+                    Edit
+                  </button>
+                  <button @click="deleteHousingListing(listing._id)" class="delete-btn">
+                    Delete
+                  </button>
                 </div>
               </div>
 
-              <div class="listing-details">
-                <p class="address"><strong>📍</strong> {{ listing.address }}</p>
-                <p class="dates">
-                  <strong>📅</strong> {{ formatDate(listing.startDate) }} -
-                  {{ formatDate(listing.endDate) }}
-                </p>
-                <p class="price">
-                  <strong>💵</strong> ${{ listing.price }}/month
-                </p>
-
-                <div
-                  v-if="listing.amenities && listing.amenities.length > 0"
-                  class="amenities"
-                >
-                  <strong>Amenities:</strong>
-                  <ul>
-                    <li v-for="amenity in listing.amenities" :key="amenity._id">
-                      {{ amenity.title }} ({{ amenity.distance }}mi away)
-                    </li>
-                  </ul>
+              <div class="card-preview">
+                <div class="listing-summary">
+                  <span class="dates-preview">{{ formatDate(listing.startDate) }} - {{ formatDate(listing.endDate) }}</span>
                 </div>
-              </div>
-
-              <div class="listing-actions">
-                <button @click="editListing(listing)" class="edit-btn">
-                  Edit
-                </button>
-                <button
-                  @click="deleteHousingListing(listing._id)"
-                  class="delete-btn"
-                >
-                  Delete
-                </button>
+                <div class="expand-hint">
+                  <span>{{ expandedListing === listing._id ? 'Click to collapse' : 'Click for details' }}</span>
+                  <span class="expand-icon">{{ expandedListing === listing._id ? '▲' : '▼' }}</span>
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
     </section>
+
+    <!-- Expanded Roommate Detail Modal -->
+    <div v-if="expandedPosting" class="detail-overlay" @click="closeDetails">
+      <div class="detail-panel" @click.stop>
+        <div class="detail-header">
+          <h2>{{ getExpandedPosting().city }} - My Roommate Posting</h2>
+          <button @click="closeDetails" class="close-btn">×</button>
+        </div>
+
+        <div class="detail-content">
+          <!-- Personal Information Table -->
+          <div class="info-section">
+            <h3>Personal Information</h3>
+            <table class="info-table">
+              <tr>
+                <td>Profile</td>
+                <td>{{ getExpandedPosting().gender }}, {{ getExpandedPosting().age }} years old</td>
+              </tr>
+              <tr v-if="getExpandedPosting().numberOfRoommates">
+                <td>Looking for</td>
+                <td>{{ getExpandedPosting().numberOfRoommates }} roommate{{ getExpandedPosting().numberOfRoommates > 1 ? 's' : '' }}</td>
+              </tr>
+            </table>
+          </div>
+
+          <!-- Dates & Timeline -->
+          <div class="info-section" v-if="getExpandedPosting().startDate || getExpandedPosting().endDate">
+            <h3>Timeline</h3>
+            <table class="info-table">
+              <tr v-if="getExpandedPosting().startDate && getExpandedPosting().endDate">
+                <td>Duration</td>
+                <td>{{ formatDate(getExpandedPosting().startDate) }} - {{ formatDate(getExpandedPosting().endDate) }}</td>
+              </tr>
+            </table>
+          </div>
+
+          <!-- Lifestyle Preferences -->
+          <div class="info-section">
+            <h3>Lifestyle & Preferences</h3>
+            <table class="info-table">
+              <tr v-if="getExpandedPosting().dailyRhythm">
+                <td>Daily Rhythm</td>
+                <td>{{ getExpandedPosting().dailyRhythm }}</td>
+              </tr>
+              <tr v-if="getExpandedPosting().cleanlinessPreference">
+                <td>Cleanliness</td>
+                <td>{{ getExpandedPosting().cleanlinessPreference }}</td>
+              </tr>
+              <tr v-if="getExpandedPosting().homeEnvironment">
+                <td>Home Environment</td>
+                <td>{{ getExpandedPosting().homeEnvironment }}</td>
+              </tr>
+              <tr v-if="getExpandedPosting().guestsVisitors">
+                <td>Guests & Visitors</td>
+                <td>{{ getExpandedPosting().guestsVisitors }}</td>
+              </tr>
+            </table>
+          </div>
+
+          <!-- Description -->
+          <div class="info-section">
+            <h3>About</h3>
+            <div class="description-full">
+              {{ getExpandedPosting().description }}
+            </div>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="detail-actions">
+          <button @click="editRoommatePosting(getExpandedPosting())" class="edit-btn">
+            Edit Posting
+          </button>
+          <button @click="deleteRoommatePosting(getExpandedPosting()._id)" class="delete-btn">
+            Delete Posting
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Expanded Housing Detail Modal -->
+    <div v-if="expandedListing" class="detail-overlay" @click="closeListing">
+      <div class="detail-panel" @click.stop>
+        <div class="detail-header">
+          <h2>{{ getExpandedListing().title }} - My Housing Listing</h2>
+          <button @click="closeListing" class="close-btn">×</button>
+        </div>
+
+        <div class="detail-content">
+          <!-- Property Information -->
+          <div class="info-section">
+            <h3>Property Information</h3>
+            <table class="info-table">
+              <tr>
+                <td>Address</td>
+                <td>{{ getExpandedListing().address }}</td>
+              </tr>
+              <tr>
+                <td>Price</td>
+                <td>${{ getExpandedListing().price }}/month</td>
+              </tr>
+            </table>
+          </div>
+
+          <!-- Availability -->
+          <div class="info-section">
+            <h3>Availability</h3>
+            <table class="info-table">
+              <tr>
+                <td>Duration</td>
+                <td>{{ formatDate(getExpandedListing().startDate) }} - {{ formatDate(getExpandedListing().endDate) }}</td>
+              </tr>
+            </table>
+          </div>
+
+          <!-- Amenities -->
+          <div class="info-section" v-if="getExpandedListing().amenities && getExpandedListing().amenities.length > 0">
+            <h3>Amenities</h3>
+            <table class="info-table">
+              <tr v-for="amenity in getExpandedListing().amenities" :key="amenity._id">
+                <td>{{ amenity.title }}</td>
+                <td>{{ amenity.distance }} miles away</td>
+              </tr>
+            </table>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="detail-actions">
+          <button @click="editListing(getExpandedListing())" class="edit-btn">
+            Edit Listing
+          </button>
+          <button @click="deleteHousingListing(getExpandedListing()._id)" class="delete-btn">
+            Delete Listing
+          </button>
+        </div>
+      </div>
+    </div>
 
     <!-- Edit Listing Modal -->
     <div v-if="showEditModal" class="modal-overlay" @click="closeEditModal">
@@ -523,6 +633,8 @@ export default {
       guestsVisitors: "",
       numberOfRoommates: "",
     });
+    const expandedPosting = ref(null);
+    const expandedListing = ref(null);
 
     const formatDate = (dateString) => {
       const date = new Date(dateString);
@@ -935,6 +1047,47 @@ export default {
       }
     };
 
+    // Expanded view methods
+    const truncateText = (text, maxLength) => {
+      if (!text) return '';
+      if (text.length <= maxLength) return text;
+      return text.substring(0, maxLength) + '...';
+    };
+
+    const togglePostingDetails = (postingId) => {
+      if (expandedPosting.value === postingId) {
+        expandedPosting.value = null;
+      } else {
+        expandedPosting.value = postingId;
+        expandedListing.value = null; // Close listing if open
+      }
+    };
+
+    const toggleListingDetails = (listingId) => {
+      if (expandedListing.value === listingId) {
+        expandedListing.value = null;
+      } else {
+        expandedListing.value = listingId;
+        expandedPosting.value = null; // Close posting if open
+      }
+    };
+
+    const closeDetails = () => {
+      expandedPosting.value = null;
+    };
+
+    const closeListing = () => {
+      expandedListing.value = null;
+    };
+
+    const getExpandedPosting = () => {
+      return roommatePostings.value.find(posting => posting._id === expandedPosting.value) || {};
+    };
+
+    const getExpandedListing = () => {
+      return housingListings.value.find(listing => listing._id === expandedListing.value) || {};
+    };
+
     onMounted(async () => {
       await fetchMyPostings();
     });
@@ -963,6 +1116,15 @@ export default {
       addEditAmenity,
       removeEditAmenity,
       handleEditListing,
+      expandedPosting,
+      expandedListing,
+      togglePostingDetails,
+      toggleListingDetails,
+      closeDetails,
+      closeListing,
+      getExpandedPosting,
+      getExpandedListing,
+      truncateText,
     };
   },
 };
@@ -1036,38 +1198,58 @@ export default {
   margin-bottom: 2rem;
 }
 
-.listing-card {
+.posting-card {
   background: white;
   border-radius: 12px;
-  padding: 1.5rem;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  transition: transform 0.2s, box-shadow 0.2s;
+  border: 2px solid #f0f0f0;
+  transition: all 0.3s ease;
+  cursor: pointer;
+  min-height: 120px;
+  display: flex;
+  flex-direction: column;
 }
 
-.listing-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 8px 12px rgba(0, 0, 0, 0.15);
+.posting-card:hover {
+  border-color: rgb(47, 71, 62);
+  box-shadow: 0 4px 12px rgba(47, 71, 62, 0.1);
 }
 
-.listing-header {
+.posting-card.expanded {
+  border-color: rgb(47, 71, 62);
+  box-shadow: 0 4px 12px rgba(47, 71, 62, 0.15);
+}
+
+.card-header {
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid #f0f0f0;
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
-  padding-bottom: 1rem;
-  border-bottom: 2px solid #f0f0f0;
+  align-items: flex-start;
 }
 
-.listing-header h3 {
+.card-title h3 {
   color: rgb(47, 71, 62);
   font-size: 1.25rem;
-  margin: 0;
+  margin: 0 0 0.5rem 0;
+  font-weight: 600;
 }
 
-.header-actions {
+.quick-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.age-gender, .roommate-count, .address-preview, .price-preview {
+  font-size: 0.85rem;
+  color: #666;
+}
+
+.card-actions {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.5rem;
+  flex-shrink: 0;
 }
 
 .owner-badge {
@@ -1075,8 +1257,36 @@ export default {
   color: white;
   padding: 0.25rem 0.75rem;
   border-radius: 12px;
-  font-size: 0.85rem;
+  font-size: 0.75rem;
   font-weight: 600;
+}
+
+.edit-btn, .delete-btn {
+  padding: 0.4rem 0.8rem;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.edit-btn {
+  background: rgb(47, 71, 62);
+  color: white;
+}
+
+.edit-btn:hover {
+  background: rgb(37, 61, 52);
+}
+
+.delete-btn {
+  background: #dc3545;
+  color: white;
+}
+
+.delete-btn:hover {
+  background: #c82333;
 }
 
 .delete-btn-header {
@@ -1093,96 +1303,188 @@ export default {
   transform: scale(1.15);
 }
 
-.listing-details {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
+.card-preview {
+  padding: 0 1.25rem 1rem 1.25rem;
+  flex: 1;
 }
 
-.info,
-.address,
-.dates,
-.price {
-  color: #555;
-  font-size: 1rem;
-  line-height: 1.6;
-}
-
-.description {
+.description-preview {
   color: #666;
-  font-size: 0.95rem;
-  line-height: 1.6;
+  font-size: 0.9rem;
+  line-height: 1.4;
+  margin: 0 0 0.75rem 0;
+}
+
+.listing-summary {
+  margin-bottom: 0.75rem;
+}
+
+.dates-preview {
+  font-size: 0.85rem;
+  color: #666;
+}
+
+.expand-hint {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.8rem;
+  color: rgb(47, 71, 62);
+  font-weight: 500;
   margin-top: 0.5rem;
-  padding: 1rem;
-  background: #f8f9fa;
-  border-radius: 6px;
 }
 
-.amenities {
-  margin-top: 1rem;
-  padding: 1rem;
-  background: #f8f9fa;
-  border-radius: 6px;
+.expand-icon {
+  margin-left: 0.5rem;
 }
 
-.amenities strong {
-  display: block;
-  margin-bottom: 0.5rem;
+/* Detail Modal Styles */
+.detail-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.detail-panel {
+  background: white;
+  border-radius: 12px;
+  max-width: 600px;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+}
+
+.detail-header {
+  padding: 1.5rem 1.5rem 1rem 1.5rem;
+  border-bottom: 2px solid #f0f0f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.detail-header h2 {
+  color: rgb(47, 71, 62);
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 2rem;
+  cursor: pointer;
+  color: #666;
+  padding: 0;
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.close-btn:hover {
+  background-color: #f0f0f0;
   color: rgb(47, 71, 62);
 }
 
-.amenities ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
+.detail-content {
+  padding: 1.5rem;
 }
 
-.amenities li {
-  padding: 0.25rem 0;
-  color: #555;
-  font-size: 0.9rem;
+.info-section {
+  margin-bottom: 1.5rem;
 }
 
-.listing-actions {
+.info-section h3 {
+  color: rgb(47, 71, 62);
+  font-size: 1.1rem;
+  margin: 0 0 0.75rem 0;
+  font-weight: 600;
+}
+
+.info-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.info-table tr {
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.info-table tr:last-child {
+  border-bottom: none;
+}
+
+.info-table td {
+  padding: 0.5rem 0;
+  vertical-align: top;
+}
+
+.info-table td:first-child {
+  font-weight: 500;
+  color: rgb(47, 71, 62);
+  width: 30%;
+}
+
+.info-table td:last-child {
+  color: #666;
+  padding-left: 1rem;
+}
+
+.description-full {
+  color: #666;
+  line-height: 1.6;
+  padding: 1rem;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.detail-actions {
+  padding: 1rem 1.5rem 1.5rem 1.5rem;
+  border-top: 2px solid #f0f0f0;
   display: flex;
   gap: 0.75rem;
-  margin-top: 1rem;
-  padding-top: 1rem;
-  border-top: 2px solid #f0f0f0;
+  justify-content: flex-end;
 }
 
-.edit-btn,
-.delete-btn {
-  flex: 1;
+.detail-actions .edit-btn,
+.detail-actions .delete-btn {
   padding: 0.75rem 1.5rem;
-  border: none;
   border-radius: 6px;
-  font-size: 1rem;
-  font-weight: 600;
+  font-weight: 500;
   cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition: all 0.2s ease;
+  border: none;
 }
 
-.edit-btn {
-  background: rgb(22, 53, 27);
+.detail-actions .edit-btn {
+  background: rgb(47, 71, 62);
   color: white;
 }
 
-.edit-btn:hover {
-  background: rgb(15, 38, 19);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+.detail-actions .edit-btn:hover {
+  background: rgb(37, 61, 52);
 }
 
-.delete-btn {
+.detail-actions .delete-btn {
   background: #dc3545;
   color: white;
 }
 
-.delete-btn:hover {
+.detail-actions .delete-btn:hover {
   background: #c82333;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
 /* Modal Styles */
@@ -1410,6 +1712,147 @@ export default {
   cursor: not-allowed;
 }
 
+.detail-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(6px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1100;
+  animation: fadeIn 0.2s ease;
+}
+
+.detail-panel {
+  background: white;
+  padding: 2rem;
+  border-radius: 12px;
+  width: 90%;
+  max-width: 700px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.3s ease;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.detail-header h2 {
+  color: rgb(47, 71, 62);
+  font-size: 1.5rem;
+  margin: 0;
+}
+
+.close-btn {
+  background: none;
+  border: none;
+  font-size: 2rem;
+  cursor: pointer;
+  color: #666;
+  padding: 0;
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: all 0.2s ease;
+}
+
+.close-btn:hover {
+  background-color: #f0f0f0;
+  color: rgb(47, 71, 62);
+}
+
+.detail-content {
+  margin-bottom: 1.5rem;
+}
+
+.info-section {
+  margin-bottom: 1.5rem;
+}
+
+.info-section h3 {
+  font-size: 1.2rem;
+  color: rgb(47, 71, 62);
+  margin-bottom: 0.75rem;
+}
+
+.info-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.info-table td {
+  padding: 0.75rem;
+  border: 1px solid #e0e0e0;
+  font-size: 0.95rem;
+  color: #333;
+}
+
+.info-table tr:nth-child(even) td {
+  background: #f9f9f9;
+}
+
+.description-full {
+  font-size: 0.95rem;
+  color: #333;
+  line-height: 1.6;
+  padding: 0.75rem;
+  background: #f8f9fa;
+  border-radius: 6px;
+}
+
+.detail-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: flex-end;
+}
+
+.detail-actions .edit-btn,
+.detail-actions .delete-btn {
+  flex: 1;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.detail-actions .edit-btn {
+  background: rgb(22, 53, 27);
+  color: white;
+}
+
+.detail-actions .edit-btn:hover {
+  background: rgb(15, 38, 19);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.detail-actions .delete-btn {
+  background: #dc3545;
+  color: white;
+}
+
+.detail-actions .delete-btn:hover {
+  background: #c82333;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
 @media (max-width: 768px) {
   .listings-grid {
     grid-template-columns: 1fr;
@@ -1424,6 +1867,11 @@ export default {
   }
 
   .modal-content {
+    width: 95%;
+    padding: 1.5rem;
+  }
+
+  .detail-panel {
     width: 95%;
     padding: 1.5rem;
   }
