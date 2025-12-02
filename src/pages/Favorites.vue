@@ -381,39 +381,39 @@ export default {
 }
 
 .hero {
-  background: linear-gradient(135deg, #123619 0%, #1e5a2e 100%);
+  background: rgb(47, 71, 62);
   color: white;
-  padding: 3rem 2rem;
+  padding: 2rem 2rem;
   text-align: center;
 }
 
 .hero h2 {
-  font-size: 2.5rem;
+  font-size: 2rem;
   margin-bottom: 0.5rem;
   color: white;
 }
 
 .hero p {
-  font-size: 1.25rem;
+  font-size: 1.1rem;
   color: rgba(255, 255, 255, 0.9);
 }
 
 .listings-section {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 3rem 2rem;
+  padding: 2rem 2rem;
 }
 
 .section {
-  margin-top: 3rem;
+  margin-top: 2rem;
 }
 
 .section-title {
-  font-size: 1.8rem;
-  color: #123619;
-  margin-bottom: 1.5rem;
+  font-size: 1.6rem;
+  color: rgb(47, 71, 62);
+  margin-bottom: 1.25rem;
   padding-bottom: 0.5rem;
-  border-bottom: 3px solid #1e5a2e;
+  border-bottom: 3px solid rgb(47, 71, 62);
 }
 
 .loading,
@@ -464,8 +464,8 @@ export default {
 }
 
 .listing-header h3 {
-  color: #123619;
-  font-size: 1.4rem;
+  color: rgb(47, 71, 62);
+  font-size: 1.25rem;
   margin: 0;
 }
 
@@ -517,7 +517,7 @@ export default {
 }
 
 .tag {
-  background: #1e5a2e;
+  background: rgb(47, 71, 62);
   color: white;
   padding: 0.25rem 0.75rem;
   border-radius: 12px;
@@ -533,7 +533,7 @@ export default {
 .contact-btn,
 .interest-btn {
   width: 100%;
-  background: #1e5a2e;
+  background: rgb(22, 53, 27);
   color: white;
   border: none;
   padding: 0.75rem 1rem;
@@ -547,7 +547,7 @@ export default {
 
 .contact-btn:hover:not(:disabled),
 .interest-btn:hover:not(:disabled) {
-  background: #123619;
+  background: rgb(15, 38, 19);
 }
 
 .contact-btn:disabled,

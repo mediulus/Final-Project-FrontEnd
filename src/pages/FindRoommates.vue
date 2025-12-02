@@ -1206,27 +1206,27 @@ export default {
 }
 
 .hero {
-  background: linear-gradient(135deg, #123619 0%, #1e5a2e 100%);
+  background: rgb(47, 71, 62);
   color: white;
-  padding: 3rem 2rem;
+  padding: 2rem 2rem;
   text-align: center;
 }
 
 .hero h2 {
-  font-size: 2.5rem;
+  font-size: 2rem;
   margin-bottom: 0.5rem;
   color: white;
 }
 
 .hero p {
-  font-size: 1.25rem;
-  margin-bottom: 2rem;
+  font-size: 1.1rem;
+  margin-bottom: 1.5rem;
   color: rgba(255, 255, 255, 0.9);
 }
 
 .create-btn {
   background: white;
-  color: #123619;
+  color: rgb(47, 71, 62);
   border: none;
   padding: 0.875rem 2rem;
   font-size: 1.1rem;
@@ -1244,21 +1244,21 @@ export default {
 .listings-section {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 3rem 2rem;
+  padding: 2rem 2rem;
 }
 
 .loading,
 .no-listings {
   text-align: center;
-  padding: 3rem;
-  font-size: 1.2rem;
+  padding: 2rem;
+  font-size: 1.1rem;
   color: #666;
 }
 
 .error-message {
   background-color: #fee;
   color: #c33;
-  padding: 1rem;
+  padding: 0.75rem;
   border-radius: 6px;
   margin-bottom: 1rem;
   border: 1px solid #fcc;
@@ -1267,13 +1267,13 @@ export default {
 .listings-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 2rem;
+  gap: 1.25rem;
 }
 
 .listing-card {
   background: white;
   border-radius: 12px;
-  padding: 1.5rem;
+  padding: 1rem;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   transition: transform 0.2s, box-shadow 0.2s;
 }
@@ -1287,14 +1287,14 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1rem;
-  padding-bottom: 1rem;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.75rem;
   border-bottom: 2px solid #f0f0f0;
 }
 
 .listing-header h3 {
-  color: #123619;
-  font-size: 1.4rem;
+  color: rgb(47, 71, 62);
+  font-size: 1.25rem;
   margin: 0;
 }
 
@@ -1315,11 +1315,11 @@ export default {
 }
 
 .owner-badge {
-  background: #1e5a2e;
+  background: rgb(47, 71, 62);
   color: white;
-  padding: 0.375rem 0.75rem;
+  padding: 0.25rem 0.625rem;
   border-radius: 20px;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   font-weight: 600;
 }
 
@@ -1334,19 +1334,19 @@ export default {
 .listing-details {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.5rem;
 }
 
 .info,
 .dates {
   color: #555;
-  font-size: 1rem;
+  font-size: 0.95rem;
   line-height: 1.6;
 }
 
 .description {
   color: #666;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   line-height: 1.6;
   margin-top: 0.5rem;
   padding: 1rem;
@@ -1356,20 +1356,20 @@ export default {
 
 .contact-btn {
   width: 100%;
-  background: #1e5a2e;
+  background: rgb(22, 53, 27);
   color: white;
   border: none;
-  padding: 0.75rem 1rem;
-  font-size: 1rem;
+  padding: 0.625rem 1rem;
+  font-size: 0.95rem;
   font-weight: 600;
   border-radius: 6px;
   cursor: pointer;
-  margin-top: 1rem;
+  margin-top: 0.75rem;
   transition: background 0.2s, opacity 0.2s;
 }
 
 .contact-btn:hover:not(:disabled) {
-  background: #123619;
+  background: rgb(15, 38, 19);
 }
 
 .contact-btn:disabled {
@@ -1379,25 +1379,26 @@ export default {
 
 .listing-actions {
   display: flex;
-  gap: 1rem;
-  margin-top: 1rem;
-  padding-top: 1rem;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
   border-top: 1px solid #f0f0f0;
 }
 
 .edit-btn,
 .delete-btn {
   flex: 1;
-  padding: 0.625rem;
+  padding: 0.5rem;
   border: none;
   border-radius: 6px;
   font-weight: 600;
   cursor: pointer;
   transition: opacity 0.2s;
+  font-size: 0.9rem;
 }
 
 .edit-btn {
-  background: #1e5a2e;
+  background: rgb(22, 53, 27);
   color: white;
 }
 
@@ -1460,11 +1461,11 @@ export default {
 }
 
 .modal-content h2 {
-  color: #123619;
+  color: rgb(47, 71, 62);
   margin-bottom: 2rem;
   font-size: 1.875rem;
   font-weight: 700;
-  border-bottom: 3px solid #1e5a2e;
+  border-bottom: 3px solid rgb(47, 71, 62);
   padding-bottom: 0.75rem;
 }
 
@@ -1481,7 +1482,7 @@ export default {
 .form-group label {
   display: block;
   margin-bottom: 0.625rem;
-  color: #123619;
+  color: rgb(47, 71, 62);
   font-weight: 600;
   font-size: 0.95rem;
   letter-spacing: 0.3px;
@@ -1511,9 +1512,9 @@ export default {
 .form-group select:focus,
 .form-group textarea:focus {
   outline: none;
-  border-color: #1e5a2e;
+  border-color: rgb(47, 71, 62);
   background: white;
-  box-shadow: 0 0 0 3px rgba(30, 90, 46, 0.1);
+  box-shadow: 0 0 0 3px rgba(47, 71, 62, 0.1);
 }
 
 .form-group textarea {
@@ -1555,13 +1556,13 @@ export default {
 }
 
 .submit-btn {
-  background: linear-gradient(135deg, #1e5a2e 0%, #123619 100%);
+  background: rgb(22, 53, 27);
   color: white;
 }
 
 .submit-btn:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(30, 90, 46, 0.3);
+  box-shadow: 0 4px 12px rgba(22, 53, 27, 0.3);
 }
 
 .submit-btn:disabled {

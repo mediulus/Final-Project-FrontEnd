@@ -1020,39 +1020,39 @@ export default {
 }
 
 .hero {
-  background: linear-gradient(135deg, #123619 0%, #1e5a2e 100%);
+  background: rgb(47, 71, 62);
   color: white;
-  padding: 3rem 2rem;
+  padding: 2rem 2rem;
   text-align: center;
 }
 
 .hero h2 {
-  font-size: 2.5rem;
+  font-size: 2rem;
   margin-bottom: 0.5rem;
   color: white;
 }
 
 .hero p {
-  font-size: 1.25rem;
+  font-size: 1.1rem;
   color: rgba(255, 255, 255, 0.9);
 }
 
 .listings-section {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 3rem 2rem;
+  padding: 2rem 2rem;
 }
 
 .section {
-  margin-top: 3rem;
+  margin-top: 2rem;
 }
 
 .section-title {
-  font-size: 1.8rem;
-  color: #123619;
-  margin-bottom: 1.5rem;
+  font-size: 1.6rem;
+  color: rgb(47, 71, 62);
+  margin-bottom: 1.25rem;
   padding-bottom: 0.5rem;
-  border-bottom: 3px solid #1e5a2e;
+  border-bottom: 3px solid rgb(47, 71, 62);
 }
 
 .loading,
@@ -1103,8 +1103,8 @@ export default {
 }
 
 .listing-header h3 {
-  color: #123619;
-  font-size: 1.5rem;
+  color: rgb(47, 71, 62);
+  font-size: 1.25rem;
   margin: 0;
 }
 
@@ -1115,7 +1115,7 @@ export default {
 }
 
 .owner-badge {
-  background: #1e5a2e;
+  background: rgb(47, 71, 62);
   color: white;
   padding: 0.25rem 0.75rem;
   border-radius: 12px;
@@ -1172,7 +1172,7 @@ export default {
 .amenities strong {
   display: block;
   margin-bottom: 0.5rem;
-  color: #123619;
+  color: rgb(47, 71, 62);
 }
 
 .amenities ul {
@@ -1208,12 +1208,12 @@ export default {
 }
 
 .edit-btn {
-  background: #1e5a2e;
+  background: rgb(22, 53, 27);
   color: white;
 }
 
 .edit-btn:hover {
-  background: #123619;
+  background: rgb(15, 38, 19);
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
@@ -1279,11 +1279,11 @@ export default {
 }
 
 .modal-content h2 {
-  color: #123619;
+  color: rgb(47, 71, 62);
   margin-bottom: 2rem;
   font-size: 1.875rem;
   font-weight: 700;
-  border-bottom: 3px solid #1e5a2e;
+  border-bottom: 3px solid rgb(47, 71, 62);
   padding-bottom: 0.75rem;
 }
 
@@ -1300,7 +1300,7 @@ export default {
 .form-group label {
   display: block;
   font-weight: 600;
-  color: #123619;
+  color: rgb(47, 71, 62);
   margin-bottom: 0.625rem;
   font-size: 0.95rem;
   letter-spacing: 0.3px;
@@ -1331,9 +1331,9 @@ export default {
 .form-group select:focus,
 .form-group textarea:focus {
   outline: none;
-  border-color: #1e5a2e;
+  border-color: rgb(47, 71, 62);
   background: white;
-  box-shadow: 0 0 0 3px rgba(30, 90, 46, 0.1);
+  box-shadow: 0 0 0 3px rgba(47, 71, 62, 0.1);
 }
 
 .form-group select {
@@ -1391,7 +1391,7 @@ export default {
 .amenity-title:focus,
 .amenity-distance:focus {
   outline: none;
-  border-color: #1e5a2e;
+  border-color: rgb(47, 71, 62);
 }
 
 .remove-amenity-btn {
@@ -1415,7 +1415,7 @@ export default {
 }
 
 .add-amenity-btn {
-  background: #1e5a2e;
+  background: rgb(22, 53, 27);
   color: white;
   border: none;
   padding: 0.625rem 1rem;
@@ -1427,7 +1427,7 @@ export default {
 }
 
 .add-amenity-btn:hover {
-  background: #123619;
+  background: rgb(15, 38, 19);
 }
 
 .modal-actions {
@@ -1463,13 +1463,13 @@ export default {
 }
 
 .submit-btn {
-  background: linear-gradient(135deg, #1e5a2e 0%, #123619 100%);
+  background: rgb(22, 53, 27);
   color: white;
 }
 
 .submit-btn:hover:not(:disabled) {
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(30, 90, 46, 0.3);
+  box-shadow: 0 4px 12px rgba(22, 53, 27, 0.3);
 }
 
 .submit-btn:disabled {

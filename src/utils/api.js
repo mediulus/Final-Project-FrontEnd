@@ -134,13 +134,52 @@ export const auth = {
     });
   },
 
+  /**
+   * Delete user account
+   * @param {string} password - User's password for confirmation
+   */
   async deleteAccount(password) {
     const sessionStore = useSessionStore();
-    return await apiRequest("/PasswordAuth/deleteAccount", {
-      password,
+
+    const response = await apiRequest('/PasswordAuth/deleteAccount', {
+      request: 'deleteAccount',
       session: sessionStore.token,
+      password: password,
+      username: sessionStore.user?.username,
+      user: sessionStore.user?.id || sessionStore.user?.user,
+      emailAddress: sessionStore.user?.emailAddress
     });
+
+    // Check if the response contains an error
+    if (response && response.error) {
+      throw new Error(response.error);
+    }
+
+    return response;
   },
+
+  /**
+   * Change user password
+   * @param {string} currentPass - Current password for verification
+   * @param {string} newPass - New password to set
+   */
+  async changePassword(currentPass, newPass) {
+    const sessionStore = useSessionStore();
+
+    const response = await apiRequest('/PasswordAuth/changePassword', {
+      request: 'changePassword',
+      username: sessionStore.user?.username,
+      currentPass: currentPass,
+      newPass: newPass
+    });
+
+    // Check if the response contains an error
+    if (response && response.error) {
+      throw new Error(response.error);
+    }
+
+    return response;
+  }
 };
 
 /**
