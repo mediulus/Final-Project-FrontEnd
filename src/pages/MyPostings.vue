@@ -28,6 +28,9 @@
             >
               <div class="listing-header">
                 <h3>{{ posting.city }}</h3>
+                <div class="header-actions">
+                  <div class="owner-badge">Your Posting</div>
+                </div>
               </div>
 
               <div class="listing-details">
@@ -43,6 +46,9 @@
               </div>
 
               <div class="listing-actions">
+                <button @click="editRoommatePosting(posting)" class="edit-btn">
+                  Edit
+                </button>
                 <button
                   @click="deleteRoommatePosting(posting._id)"
                   class="delete-btn"
@@ -224,6 +230,111 @@
         </form>
       </div>
     </div>
+
+    <!-- Edit Roommate Posting Modal -->
+    <div
+      v-if="showEditRoommateModal"
+      class="modal-overlay"
+      @click="closeEditRoommateModal"
+    >
+      <div class="modal-content" @click.stop>
+        <h2>Edit Roommate Posting</h2>
+        <form @submit.prevent="handleEditRoommatePosting">
+          <div class="form-group">
+            <label for="edit-roommate-city">City *</label>
+            <input
+              type="text"
+              id="edit-roommate-city"
+              v-model="editRoommateForm.city"
+              required
+              placeholder="e.g., Cambridge"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="edit-roommate-gender">Gender *</label>
+            <select
+              id="edit-roommate-gender"
+              v-model="editRoommateForm.gender"
+              required
+            >
+              <option value="" disabled>Select your gender</option>
+              <option value="Female">Female</option>
+              <option value="Male">Male</option>
+              <option value="Non-binary">Non-binary</option>
+              <option value="Prefer not to say">Prefer not to say</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="edit-roommate-age">Age *</label>
+            <input
+              type="number"
+              id="edit-roommate-age"
+              v-model.number="editRoommateForm.age"
+              required
+              min="18"
+              max="120"
+              placeholder="e.g., 25"
+            />
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="edit-roommate-startDate">Start Date *</label>
+              <input
+                type="date"
+                id="edit-roommate-startDate"
+                v-model="editRoommateForm.startDate"
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="edit-roommate-endDate">End Date *</label>
+              <input
+                type="date"
+                id="edit-roommate-endDate"
+                v-model="editRoommateForm.endDate"
+                required
+              />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="edit-roommate-description">Description *</label>
+            <textarea
+              id="edit-roommate-description"
+              v-model="editRoommateForm.description"
+              required
+              rows="4"
+              placeholder="Tell others about yourself and what you're looking for..."
+            ></textarea>
+          </div>
+
+          <div v-if="editRoommateError" class="error-message">
+            {{ editRoommateError }}
+          </div>
+
+          <div class="modal-actions">
+            <button
+              type="button"
+              @click="closeEditRoommateModal"
+              class="cancel-btn"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              class="submit-btn"
+              :disabled="isEditingRoommate"
+            >
+              {{ isEditingRoommate ? "Saving..." : "Save Changes" }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   </main>
 </template>
 
@@ -254,6 +365,18 @@ export default {
       endDate: "",
       price: "",
       amenities: [],
+    });
+    const showEditRoommateModal = ref(false);
+    const isEditingRoommate = ref(false);
+    const editRoommateError = ref("");
+    const editingRoommatePostingId = ref(null);
+    const editRoommateForm = ref({
+      city: "",
+      gender: "",
+      age: "",
+      description: "",
+      startDate: "",
+      endDate: "",
     });
 
     const formatDate = (dateString) => {
@@ -337,6 +460,124 @@ export default {
       const month = String(date.getMonth() + 1).padStart(2, "0");
       const day = String(date.getDate()).padStart(2, "0");
       return `${year}-${month}-${day}`;
+    };
+
+    const editRoommatePosting = (posting) => {
+      editingRoommatePostingId.value = posting._id;
+      editRoommateForm.value = {
+        city: posting.city || "",
+        gender: posting.gender || "",
+        age: posting.age || "",
+        description: posting.description || "",
+        startDate: formatDateForInput(posting.startDate),
+        endDate: formatDateForInput(posting.endDate),
+      };
+      editRoommateError.value = "";
+      showEditRoommateModal.value = true;
+    };
+
+    const closeEditRoommateModal = () => {
+      showEditRoommateModal.value = false;
+      editRoommateError.value = "";
+      editingRoommatePostingId.value = null;
+      editRoommateForm.value = {
+        city: "",
+        gender: "",
+        age: "",
+        description: "",
+        startDate: "",
+        endDate: "",
+      };
+    };
+
+    const handleEditRoommatePosting = async () => {
+      if (!editingRoommatePostingId.value) {
+        editRoommateError.value = "No posting selected for editing.";
+        return;
+      }
+
+      isEditingRoommate.value = true;
+      editRoommateError.value = "";
+
+      try {
+        const postingId = editingRoommatePostingId.value;
+        const posting = roommatePostings.value.find((p) => p._id === postingId);
+        if (!posting) {
+          editRoommateError.value = "Posting not found";
+          return;
+        }
+
+        const userId = sessionStore.user?.id || sessionStore.user?.user;
+        if (!userId) {
+          editRoommateError.value = "User not found";
+          return;
+        }
+
+        // Compare and update only changed fields
+        if (editRoommateForm.value.city !== posting.city) {
+          await roommatePostingsApi.editCity(
+            userId,
+            editRoommateForm.value.city
+          );
+        }
+        if (editRoommateForm.value.gender !== posting.gender) {
+          await roommatePostingsApi.editGender(
+            userId,
+            editRoommateForm.value.gender
+          );
+        }
+        if (editRoommateForm.value.age !== posting.age) {
+          await roommatePostingsApi.editAge(userId, editRoommateForm.value.age);
+        }
+        if (editRoommateForm.value.description !== posting.description) {
+          await roommatePostingsApi.editDescription(
+            userId,
+            editRoommateForm.value.description
+          );
+        }
+
+        // Update dates if changed
+        if (posting.startDate) {
+          const newStartDate = new Date(editRoommateForm.value.startDate);
+          const oldStartDate = new Date(posting.startDate);
+          if (newStartDate.getTime() !== oldStartDate.getTime()) {
+            await roommatePostingsApi.editStartDate(
+              userId,
+              editRoommateForm.value.startDate
+            );
+          }
+        } else if (editRoommateForm.value.startDate) {
+          await roommatePostingsApi.editStartDate(
+            userId,
+            editRoommateForm.value.startDate
+          );
+        }
+
+        if (posting.endDate) {
+          const newEndDate = new Date(editRoommateForm.value.endDate);
+          const oldEndDate = new Date(posting.endDate);
+          if (newEndDate.getTime() !== oldEndDate.getTime()) {
+            await roommatePostingsApi.editEndDate(
+              userId,
+              editRoommateForm.value.endDate
+            );
+          }
+        } else if (editRoommateForm.value.endDate) {
+          await roommatePostingsApi.editEndDate(
+            userId,
+            editRoommateForm.value.endDate
+          );
+        }
+
+        // Refresh postings to get updated data
+        await fetchMyPostings();
+        closeEditRoommateModal();
+      } catch (err) {
+        console.error("[MyPostings] Error editing roommate posting:", err);
+        editRoommateError.value = err.message || "Failed to update posting";
+      } finally {
+        isEditingRoommate.value = false;
+      }
     };
 
     const editListing = (listing) => {
@@ -519,6 +760,13 @@ export default {
       error,
       formatDate,
       deleteRoommatePosting,
+      editRoommatePosting,
+      showEditRoommateModal,
+      isEditingRoommate,
+      editRoommateError,
+      editRoommateForm,
+      closeEditRoommateModal,
+      handleEditRoommatePosting,
       editListing,
       deleteHousingListing,
       showEditModal,
@@ -758,58 +1006,110 @@ export default {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .modal-content {
   background: white;
-  padding: 2rem;
-  border-radius: 12px;
+  padding: 2.5rem;
+  border-radius: 16px;
   width: 90%;
   max-width: 600px;
   max-height: 90vh;
   overflow-y: auto;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.3s ease;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .modal-content h2 {
   color: #123619;
-  margin-bottom: 1.5rem;
+  margin-bottom: 2rem;
+  font-size: 1.875rem;
+  font-weight: 700;
+  border-bottom: 3px solid #1e5a2e;
+  padding-bottom: 0.75rem;
 }
 
 .form-group {
-  margin-bottom: 1.25rem;
+  margin-bottom: 1.75rem;
 }
 
 .form-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1rem;
+  gap: 1.25rem;
 }
 
 .form-group label {
   display: block;
   font-weight: 600;
   color: #123619;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.625rem;
+  font-size: 0.95rem;
+  letter-spacing: 0.3px;
 }
 
-.form-group input {
+.form-group input,
+.form-group select,
+.form-group textarea {
   width: 100%;
-  padding: 0.75rem;
+  padding: 0.875rem 1rem;
   border: 2px solid #e0e0e0;
-  border-radius: 6px;
+  border-radius: 8px;
   font-size: 1rem;
-  transition: border-color 0.3s;
+  transition: all 0.2s ease;
   box-sizing: border-box;
+  font-family: inherit;
+  background: #fafafa;
 }
 
-.form-group input:focus {
+.form-group input:hover,
+.form-group select:hover,
+.form-group textarea:hover {
+  border-color: #c0c0c0;
+  background: white;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
   outline: none;
   border-color: #1e5a2e;
+  background: white;
+  box-shadow: 0 0 0 3px rgba(30, 90, 46, 0.1);
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 120px;
+  line-height: 1.6;
 }
 
 .amenities-list {
@@ -880,38 +1180,43 @@ export default {
 .modal-actions {
   display: flex;
   gap: 1rem;
-  margin-top: 1.5rem;
+  margin-top: 2.5rem;
+  padding-top: 1.5rem;
+  border-top: 2px solid #f0f0f0;
   justify-content: flex-end;
 }
 
 .cancel-btn,
 .submit-btn {
-  padding: 0.75rem 1.5rem;
+  padding: 0.875rem 1.5rem;
   border: none;
-  border-radius: 6px;
-  font-size: 1rem;
+  border-radius: 8px;
+  font-size: 1.05rem;
   font-weight: 600;
   cursor: pointer;
-  transition: opacity 0.2s, transform 0.2s;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .cancel-btn {
-  background: #e0e0e0;
-  color: #333;
+  background: #6c757d;
+  color: white;
 }
 
 .cancel-btn:hover {
-  background: #d0d0d0;
+  background: #5a6268;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
 .submit-btn {
-  background: #1e5a2e;
+  background: linear-gradient(135deg, #1e5a2e 0%, #123619 100%);
   color: white;
 }
 
 .submit-btn:hover:not(:disabled) {
-  background: #123619;
-  transform: translateY(-2px);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(30, 90, 46, 0.3);
 }
 
 .submit-btn:disabled {

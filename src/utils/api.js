@@ -492,6 +492,60 @@ export const roommatePostings = {
       session: sessionStore.token,
     });
   },
+
+  async editCity(poster, newCity) {
+    const sessionStore = useSessionStore();
+    return await apiRequest("/RoommatePosting/editCity", {
+      poster,
+      newCity,
+      session: sessionStore.token,
+    });
+  },
+
+  async editGender(poster, newGender) {
+    const sessionStore = useSessionStore();
+    return await apiRequest("/RoommatePosting/editGender", {
+      poster,
+      newGender,
+      session: sessionStore.token,
+    });
+  },
+
+  async editAge(poster, newAge) {
+    const sessionStore = useSessionStore();
+    return await apiRequest("/RoommatePosting/editAge", {
+      poster,
+      newAge,
+      session: sessionStore.token,
+    });
+  },
+
+  async editDescription(poster, newDescription) {
+    const sessionStore = useSessionStore();
+    return await apiRequest("/RoommatePosting/editDescription", {
+      poster,
+      newDescription,
+      session: sessionStore.token,
+    });
+  },
+
+  async editStartDate(poster, newStartDate) {
+    const sessionStore = useSessionStore();
+    return await apiRequest("/RoommatePosting/editStartDate", {
+      poster,
+      newStartDate,
+      session: sessionStore.token,
+    });
+  },
+
+  async editEndDate(poster, newEndDate) {
+    const sessionStore = useSessionStore();
+    return await apiRequest("/RoommatePosting/editEndDate", {
+      poster,
+      newEndDate,
+      session: sessionStore.token,
+    });
+  },
 };
 
 export default {

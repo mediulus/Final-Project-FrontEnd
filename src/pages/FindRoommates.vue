@@ -22,19 +22,24 @@
         >
           <div class="listing-header">
             <h3>{{ posting.city }}</h3>
-            <button
-              @click="toggleSavedItem(posting._id)"
-              class="favorite-btn"
-              :class="{ 'is-saved': isSaved(posting._id) }"
-              :title="
-                isSaved(posting._id)
-                  ? 'Remove from favorites'
-                  : 'Add to favorites'
-              "
-            >
-              <span v-if="isSaved(posting._id)">♥</span>
-              <span v-else>♡</span>
-            </button>
+            <div class="header-actions">
+              <button
+                @click="toggleSavedItem(posting._id)"
+                class="favorite-btn"
+                :class="{ 'is-saved': isSaved(posting._id) }"
+                :title="
+                  isSaved(posting._id)
+                    ? 'Remove from favorites'
+                    : 'Add to favorites'
+                "
+              >
+                <span v-if="isSaved(posting._id)">♥</span>
+                <span v-else>♡</span>
+              </button>
+              <div v-if="isPoster(posting)" class="owner-badge">
+                Your Posting
+              </div>
+            </div>
           </div>
 
           <div class="listing-details">
@@ -58,6 +63,7 @@
           </div>
 
           <div v-if="isPoster(posting)" class="listing-actions">
+            <button @click="editPosting(posting)" class="edit-btn">Edit</button>
             <button @click="deletePosting(posting._id)" class="delete-btn">
               Delete
             </button>
@@ -130,12 +136,7 @@
 
             <div class="form-group">
               <label for="endDate">End Date *</label>
-              <input
-                type="date"
-                id="endDate"
-                v-model="form.endDate"
-                required
-              />
+              <input type="date" id="endDate" v-model="form.endDate" required />
             </div>
           </div>
 
@@ -158,6 +159,93 @@
             </button>
             <button type="submit" class="submit-btn" :disabled="isCreating">
               {{ isCreating ? "Creating..." : "Create Posting" }}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Edit Posting Modal -->
+    <div v-if="showEditModal" class="modal-overlay" @click="closeEditModal">
+      <div class="modal-content" @click.stop>
+        <h2>Edit Roommate Posting</h2>
+        <form @submit.prevent="handleEditPosting">
+          <div class="form-group">
+            <label for="edit-city">City *</label>
+            <input
+              type="text"
+              id="edit-city"
+              v-model="editForm.city"
+              required
+              placeholder="e.g., Cambridge"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="edit-gender">Gender *</label>
+            <select id="edit-gender" v-model="editForm.gender" required>
+              <option value="" disabled>Select your gender</option>
+              <option value="Female">Female</option>
+              <option value="Male">Male</option>
+              <option value="Non-binary">Non-binary</option>
+              <option value="Prefer not to say">Prefer not to say</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="edit-age">Age *</label>
+            <input
+              type="number"
+              id="edit-age"
+              v-model.number="editForm.age"
+              required
+              min="18"
+              max="120"
+              placeholder="e.g., 25"
+            />
+          </div>
+
+          <div class="form-row">
+            <div class="form-group">
+              <label for="edit-startDate">Start Date *</label>
+              <input
+                type="date"
+                id="edit-startDate"
+                v-model="editForm.startDate"
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="edit-endDate">End Date *</label>
+              <input
+                type="date"
+                id="edit-endDate"
+                v-model="editForm.endDate"
+                required
+              />
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label for="edit-description">Description *</label>
+            <textarea
+              id="edit-description"
+              v-model="editForm.description"
+              required
+              rows="4"
+              placeholder="Tell others about yourself and what you're looking for..."
+            ></textarea>
+          </div>
+
+          <div v-if="editError" class="error-message">{{ editError }}</div>
+
+          <div class="modal-actions">
+            <button type="button" @click="closeEditModal" class="cancel-btn">
+              Cancel
+            </button>
+            <button type="submit" class="submit-btn" :disabled="isEditing">
+              {{ isEditing ? "Saving..." : "Save Changes" }}
             </button>
           </div>
         </form>
@@ -196,6 +284,18 @@ export default {
     const isCreating = ref(false);
     const createError = ref("");
     const isContacting = ref({}); // Track loading state per posting ID
+    const showEditModal = ref(false);
+    const isEditing = ref(false);
+    const editError = ref("");
+    const editingPostingId = ref(null);
+    const editForm = ref({
+      city: "",
+      gender: "",
+      age: "",
+      description: "",
+      startDate: "",
+      endDate: "",
+    });
 
     // Helper function to check if a string looks like a UUID (not a username)
     const isUUID = (str) => {
@@ -455,9 +555,126 @@ export default {
       });
     };
 
+    const formatDateForInput = (dateString) => {
+      if (!dateString) return "";
+      const date = new Date(dateString);
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, "0");
+      const day = String(date.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
+    };
+
     const closeModal = () => {
       localModal.value = false;
       createError.value = "";
+    };
+
+    const editPosting = (posting) => {
+      editingPostingId.value = posting._id;
+      editForm.value = {
+        city: posting.city || "",
+        gender: posting.gender || "",
+        age: posting.age || "",
+        description: posting.description || "",
+        startDate: formatDateForInput(posting.startDate),
+        endDate: formatDateForInput(posting.endDate),
+      };
+      editError.value = "";
+      showEditModal.value = true;
+    };
+
+    const closeEditModal = () => {
+      showEditModal.value = false;
+      editError.value = "";
+      editingPostingId.value = null;
+      editForm.value = {
+        city: "",
+        gender: "",
+        age: "",
+        description: "",
+        startDate: "",
+        endDate: "",
+      };
+    };
+
+    const handleEditPosting = async () => {
+      if (!editingPostingId.value) {
+        editError.value = "No posting selected for editing.";
+        return;
+      }
+
+      isEditing.value = true;
+      editError.value = "";
+
+      try {
+        const postingId = editingPostingId.value;
+        const posting = postings.value.find((p) => p._id === postingId);
+        if (!posting) {
+          editError.value = "Posting not found";
+          return;
+        }
+
+        const userId = sessionStore.user?.id || sessionStore.user?.user;
+        if (!userId) {
+          editError.value = "User not found";
+          return;
+        }
+
+        // Compare and update only changed fields
+        if (editForm.value.city !== posting.city) {
+          await roommatePostings.editCity(userId, editForm.value.city);
+        }
+        if (editForm.value.gender !== posting.gender) {
+          await roommatePostings.editGender(userId, editForm.value.gender);
+        }
+        if (editForm.value.age !== posting.age) {
+          await roommatePostings.editAge(userId, editForm.value.age);
+        }
+        if (editForm.value.description !== posting.description) {
+          await roommatePostings.editDescription(
+            userId,
+            editForm.value.description
+          );
+        }
+
+        // Update dates if changed
+        if (posting.startDate) {
+          const newStartDate = new Date(editForm.value.startDate);
+          const oldStartDate = new Date(posting.startDate);
+          if (newStartDate.getTime() !== oldStartDate.getTime()) {
+            await roommatePostings.editStartDate(
+              userId,
+              editForm.value.startDate
+            );
+          }
+        } else if (editForm.value.startDate) {
+          // Date didn't exist before, add it now
+          await roommatePostings.editStartDate(
+            userId,
+            editForm.value.startDate
+          );
+        }
+
+        if (posting.endDate) {
+          const newEndDate = new Date(editForm.value.endDate);
+          const oldEndDate = new Date(posting.endDate);
+          if (newEndDate.getTime() !== oldEndDate.getTime()) {
+            await roommatePostings.editEndDate(userId, editForm.value.endDate);
+          }
+        } else if (editForm.value.endDate) {
+          // Date didn't exist before, add it now
+          await roommatePostings.editEndDate(userId, editForm.value.endDate);
+        }
+
+        // Refresh postings to get updated data
+        await fetchPostings();
+        closeEditModal();
+      } catch (err) {
+        console.error("[FindRoommates] Error editing posting:", err);
+        editError.value = err.message || "Failed to update posting";
+      } finally {
+        isEditing.value = false;
+      }
     };
 
     const isPoster = (posting) => {
@@ -630,6 +847,13 @@ export default {
       isPoster,
       deletePosting,
       formatDate,
+      editPosting,
+      showEditModal,
+      isEditing,
+      editError,
+      editForm,
+      closeEditModal,
+      handleEditPosting,
     };
   },
 };
@@ -735,6 +959,12 @@ export default {
   margin: 0;
 }
 
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
 .favorite-btn {
   background: none;
   border: none;
@@ -743,6 +973,15 @@ export default {
   padding: 0.25rem;
   transition: transform 0.2s;
   line-height: 1;
+}
+
+.owner-badge {
+  background: #1e5a2e;
+  color: white;
+  padding: 0.375rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  font-weight: 600;
 }
 
 .favorite-btn.is-saved {
@@ -807,6 +1046,7 @@ export default {
   border-top: 1px solid #f0f0f0;
 }
 
+.edit-btn,
 .delete-btn {
   flex: 1;
   padding: 0.625rem;
@@ -815,10 +1055,19 @@ export default {
   font-weight: 600;
   cursor: pointer;
   transition: opacity 0.2s;
+}
+
+.edit-btn {
+  background: #1e5a2e;
+  color: white;
+}
+
+.delete-btn {
   background: #dc3545;
   color: white;
 }
 
+.edit-btn:hover,
 .delete-btn:hover {
   opacity: 0.85;
 }
@@ -829,58 +1078,94 @@ export default {
   left: 0;
   width: 100vw;
   height: 100vh;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .modal-content {
   background: white;
-  border-radius: 12px;
-  padding: 2rem;
+  border-radius: 16px;
+  padding: 2.5rem;
   width: 90%;
   max-width: 600px;
   max-height: 90vh;
   overflow-y: auto;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.3s ease;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .modal-content h2 {
   color: #123619;
-  margin-bottom: 1.5rem;
-  font-size: 1.8rem;
+  margin-bottom: 2rem;
+  font-size: 1.875rem;
+  font-weight: 700;
+  border-bottom: 3px solid #1e5a2e;
+  padding-bottom: 0.75rem;
 }
 
 .form-group {
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.75rem;
 }
 
 .form-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1rem;
+  gap: 1.25rem;
 }
 
 .form-group label {
   display: block;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.625rem;
   color: #123619;
   font-weight: 600;
   font-size: 0.95rem;
+  letter-spacing: 0.3px;
 }
 
 .form-group input,
 .form-group select,
 .form-group textarea {
   width: 100%;
-  padding: 0.75rem;
+  padding: 0.875rem 1rem;
   border: 2px solid #e0e0e0;
-  border-radius: 6px;
+  border-radius: 8px;
   font-size: 1rem;
-  transition: border-color 0.3s;
+  transition: all 0.2s ease;
   font-family: inherit;
+  background: #fafafa;
+}
+
+.form-group input:hover,
+.form-group select:hover,
+.form-group textarea:hover {
+  border-color: #c0c0c0;
+  background: white;
 }
 
 .form-group input:focus,
@@ -888,29 +1173,35 @@ export default {
 .form-group textarea:focus {
   outline: none;
   border-color: #1e5a2e;
+  background: white;
+  box-shadow: 0 0 0 3px rgba(30, 90, 46, 0.1);
 }
 
 .form-group textarea {
   resize: vertical;
-  min-height: 100px;
+  min-height: 120px;
+  line-height: 1.6;
 }
 
 .modal-actions {
   display: flex;
   gap: 1rem;
-  margin-top: 2rem;
+  margin-top: 2.5rem;
+  padding-top: 1.5rem;
+  border-top: 2px solid #f0f0f0;
 }
 
 .cancel-btn,
 .submit-btn {
   flex: 1;
-  padding: 0.875rem;
+  padding: 0.875rem 1.5rem;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   font-size: 1.05rem;
   font-weight: 600;
   cursor: pointer;
-  transition: opacity 0.2s;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .cancel-btn {
@@ -918,19 +1209,26 @@ export default {
   color: white;
 }
 
+.cancel-btn:hover {
+  background: #5a6268;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
 .submit-btn {
-  background: #1e5a2e;
+  background: linear-gradient(135deg, #1e5a2e 0%, #123619 100%);
   color: white;
 }
 
-.cancel-btn:hover,
 .submit-btn:hover:not(:disabled) {
-  opacity: 0.85;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(30, 90, 46, 0.3);
 }
 
 .submit-btn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+  transform: none;
 }
 
 @media (max-width: 768px) {
