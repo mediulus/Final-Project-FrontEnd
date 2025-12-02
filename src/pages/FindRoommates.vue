@@ -47,6 +47,10 @@
               <strong>👤</strong> {{ posting.gender }}, {{ posting.age }} years
               old
             </p>
+            <p v-if="posting.numberOfRoommates" class="info">
+              <strong>👥</strong> Looking for {{ posting.numberOfRoommates }}
+              {{ posting.numberOfRoommates === 1 ? "roommate" : "roommates" }}
+            </p>
             <p v-if="posting.startDate && posting.endDate" class="dates">
               <strong>📅</strong> {{ formatDate(posting.startDate) }} -
               {{ formatDate(posting.endDate) }}
@@ -132,6 +136,19 @@
               min="18"
               max="120"
               placeholder="e.g., 25"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="numberOfRoommates">Number of Roommates *</label>
+            <input
+              type="number"
+              id="numberOfRoommates"
+              v-model.number="form.numberOfRoommates"
+              required
+              min="1"
+              max="10"
+              placeholder="e.g., 2"
             />
           </div>
 
@@ -306,6 +323,19 @@
               min="18"
               max="120"
               placeholder="e.g., 25"
+            />
+          </div>
+
+          <div class="form-group">
+            <label for="edit-numberOfRoommates">Number of Roommates *</label>
+            <input
+              type="number"
+              id="edit-numberOfRoommates"
+              v-model.number="editForm.numberOfRoommates"
+              required
+              min="1"
+              max="10"
+              placeholder="e.g., 2"
             />
           </div>
 
@@ -484,6 +514,7 @@ export default {
       cleanlinessPreference: "",
       homeEnvironment: "",
       guestsVisitors: "",
+      numberOfRoommates: "",
     });
     const sessionStore = useSessionStore();
     const postings = ref([]);
@@ -509,6 +540,7 @@ export default {
       cleanlinessPreference: "",
       homeEnvironment: "",
       guestsVisitors: "",
+      numberOfRoommates: "",
     });
 
     // Helper function to check if a string looks like a UUID (not a username)
@@ -816,6 +848,7 @@ export default {
         cleanlinessPreference: "",
         homeEnvironment: "",
         guestsVisitors: "",
+        numberOfRoommates: "",
       };
     };
 
@@ -913,6 +946,12 @@ export default {
           await roommatePostings.editGuestsVisitors(
             userId,
             editForm.value.guestsVisitors
+          );
+        }
+        if (editForm.value.numberOfRoommates !== posting.numberOfRoommates) {
+          await roommatePostings.editNumberOfRoommates(
+            userId,
+            editForm.value.numberOfRoommates
           );
         }
 
@@ -1027,7 +1066,8 @@ export default {
           !form.value.dailyRhythm ||
           !form.value.cleanlinessPreference ||
           !form.value.homeEnvironment ||
-          !form.value.guestsVisitors
+          !form.value.guestsVisitors ||
+          !form.value.numberOfRoommates
         ) {
           createError.value = "Please fill in all required fields";
           isCreating.value = false;
@@ -1045,6 +1085,7 @@ export default {
           cleanlinessPreference: form.value.cleanlinessPreference,
           homeEnvironment: form.value.homeEnvironment,
           guestsVisitors: form.value.guestsVisitors,
+          numberOfRoommates: form.value.numberOfRoommates,
         };
 
         console.log("Sending posting data:", postingData);
@@ -1082,6 +1123,7 @@ export default {
           cleanlinessPreference: "",
           homeEnvironment: "",
           guestsVisitors: "",
+          numberOfRoommates: "",
         };
         closeModal();
 

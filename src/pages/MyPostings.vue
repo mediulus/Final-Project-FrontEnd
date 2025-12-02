@@ -38,6 +38,13 @@
                   <strong>👤</strong> {{ posting.gender }},
                   {{ posting.age }} years old
                 </p>
+                <p v-if="posting.numberOfRoommates" class="info">
+                  <strong>👥</strong> Looking for
+                  {{ posting.numberOfRoommates }}
+                  {{
+                    posting.numberOfRoommates === 1 ? "roommate" : "roommates"
+                  }}
+                </p>
                 <p v-if="posting.startDate && posting.endDate" class="dates">
                   <strong>📅</strong> {{ formatDate(posting.startDate) }} -
                   {{ formatDate(posting.endDate) }}
@@ -291,6 +298,21 @@
             />
           </div>
 
+          <div class="form-group">
+            <label for="edit-roommate-numberOfRoommates"
+              >Number of Roommates *</label
+            >
+            <input
+              type="number"
+              id="edit-roommate-numberOfRoommates"
+              v-model.number="editRoommateForm.numberOfRoommates"
+              required
+              min="1"
+              max="10"
+              placeholder="e.g., 2"
+            />
+          </div>
+
           <div class="form-row">
             <div class="form-group">
               <label for="edit-roommate-startDate">Start Date *</label>
@@ -499,6 +521,7 @@ export default {
       cleanlinessPreference: "",
       homeEnvironment: "",
       guestsVisitors: "",
+      numberOfRoommates: "",
     });
 
     const formatDate = (dateString) => {
@@ -597,6 +620,7 @@ export default {
         cleanlinessPreference: posting.cleanlinessPreference || "",
         homeEnvironment: posting.homeEnvironment || "",
         guestsVisitors: posting.guestsVisitors || "",
+        numberOfRoommates: posting.numberOfRoommates || "",
       };
       editRoommateError.value = "";
       showEditRoommateModal.value = true;
@@ -617,6 +641,7 @@ export default {
         cleanlinessPreference: "",
         homeEnvironment: "",
         guestsVisitors: "",
+        numberOfRoommates: "",
       };
     };
 

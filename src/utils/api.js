@@ -582,6 +582,15 @@ export const roommatePostings = {
       session: sessionStore.token,
     });
   },
+
+  async editNumberOfRoommates(poster, newValue) {
+    const sessionStore = useSessionStore();
+    return await apiRequest("/RoommatePosting/editNumberOfRoommates", {
+      poster,
+      newValue,
+      session: sessionStore.token,
+    });
+  },
 };
 
 export default {
