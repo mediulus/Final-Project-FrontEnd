@@ -121,13 +121,19 @@
 
             <!-- Photo Preview -->
             <div v-if="listing.photos && listing.photos.length > 0" class="card-photos">
-              <img
-                :src="getPhotoUrl(listing.photos[0])"
-                :alt="listing.title + ' photo'"
-                class="card-photo-main"
-              />
-              <div v-if="listing.photos.length > 1" class="photo-count-badge">
-                +{{ listing.photos.length - 1 }} more
+              <div
+                v-for="(photo, index) in listing.photos.slice(0, 2)"
+                :key="index"
+                class="card-photo-item"
+              >
+                <img
+                  :src="getPhotoUrl(photo)"
+                  :alt="listing.title + ' photo ' + (index + 1)"
+                  class="card-photo-main"
+                />
+              </div>
+              <div v-if="listing.photos.length > 2" class="photo-count-badge">
+                +{{ listing.photos.length - 2 }} more
               </div>
             </div>
 
@@ -1964,6 +1970,8 @@ export default {
   border: 1px solid #e9ecef;
   cursor: pointer;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .posting-card:hover {
@@ -2024,6 +2032,9 @@ export default {
 
 .card-preview {
   padding: 0 1.25rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
 }
 
 .listing-summary {
@@ -2067,6 +2078,7 @@ export default {
   font-weight: 500;
   padding-top: 0.5rem;
   border-top: 1px solid #e9ecef;
+  margin-top: auto;
 }
 
 .expand-icon {
@@ -2740,6 +2752,16 @@ export default {
   border-radius: 8px;
   overflow: hidden;
   background: #f8f9fa;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem;
+  padding: 0.5rem;
+}
+
+.card-photo-item {
+  border-radius: 6px;
+  overflow: hidden;
+  background: white;
 }
 
 .card-photo-main {

@@ -250,11 +250,11 @@
               >
                 {{ isContacting[getExpandedPosting()._id] ? "Sending..." : "Contact Me" }}
               </button>
-              
+
               <div v-if="!isPoster(getExpandedPosting()) && getItemTags(getExpandedPosting()._id).includes('Contacted')" class="contacted-message">
                 Already contacted
               </div>
-              
+
               <div v-if="isPoster(getExpandedPosting())" class="owner-message">
                 This is your own posting
               </div>
@@ -359,11 +359,11 @@
               >
                 {{ isSendingInterest[getExpandedListing()._id] ? "Sending..." : "Send Interest" }}
               </button>
-              
+
               <div v-if="!isOwner(getExpandedListing()) && getItemTags(getExpandedListing()._id).includes('Contacted')" class="contacted-message">
                 Already contacted
               </div>
-              
+
               <div v-if="isOwner(getExpandedListing())" class="owner-message">
                 This is your own listing
               </div>
@@ -1030,6 +1030,8 @@ export default {
   border: 1px solid #e9ecef;
   cursor: pointer;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .posting-card:hover {
@@ -1108,6 +1110,9 @@ export default {
 
 .card-preview {
   padding: 0 1.25rem 1.25rem;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
 }
 
 .description-preview {
@@ -1151,6 +1156,7 @@ export default {
   font-weight: 500;
   padding-top: 0.5rem;
   border-top: 1px solid #e9ecef;
+  margin-top: auto;
 }
 
 .expand-icon {
@@ -1329,7 +1335,7 @@ export default {
 
 .photo-gallery {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  grid-template-columns: repeat(2, 1fr);
   gap: 1rem;
   margin-top: 1rem;
 }
@@ -1376,7 +1382,7 @@ export default {
   }
 
   .photo-gallery {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
   }
 
   .detail-overlay {

@@ -47,11 +47,19 @@
 
                 <div class="card-actions" @click.stop>
                   <div class="owner-badge">Your Posting</div>
-                  <button @click="editRoommatePosting(posting)" class="edit-btn">
-                    Edit
+                  <button @click="editRoommatePosting(posting)" class="icon-btn edit-icon-btn" title="Edit">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                    </svg>
                   </button>
-                  <button @click="deleteRoommatePosting(posting._id)" class="delete-btn">
-                    Delete
+                  <button @click="deleteRoommatePosting(posting._id)" class="icon-btn delete-icon-btn" title="Delete">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="3 6 5 6 21 6"></polyline>
+                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                      <line x1="10" y1="11" x2="10" y2="17"></line>
+                      <line x1="14" y1="11" x2="14" y2="17"></line>
+                    </svg>
                   </button>
                 </div>
               </div>
@@ -101,28 +109,42 @@
 
                 <div class="card-actions" @click.stop>
                   <div class="owner-badge">Your Listing</div>
-                  <button @click="editListing(listing)" class="edit-btn">
-                    Edit
+                  <button @click="editListing(listing)" class="icon-btn edit-icon-btn" title="Edit">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                    </svg>
                   </button>
-                  <button @click="deleteHousingListing(listing._id)" class="delete-btn">
-                    Delete
+                  <button @click="deleteHousingListing(listing._id)" class="icon-btn delete-icon-btn" title="Delete">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="3 6 5 6 21 6"></polyline>
+                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                      <line x1="10" y1="11" x2="10" y2="17"></line>
+                      <line x1="14" y1="11" x2="14" y2="17"></line>
+                    </svg>
                   </button>
-                </div>
-              </div>
-
-              <!-- Photo Preview -->
-              <div v-if="listing.photos && listing.photos.length > 0" class="card-photos">
-                <img
-                  :src="getPhotoUrl(listing.photos[0])"
-                  :alt="listing.title + ' photo'"
-                  class="card-photo-main"
-                />
-                <div v-if="listing.photos.length > 1" class="photo-count-badge">
-                  +{{ listing.photos.length - 1 }} more
                 </div>
               </div>
 
               <div class="card-preview">
+                <!-- Photo Preview -->
+                <div v-if="listing.photos && listing.photos.length > 0" class="card-photos">
+                  <div
+                    v-for="(photo, index) in listing.photos.slice(0, 2)"
+                    :key="index"
+                    class="card-photo-item"
+                  >
+                    <img
+                      :src="getPhotoUrl(photo)"
+                      :alt="listing.title + ' photo ' + (index + 1)"
+                      class="card-photo-main"
+                    />
+                  </div>
+                  <div v-if="listing.photos.length > 2" class="photo-count-badge">
+                    +{{ listing.photos.length - 2 }} more
+                  </div>
+                </div>
+
                 <div class="listing-summary">
                   <span class="dates-preview">
                     <svg class="info-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -1672,6 +1694,36 @@ export default {
   font-weight: 600;
 }
 
+.icon-btn {
+  padding: 0.5rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+}
+
+.edit-icon-btn {
+  color: rgb(47, 71, 62);
+}
+
+.edit-icon-btn:hover {
+  background: rgba(47, 71, 62, 0.1);
+  transform: scale(1.1);
+}
+
+.delete-icon-btn {
+  color: #dc3545;
+}
+
+.delete-icon-btn:hover {
+  background: rgba(220, 53, 69, 0.1);
+  transform: scale(1.1);
+}
+
 .edit-btn, .delete-btn {
   padding: 0.4rem 0.8rem;
   border: none;
@@ -1717,6 +1769,8 @@ export default {
 .card-preview {
   padding: 0 1.25rem 1.25rem;
   flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 .description-preview {
@@ -1760,6 +1814,7 @@ export default {
   font-weight: 500;
   padding-top: 0.5rem;
   border-top: 1px solid #e9ecef;
+  margin-top: auto;
 }
 
 .expand-icon {
@@ -1981,11 +2036,22 @@ export default {
   margin: 1rem 0;
   border-radius: 8px;
   overflow: hidden;
+  background: #f8f9fa;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem;
+  padding: 0.5rem;
+}
+
+.card-photo-item {
+  border-radius: 6px;
+  overflow: hidden;
+  background: white;
 }
 
 .card-photo-main {
   width: 100%;
-  height: 200px;
+  height: 140px;
   object-fit: cover;
   display: block;
 }
@@ -1999,7 +2065,7 @@ export default {
   padding: 4px 8px;
   border-radius: 12px;
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 600;
 }
 
 /* Photo editing styles */
@@ -2200,7 +2266,7 @@ export default {
 /* Detail view photos styles */
 .photos-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  grid-template-columns: repeat(2, 1fr);
   gap: 1rem;
   margin-top: 1rem;
 }
@@ -2231,7 +2297,7 @@ export default {
 
 @media (max-width: 768px) {
   .photos-grid {
-    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    grid-template-columns: repeat(2, 1fr);
     gap: 0.5rem;
   }
 
