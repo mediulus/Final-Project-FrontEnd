@@ -370,7 +370,9 @@ export const listings = {
     endDate,
     price,
     type,
-    description
+    description,
+    latitude,
+    longitude
   ) {
     const sessionStore = useSessionStore();
     return await apiRequest("/Listing/create", {
@@ -383,6 +385,8 @@ export const listings = {
       price,
       type,
       description,
+      latitude,
+      longitude,
       session: sessionStore.token,
     });
   },
@@ -419,11 +423,13 @@ export const listings = {
     });
   },
 
-  async editAddress(listingId, newAddress) {
+  async editAddress(listingId, newAddress, latitude, longitude) {
     const sessionStore = useSessionStore();
     return await apiRequest("/Listing/editAddress", {
       listingId,
       newAddress,
+      latitude,
+      longitude,
       session: sessionStore.token,
     });
   },

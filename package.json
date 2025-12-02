@@ -9,6 +9,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@googlemaps/js-api-loader": "^2.0.2",
     "axios": "^1.13.2",
     "pinia": "^3.0.4",
     "pinia-plugin-persistedstate": "^4.7.1",

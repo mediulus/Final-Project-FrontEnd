@@ -51,12 +51,52 @@
     </section>
 
     <section class="listings-section">
+      <!-- Map View Toggle -->
+      <div class="view-toggle">
+        <button 
+          @click="showMapView = !showMapView" 
+          class="toggle-btn"
+          :class="{ active: showMapView }"
+        >
+          <span v-if="showMapView" class="toggle-content">
+            <svg class="toggle-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="8" y1="6" x2="21" y2="6"></line>
+              <line x1="8" y1="12" x2="21" y2="12"></line>
+              <line x1="8" y1="18" x2="21" y2="18"></line>
+              <line x1="3" y1="6" x2="3.01" y2="6"></line>
+              <line x1="3" y1="12" x2="3.01" y2="12"></line>
+              <line x1="3" y1="18" x2="3.01" y2="18"></line>
+            </svg>
+            Show List View
+          </span>
+          <span v-else class="toggle-content">
+            <svg class="toggle-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon>
+              <line x1="8" y1="2" x2="8" y2="18"></line>
+              <line x1="16" y1="6" x2="16" y2="22"></line>
+            </svg>
+            Show Map View
+          </span>
+        </button>
+        <span class="results-count">{{ filteredListings.length }} listing{{ filteredListings.length !== 1 ? 's' : '' }} found</span>
+      </div>
+
+      <!-- Map View -->
+      <div v-if="showMapView && !loading" class="map-view-container">
+        <GoogleMap 
+          :center="{ lat: 42.3601, lng: -71.0942 }"
+          :zoom="13"
+          :markers="mapMarkers"
+          @marker-click="handleMapMarkerClick"
+        />
+      </div>
+
       <div v-if="loading" class="loading">Loading listings...</div>
       <div v-else-if="error" class="error-message">{{ error }}</div>
       <div v-else-if="filteredListings.length === 0" class="no-listings">
         No listings match your filters. Try adjusting your search criteria.
       </div>
-      <div v-else class="listings-grid">
+      <div v-else v-show="!showMapView" class="listings-grid">
         <div
           v-for="listing in filteredListings"
           :key="listing._id"
@@ -236,13 +276,29 @@
 
           <div class="form-group">
             <label for="address">Address *</label>
-            <input
-              type="text"
-              id="address"
-              v-model="newListing.address"
-              required
-              placeholder="e.g., 123 Main St, Cambridge, MA"
-            />
+            <div class="autocomplete-wrapper">
+              <input
+                type="text"
+                id="address"
+                v-model="newListing.address"
+                @input="handleAddressInput"
+                @focus="showSuggestions = autocompleteSuggestions.length > 0"
+                @blur="handleAddressBlur"
+                required
+                placeholder="e.g., 123 Main St, Cambridge, MA"
+                autocomplete="off"
+              />
+              <ul v-if="showSuggestions && autocompleteSuggestions.length" class="suggestions-list">
+                <li
+                  v-for="(suggestion, index) in autocompleteSuggestions"
+                  :key="index"
+                  @click="selectSuggestion(suggestion, false)"
+                  class="suggestion-item"
+                >
+                  {{ getSuggestionText(suggestion) }}
+                </li>
+              </ul>
+            </div>
           </div>
 
           <div class="form-row">
@@ -366,13 +422,29 @@
 
           <div class="form-group">
             <label for="edit-address">Address *</label>
-            <input
-              type="text"
-              id="edit-address"
-              v-model="editForm.address"
-              required
-              placeholder="e.g., 123 Main St, Cambridge, MA"
-            />
+            <div class="autocomplete-wrapper">
+              <input
+                type="text"
+                id="edit-address"
+                v-model="editForm.address"
+                @input="handleEditAddressInput"
+                @focus="showEditSuggestions = editAutocompleteSuggestions.length > 0"
+                @blur="handleEditAddressBlur"
+                required
+                placeholder="e.g., 123 Main St, Cambridge, MA"
+                autocomplete="off"
+              />
+              <ul v-if="showEditSuggestions && editAutocompleteSuggestions.length" class="suggestions-list">
+                <li
+                  v-for="(suggestion, index) in editAutocompleteSuggestions"
+                  :key="index"
+                  @click="selectSuggestion(suggestion, true)"
+                  class="suggestion-item"
+                >
+                  {{ getSuggestionText(suggestion) }}
+                </li>
+              </ul>
+            </div>
           </div>
 
           <div class="form-row">
@@ -492,10 +564,15 @@ import {
   savedItems,
   userInfo as userInfoApi,
 } from "../utils/api.js";
+import { apiRequest } from "../utils/api.js";
 import { useSessionStore } from "../stores/session.js";
+import GoogleMap from "../components/GoogleMap.vue";
 
 export default {
   name: "FindHousing",
+  components: {
+    GoogleMap
+  },
   setup() {
     const sessionStore = useSessionStore();
     const listingsData = ref([]);
@@ -539,6 +616,20 @@ export default {
 
     // Expanded view state
     const expandedListing = ref(null);
+
+    // Map view state
+    const showMapView = ref(false);
+
+    // Places Autocomplete - New API
+    const addressInput = ref(null);
+    const geocodedLocation = ref(null);
+    const editGeocodedLocation = ref(null);
+    const autocompleteSuggestions = ref([]);
+    const editAutocompleteSuggestions = ref([]);
+    const showSuggestions = ref(false);
+    const showEditSuggestions = ref(false);
+    let sessionToken = null;
+    let editSessionToken = null;
 
     // Computed property for filtered listings
     const filteredListings = computed(() => {
@@ -585,13 +676,36 @@ export default {
       return result;
     });
 
+    // Computed property for map markers from filtered listings
+    const mapMarkers = computed(() => {
+      const markers = filteredListings.value
+        .filter(listing => listing.latitude && listing.longitude)
+        .map(listing => ({
+          lat: listing.latitude,
+          lng: listing.longitude,
+          title: listing.title,
+          listing: listing
+        }));
+      
+      console.log('[FindHousing] mapMarkers computed:', {
+        totalListings: filteredListings.value.length,
+        listingsWithCoords: markers.length,
+        markers: markers
+      });
+      
+      return markers;
+    });
+
     const applyFilters = () => {
+      console.log('[FindHousing] Applying filters:', filters.value);
       appliedFilters.value = {
         minPrice: filters.value.minPrice,
         maxPrice: filters.value.maxPrice,
         startDate: filters.value.startDate,
         endDate: filters.value.endDate,
       };
+      console.log('[FindHousing] Applied filters:', appliedFilters.value);
+      console.log('[FindHousing] Filtered listings count:', filteredListings.value.length);
     };
 
     const clearFilters = () => {
@@ -692,6 +806,401 @@ export default {
       newListing.value.amenities.splice(index, 1);
     };
 
+    /**
+     * Load Google Maps API if not already loaded
+     */
+    const ensureGoogleMapsLoaded = async () => {
+      // Check if already loaded and initialized
+      if (window.google?.maps?.places?.AutocompleteSuggestion) {
+        console.log('Google Maps API already loaded');
+        return true;
+      }
+
+      try {
+        const response = await apiRequest('/config/mapsKey', {});
+        const apiKey = response.apiKey || import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+        
+        if (!apiKey) {
+          console.error('Google Maps API key not available for autocomplete');
+          return false;
+        }
+
+        // Check if script tag already exists
+        const existingScript = document.querySelector('script[src*="maps.googleapis.com"]');
+        
+        if (!existingScript) {
+          console.log('Loading Google Maps API...');
+          await new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&loading=async&callback=Function.prototype`;
+            script.async = true;
+            script.defer = true;
+            script.onload = () => {
+              console.log('Google Maps script loaded');
+              resolve();
+            };
+            script.onerror = (error) => {
+              console.error('Failed to load Google Maps script:', error);
+              reject(error);
+            };
+            document.head.appendChild(script);
+          });
+        }
+
+        // Wait for API to be available
+        let retries = 0;
+        while (retries < 50) {
+          if (window.google?.maps?.places?.AutocompleteSuggestion) {
+            console.log('Google Maps API ready');
+            return true;
+          }
+          await new Promise(resolve => setTimeout(resolve, 100));
+          retries++;
+        }
+        
+        console.error('Google Maps API failed to initialize after waiting');
+        return false;
+      } catch (error) {
+        console.error('Error loading Google Maps API:', error);
+        return false;
+      }
+    };
+
+    /**
+     * Fetch autocomplete suggestions using the new API
+     */
+    const fetchAutocompleteSuggestions = async (input, isEditMode = false) => {
+      console.log('fetchAutocompleteSuggestions called with input:', input, 'isEditMode:', isEditMode);
+      
+      if (!input || input.length < 2) {
+        console.log('Input too short, clearing suggestions');
+        if (isEditMode) {
+          editAutocompleteSuggestions.value = [];
+          showEditSuggestions.value = false;
+        } else {
+          autocompleteSuggestions.value = [];
+          showSuggestions.value = false;
+        }
+        return;
+      }
+
+      try {
+        console.log('Ensuring Google Maps is loaded...');
+        const isLoaded = await ensureGoogleMapsLoaded();
+        if (!isLoaded) {
+          console.error('Failed to load Google Maps API');
+          return;
+        }
+        
+        console.log('Google Maps loaded, checking API availability...');
+        if (!google.maps.places.AutocompleteSuggestion) {
+          console.error('AutocompleteSuggestion not available');
+          return;
+        }
+
+        // Create session token if not exists
+        if (isEditMode) {
+          if (!editSessionToken) {
+            console.log('Creating edit session token');
+            editSessionToken = new google.maps.places.AutocompleteSessionToken();
+          }
+        } else {
+          if (!sessionToken) {
+            console.log('Creating session token');
+            sessionToken = new google.maps.places.AutocompleteSessionToken();
+          }
+        }
+
+        const request = {
+          input: input,
+          sessionToken: isEditMode ? editSessionToken : sessionToken,
+          locationBias: {
+            // Bias towards Cambridge, MA area
+            west: -71.15,
+            north: 42.40,
+            east: -71.05,
+            south: 42.35,
+          },
+        };
+
+        console.log('Fetching autocomplete suggestions with request:', request);
+        const { suggestions } = await google.maps.places.AutocompleteSuggestion.fetchAutocompleteSuggestions(request);
+
+        console.log('Autocomplete API response:', { suggestions, count: suggestions?.length });
+        
+        if (suggestions && suggestions.length > 0) {
+          const first = suggestions[0];
+          console.log('First suggestion structure:', first);
+          
+          // Check if it has a placePrediction property
+          if (first.placePrediction) {
+            console.log('Has placePrediction property');
+            const pred = first.placePrediction;
+            
+            // Try to log text via toString or valueOf
+            console.log('placePrediction.text:', pred.text);
+            console.log('placePrediction.text type:', typeof pred.text);
+            
+            if (pred.text && typeof pred.text === 'object') {
+              console.log('text.toString():', pred.text.toString());
+              console.log('text keys:', Object.keys(pred.text));
+            }
+            
+            console.log('placePrediction.structuredFormat:', pred.structuredFormat);
+            if (pred.structuredFormat?.mainText) {
+              console.log('mainText:', pred.structuredFormat.mainText);
+              console.log('mainText type:', typeof pred.structuredFormat.mainText);
+              if (typeof pred.structuredFormat.mainText === 'object') {
+                console.log('mainText.toString():', pred.structuredFormat.mainText.toString());
+              }
+            }
+          }
+        }
+
+        if (isEditMode) {
+          // Extract text immediately before Vue wraps the objects
+          editAutocompleteSuggestions.value = suggestions.map(s => {
+            const prediction = s.placePrediction;
+            let displayText = 'Unknown location';
+            
+            try {
+              if (prediction && prediction.text) {
+                displayText = String(prediction.text);
+              }
+            } catch (e) {
+              console.log('Error extracting text:', e.message);
+            }
+            
+            return {
+              displayText: displayText,
+              placePrediction: prediction,
+              rawSuggestion: s
+            };
+          });
+          showEditSuggestions.value = suggestions && suggestions.length > 0;
+          console.log('Edit suggestions set:', editAutocompleteSuggestions.value.length, 'Show:', showEditSuggestions.value);
+        } else {
+          // Extract text immediately before Vue wraps the objects
+          autocompleteSuggestions.value = suggestions.map(s => {
+            const prediction = s.placePrediction;
+            let displayText = 'Unknown location';
+            
+            try {
+              if (prediction && prediction.text) {
+                displayText = String(prediction.text);
+              }
+            } catch (e) {
+              console.log('Error extracting text:', e.message);
+            }
+            
+            return {
+              displayText: displayText,
+              placePrediction: prediction,
+              rawSuggestion: s
+            };
+          });
+          showSuggestions.value = suggestions && suggestions.length > 0;
+          console.log('Create suggestions set:', autocompleteSuggestions.value.length, 'Show:', showSuggestions.value);
+        }
+      } catch (err) {
+        console.error('Error fetching autocomplete suggestions:', err, err.stack);
+        if (isEditMode) {
+          editAutocompleteSuggestions.value = [];
+          showEditSuggestions.value = false;
+        } else {
+          autocompleteSuggestions.value = [];
+          showSuggestions.value = false;
+        }
+      }
+    };
+
+    /**
+     * Handle address input changes
+     */
+    const handleAddressInput = (event) => {
+      const input = event.target.value;
+      newListing.value.address = input;
+      fetchAutocompleteSuggestions(input, false);
+    };
+
+    /**
+     * Handle edit address input changes
+     */
+    const handleEditAddressInput = (event) => {
+      const input = event.target.value;
+      editForm.value.address = input;
+      fetchAutocompleteSuggestions(input, true);
+    };
+
+    /**
+     * Handle blur events for autocomplete
+     */
+    const handleAddressBlur = () => {
+      setTimeout(() => {
+        showSuggestions.value = false;
+      }, 200);
+    };
+
+    const handleEditAddressBlur = () => {
+      setTimeout(() => {
+        showEditSuggestions.value = false;
+      }, 200);
+    };
+
+    /**
+     * Get suggestion display text safely
+     */
+    const getSuggestionText = (suggestion) => {
+      if (!suggestion) {
+        return '';
+      }
+      
+      // We now cache displayText directly in the suggestion object
+      if (suggestion.displayText) {
+        return suggestion.displayText;
+      }
+      
+      return 'Unknown location';
+    };
+
+    /**
+     * Select a suggestion and fetch full place details
+     */
+    const selectSuggestion = async (suggestion, isEditMode = false) => {
+      try {
+        if (!suggestion) {
+          console.error('Invalid suggestion object:', suggestion);
+          return;
+        }
+
+        console.log('Selecting suggestion:', suggestion);
+        
+        // Get the actual prediction from our wrapper
+        const prediction = suggestion.placePrediction || suggestion.rawSuggestion || suggestion;
+        console.log('Using prediction for toPlace:', prediction);
+        
+        // The prediction should have a toPlace() method
+        let place;
+        if (typeof prediction.toPlace === 'function') {
+          place = prediction.toPlace();
+        } else {
+          console.error('Prediction does not have toPlace method:', prediction);
+          console.error('Available methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(prediction)));
+          return;
+        }
+        
+        console.log('Place object created:', place);
+        
+        await place.fetchFields({
+          fields: ['displayName', 'formattedAddress', 'location'],
+        });
+
+        console.log('Place fields fetched:', place);
+
+        if (!place.location) {
+          console.error('Place has no location data:', place);
+          return;
+        }
+
+        const lat = place.location.lat();
+        const lng = place.location.lng();
+        const address = place.formattedAddress || place.displayName;
+
+        if (isEditMode) {
+          editGeocodedLocation.value = {
+            latitude: lat,
+            longitude: lng,
+            address: address
+          };
+          editForm.value.address = address;
+          showEditSuggestions.value = false;
+          editAutocompleteSuggestions.value = [];
+          // Reset session token after selection
+          editSessionToken = null;
+        } else {
+          geocodedLocation.value = {
+            latitude: lat,
+            longitude: lng,
+            address: address
+          };
+          newListing.value.address = address;
+          showSuggestions.value = false;
+          autocompleteSuggestions.value = [];
+          // Reset session token after selection
+          sessionToken = null;
+        }
+
+        console.log('Place selected:', {
+          address: address,
+          lat: lat,
+          lng: lng
+        });
+      } catch (err) {
+        console.error('Error selecting place:', err);
+      }
+    };
+
+
+
+    /**
+     * Geocode an address to get lat/lng coordinates
+     */
+    const geocodeAddress = async (address) => {
+      try {
+        // Check if Google Maps is already loaded
+        if (!window.google || !window.google.maps) {
+          const response = await apiRequest('/config/mapsKey', {});
+          const apiKey = response.apiKey || import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+          
+          if (!apiKey) {
+            console.warn('Cannot geocode: API key not available');
+            return null;
+          }
+
+          // Load script if not already loaded
+          if (!document.querySelector('script[src*="maps.googleapis.com"]')) {
+            await new Promise((resolve, reject) => {
+              const script = document.createElement('script');
+              script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places,geocoding&v=weekly`;
+              script.async = true;
+              script.defer = true;
+              script.onload = resolve;
+              script.onerror = reject;
+              document.head.appendChild(script);
+            });
+          }
+
+          // Wait for Google Maps to be available
+          let retries = 0;
+          while ((!window.google || !window.google.maps) && retries < 50) {
+            await new Promise(resolve => setTimeout(resolve, 100));
+            retries++;
+          }
+        }
+
+        const geocoder = new google.maps.Geocoder();
+
+        return new Promise((resolve) => {
+          geocoder.geocode({ address: address }, (results, status) => {
+            if (status === 'OK' && results && results[0]) {
+              const location = results[0].geometry.location;
+              resolve({
+                latitude: location.lat(),
+                longitude: location.lng(),
+                address: results[0].formatted_address
+              });
+            } else {
+              console.warn('Geocoding failed:', status);
+              resolve(null);
+            }
+          });
+        });
+      } catch (err) {
+        console.error('Error geocoding address:', err);
+        return null;
+      }
+    };
+
     const fetchListings = async () => {
       loading.value = true;
       error.value = "";
@@ -700,14 +1209,20 @@ export default {
         console.log("[FindHousing] Fetched listings:", result);
         console.log("[FindHousing] Number of listings:", result?.length || 0);
 
-        // Debug: Log each listing's lister ID
+        // Debug: Log each listing's lister ID and coordinates
         if (result && Array.isArray(result)) {
+          const listingsWithCoords = result.filter(l => l.latitude && l.longitude);
+          console.log(`[FindHousing] Listings with coordinates: ${listingsWithCoords.length}/${result.length}`);
+          
           result.forEach((listing, index) => {
             console.log(`[FindHousing] Listing ${index}:`, {
               _id: listing._id,
               title: listing.title,
               lister: listing.lister,
               listerType: typeof listing.lister,
+              hasCoords: !!(listing.latitude && listing.longitude),
+              lat: listing.latitude,
+              lng: listing.longitude,
             });
           });
         }
@@ -935,6 +1450,12 @@ export default {
       expandedListing.value = null;
     };
 
+    const handleMapMarkerClick = (markerData) => {
+      if (markerData.listing) {
+        expandedListing.value = markerData.listing._id;
+      }
+    };
+
     const getExpandedListing = () => {
       return listingsData.value.find(listing => listing._id === expandedListing.value) || {};
     };
@@ -1000,6 +1521,22 @@ export default {
           return;
         }
 
+        // Geocode address if not already geocoded
+        let latitude = null;
+        let longitude = null;
+        
+        if (geocodedLocation.value) {
+          latitude = geocodedLocation.value.latitude;
+          longitude = geocodedLocation.value.longitude;
+        } else if (newListing.value.address) {
+          // Try to geocode the manually entered address
+          const geocoded = await geocodeAddress(newListing.value.address);
+          if (geocoded) {
+            latitude = geocoded.latitude;
+            longitude = geocoded.longitude;
+          }
+        }
+
         const result = await listings.create(
           newListing.value.title,
           validAmenities,
@@ -1009,7 +1546,9 @@ export default {
           newListing.value.endDate,
           newListing.value.price,
           typeValue,
-          descriptionValue
+          descriptionValue,
+          latitude,
+          longitude
         );
 
         console.log("Listing created successfully:", result);
@@ -1025,6 +1564,7 @@ export default {
           description: "",
           amenities: [],
         };
+        geocodedLocation.value = null;
         showCreateModal.value = false;
 
         // Refresh listings
@@ -1095,6 +1635,7 @@ export default {
         description: "",
         amenities: [],
       };
+      editGeocodedLocation.value = null;
     };
 
     const addEditAmenity = () => {
@@ -1130,7 +1671,21 @@ export default {
           await listings.editTitle(listingId, editForm.value.title);
         }
         if (editForm.value.address !== listing.address) {
-          await listings.editAddress(listingId, editForm.value.address);
+          let latitude = null;
+          let longitude = null;
+          
+          if (editGeocodedLocation.value) {
+            latitude = editGeocodedLocation.value.latitude;
+            longitude = editGeocodedLocation.value.longitude;
+          } else if (editForm.value.address) {
+            const geocoded = await geocodeAddress(editForm.value.address);
+            if (geocoded) {
+              latitude = geocoded.latitude;
+              longitude = geocoded.longitude;
+            }
+          }
+          
+          await listings.editAddress(listingId, editForm.value.address, latitude, longitude);
         }
         if (
           formatDateForInput(listing.startDate) !== editForm.value.startDate
@@ -1292,6 +1847,8 @@ export default {
       }
     );
 
+
+
     return {
       listings: listingsData,
       filteredListings,
@@ -1331,6 +1888,21 @@ export default {
       toggleListingDetails,
       closeListing,
       getExpandedListing,
+      showMapView,
+      mapMarkers,
+      handleMapMarkerClick,
+      addressInput,
+      geocodedLocation,
+      autocompleteSuggestions,
+      editAutocompleteSuggestions,
+      showSuggestions,
+      showEditSuggestions,
+      handleAddressInput,
+      handleEditAddressInput,
+      handleAddressBlur,
+      handleEditAddressBlur,
+      selectSuggestion,
+      getSuggestionText,
     };
   },
 };
@@ -1466,6 +2038,74 @@ export default {
   max-width: 1200px;
   margin: 0 auto;
   padding: 2rem 2rem;
+}
+
+.view-toggle {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #e9ecef;
+}
+
+.toggle-btn {
+  padding: 0.75rem 1.5rem;
+  background: rgb(47, 71, 62);
+  color: white;
+  border: 2px solid rgb(47, 71, 62);
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  font-family: Helvetica, Arial, sans-serif;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.toggle-btn:hover {
+  background: rgb(37, 62, 53);
+  border-color: rgb(37, 62, 53);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(47, 71, 62, 0.3);
+}
+
+.toggle-btn.active {
+  background: rgb(22, 53, 27);
+  border-color: rgb(22, 53, 27);
+  color: white;
+}
+
+.toggle-btn.active:hover {
+  background: rgb(15, 38, 19);
+  border-color: rgb(15, 38, 19);
+}
+
+.toggle-content {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.toggle-icon {
+  flex-shrink: 0;
+}
+
+.results-count {
+  color: #666;
+  font-size: 0.95rem;
+  font-weight: 500;
+}
+
+.map-view-container {
+  width: 100%;
+  height: 600px;
+  margin-bottom: 2rem;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .loading,
@@ -2138,6 +2778,50 @@ export default {
 
 .favorite-btn.is-saved {
   color: #e74c3c;
+}
+
+/* Autocomplete Suggestions Styles */
+.autocomplete-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.suggestions-list {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 2px solid #e0e0e0;
+  border-top: none;
+  border-radius: 0 0 6px 6px;
+  max-height: 250px;
+  overflow-y: auto;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.suggestion-item {
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.suggestion-item:last-child {
+  border-bottom: none;
+}
+
+.suggestion-item:hover {
+  background-color: #f8f9fa;
+  color: #1e5a2e;
+}
+
+.suggestion-item:active {
+  background-color: #e8f5e9;
 }
 
 </style>

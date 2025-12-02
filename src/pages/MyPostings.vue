@@ -314,13 +314,29 @@
 
           <div class="form-group">
             <label for="edit-address">Address *</label>
-            <input
-              type="text"
-              id="edit-address"
-              v-model="editForm.address"
-              required
-              placeholder="e.g., 123 Main St, Cambridge, MA"
-            />
+            <div class="autocomplete-wrapper">
+              <input
+                type="text"
+                id="edit-address"
+                v-model="editForm.address"
+                @input="handleEditAddressInput"
+                @focus="showEditSuggestions = editAutocompleteSuggestions.length > 0"
+                @blur="handleEditAddressBlur"
+                required
+                placeholder="e.g., 123 Main St, Cambridge, MA"
+                autocomplete="off"
+              />
+              <ul v-if="showEditSuggestions && editAutocompleteSuggestions.length" class="suggestions-list">
+                <li
+                  v-for="(suggestion, index) in editAutocompleteSuggestions"
+                  :key="index"
+                  @click="selectSuggestion(suggestion)"
+                  class="suggestion-item"
+                >
+                  {{ getSuggestionText(suggestion) }}
+                </li>
+              </ul>
+            </div>
           </div>
 
           <div class="form-row">
@@ -664,6 +680,7 @@ import {
   roommatePostings as roommatePostingsApi,
   listings as listingsApi,
 } from "../utils/api.js";
+import { apiRequest } from "../utils/api.js";
 
 export default {
   name: "MyPostings",
@@ -687,6 +704,10 @@ export default {
       description: "",
       amenities: [],
     });
+    const editGeocodedLocation = ref(null);
+    const editAutocompleteSuggestions = ref([]);
+    const showEditSuggestions = ref(false);
+    let editSessionToken = null;
     const showEditRoommateModal = ref(false);
     const isEditingRoommate = ref(false);
     const editRoommateError = ref("");
@@ -706,6 +727,239 @@ export default {
     });
     const expandedPosting = ref(null);
     const expandedListing = ref(null);
+
+    /**
+     * Load Google Maps API if not already loaded
+     */
+    const ensureGoogleMapsLoaded = async () => {
+      if (window.google?.maps?.places?.AutocompleteSuggestion) {
+        return true;
+      }
+
+      try {
+        const response = await apiRequest('/config/mapsKey', {});
+        const apiKey = response.apiKey || import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+        
+        if (!apiKey) {
+          console.error('Google Maps API key not available');
+          return false;
+        }
+
+        const existingScript = document.querySelector('script[src*="maps.googleapis.com"]');
+        
+        if (!existingScript) {
+          await new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&loading=async&callback=Function.prototype`;
+            script.async = true;
+            script.defer = true;
+            script.onload = () => resolve();
+            script.onerror = (error) => reject(error);
+            document.head.appendChild(script);
+          });
+        }
+
+        let retries = 0;
+        while (retries < 50) {
+          if (window.google?.maps?.places?.AutocompleteSuggestion) {
+            return true;
+          }
+          await new Promise(resolve => setTimeout(resolve, 100));
+          retries++;
+        }
+        
+        return false;
+      } catch (error) {
+        console.error('Error loading Google Maps API:', error);
+        return false;
+      }
+    };
+
+    /**
+     * Fetch autocomplete suggestions
+     */
+    const fetchAutocompleteSuggestions = async (input) => {
+      if (!input || input.length < 2) {
+        editAutocompleteSuggestions.value = [];
+        showEditSuggestions.value = false;
+        return;
+      }
+
+      try {
+        const isLoaded = await ensureGoogleMapsLoaded();
+        if (!isLoaded || !google.maps.places.AutocompleteSuggestion) {
+          return;
+        }
+
+        if (!editSessionToken) {
+          editSessionToken = new google.maps.places.AutocompleteSessionToken();
+        }
+
+        const request = {
+          input: input,
+          sessionToken: editSessionToken,
+          locationBias: {
+            west: -71.15,
+            north: 42.40,
+            east: -71.05,
+            south: 42.35,
+          },
+        };
+
+        const { suggestions } = await google.maps.places.AutocompleteSuggestion.fetchAutocompleteSuggestions(request);
+
+        editAutocompleteSuggestions.value = suggestions.map(s => {
+          const prediction = s.placePrediction;
+          let displayText = 'Unknown location';
+          
+          try {
+            if (prediction && prediction.text) {
+              displayText = String(prediction.text);
+            }
+          } catch (e) {
+            console.log('Error extracting text:', e.message);
+          }
+          
+          return {
+            displayText: displayText,
+            placePrediction: prediction,
+            rawSuggestion: s
+          };
+        });
+        showEditSuggestions.value = suggestions && suggestions.length > 0;
+      } catch (err) {
+        console.error('Error fetching autocomplete suggestions:', err);
+        editAutocompleteSuggestions.value = [];
+        showEditSuggestions.value = false;
+      }
+    };
+
+    /**
+     * Handle edit address input changes
+     */
+    const handleEditAddressInput = (event) => {
+      const input = event.target.value;
+      editForm.value.address = input;
+      fetchAutocompleteSuggestions(input);
+    };
+
+    /**
+     * Handle blur events for autocomplete
+     */
+    const handleEditAddressBlur = () => {
+      setTimeout(() => {
+        showEditSuggestions.value = false;
+      }, 200);
+    };
+
+    /**
+     * Get suggestion display text safely
+     */
+    const getSuggestionText = (suggestion) => {
+      if (!suggestion) return '';
+      if (suggestion.displayText) return suggestion.displayText;
+      return 'Unknown location';
+    };
+
+    /**
+     * Select a suggestion and fetch full place details
+     */
+    const selectSuggestion = async (suggestion) => {
+      try {
+        if (!suggestion) return;
+
+        const prediction = suggestion.placePrediction || suggestion.rawSuggestion || suggestion;
+        
+        let place;
+        if (typeof prediction.toPlace === 'function') {
+          place = prediction.toPlace();
+        } else {
+          console.error('Prediction does not have toPlace method');
+          return;
+        }
+        
+        await place.fetchFields({
+          fields: ['displayName', 'formattedAddress', 'location'],
+        });
+
+        if (!place.location) {
+          console.error('Place has no location data');
+          return;
+        }
+
+        const lat = place.location.lat();
+        const lng = place.location.lng();
+        const address = place.formattedAddress || place.displayName;
+
+        editGeocodedLocation.value = {
+          latitude: lat,
+          longitude: lng,
+          address: address
+        };
+        editForm.value.address = address;
+        showEditSuggestions.value = false;
+        editAutocompleteSuggestions.value = [];
+        editSessionToken = null;
+      } catch (err) {
+        console.error('Error selecting place:', err);
+      }
+    };
+
+    /**
+     * Geocode an address to get lat/lng coordinates
+     */
+    const geocodeAddress = async (address) => {
+      try {
+        if (!window.google || !window.google.maps) {
+          const response = await apiRequest('/config/mapsKey', {});
+          const apiKey = response.apiKey || import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+          
+          if (!apiKey) {
+            console.warn('Cannot geocode: API key not available');
+            return null;
+          }
+
+          if (!document.querySelector('script[src*="maps.googleapis.com"]')) {
+            await new Promise((resolve, reject) => {
+              const script = document.createElement('script');
+              script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places,geocoding&v=weekly`;
+              script.async = true;
+              script.defer = true;
+              script.onload = resolve;
+              script.onerror = reject;
+              document.head.appendChild(script);
+            });
+          }
+
+          let retries = 0;
+          while ((!window.google || !window.google.maps) && retries < 50) {
+            await new Promise(resolve => setTimeout(resolve, 100));
+            retries++;
+          }
+        }
+
+        const geocoder = new google.maps.Geocoder();
+
+        return new Promise((resolve) => {
+          geocoder.geocode({ address: address }, (results, status) => {
+            if (status === 'OK' && results && results[0]) {
+              const location = results[0].geometry.location;
+              resolve({
+                latitude: location.lat(),
+                longitude: location.lng(),
+                address: results[0].formatted_address
+              });
+            } else {
+              console.warn('Geocoding failed:', status);
+              resolve(null);
+            }
+          });
+        });
+      } catch (err) {
+        console.error('Error geocoding address:', err);
+        return null;
+      }
+    };
 
     const formatDate = (dateString) => {
       const date = new Date(dateString);
@@ -967,6 +1221,7 @@ export default {
             }))
           : [],
       };
+      editGeocodedLocation.value = null;
       editError.value = "";
       showEditModal.value = true;
     };
@@ -985,6 +1240,7 @@ export default {
         description: "",
         amenities: [],
       };
+      editGeocodedLocation.value = null;
     };
 
     const addEditAmenity = () => {
@@ -1019,7 +1275,21 @@ export default {
 
         // Update address if changed
         if (editForm.value.address !== listing.address) {
-          await listingsApi.editAddress(listingId, editForm.value.address);
+          let latitude = null;
+          let longitude = null;
+          
+          if (editGeocodedLocation.value) {
+            latitude = editGeocodedLocation.value.latitude;
+            longitude = editGeocodedLocation.value.longitude;
+          } else if (editForm.value.address) {
+            const geocoded = await geocodeAddress(editForm.value.address);
+            if (geocoded) {
+              latitude = geocoded.latitude;
+              longitude = geocoded.longitude;
+            }
+          }
+          
+          await listingsApi.editAddress(listingId, editForm.value.address, latitude, longitude);
         }
 
         // Update start date if changed
@@ -1210,6 +1480,12 @@ export default {
       getExpandedPosting,
       getExpandedListing,
       truncateText,
+      editAutocompleteSuggestions,
+      showEditSuggestions,
+      handleEditAddressInput,
+      handleEditAddressBlur,
+      selectSuggestion,
+      getSuggestionText,
     };
   },
 };
@@ -2072,6 +2348,47 @@ export default {
   background: #c82333;
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Autocomplete Styles */
+.autocomplete-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.suggestions-list {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 2px solid rgb(47, 71, 62);
+  border-top: none;
+  border-radius: 0 0 8px 8px;
+  max-height: 300px;
+  overflow-y: auto;
+  z-index: 1000;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.suggestion-item {
+  padding: 0.875rem 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  border-bottom: 1px solid #f0f0f0;
+  font-size: 0.95rem;
+  color: #333;
+}
+
+.suggestion-item:last-child {
+  border-bottom: none;
+}
+
+.suggestion-item:hover {
+  background-color: rgba(47, 71, 62, 0.1);
 }
 
 @media (max-width: 768px) {
