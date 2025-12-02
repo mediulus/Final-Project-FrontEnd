@@ -1101,7 +1101,7 @@ export default {
 
 .card-actions {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 0.75rem;
   flex-shrink: 0;
 }
