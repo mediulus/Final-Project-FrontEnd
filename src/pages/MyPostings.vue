@@ -35,6 +35,10 @@
                   <strong>👤</strong> {{ posting.gender }},
                   {{ posting.age }} years old
                 </p>
+                <p v-if="posting.startDate && posting.endDate" class="dates">
+                  <strong>📅</strong> {{ formatDate(posting.startDate) }} -
+                  {{ formatDate(posting.endDate) }}
+                </p>
                 <p class="description">{{ posting.description }}</p>
               </div>
 

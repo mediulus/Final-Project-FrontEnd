@@ -42,6 +42,10 @@
               <strong>👤</strong> {{ posting.gender }}, {{ posting.age }} years
               old
             </p>
+            <p v-if="posting.startDate && posting.endDate" class="dates">
+              <strong>📅</strong> {{ formatDate(posting.startDate) }} -
+              {{ formatDate(posting.endDate) }}
+            </p>
             <p class="description">{{ posting.description }}</p>
             <button
               v-if="!isPoster(posting)"
@@ -113,6 +117,28 @@
             />
           </div>
 
+          <div class="form-row">
+            <div class="form-group">
+              <label for="startDate">Start Date *</label>
+              <input
+                type="date"
+                id="startDate"
+                v-model="form.startDate"
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="endDate">End Date *</label>
+              <input
+                type="date"
+                id="endDate"
+                v-model="form.endDate"
+                required
+              />
+            </div>
+          </div>
+
           <div class="form-group">
             <label for="description">Description *</label>
             <textarea
@@ -158,6 +184,8 @@ export default {
       gender: "",
       age: "",
       description: "",
+      startDate: "",
+      endDate: "",
     });
     const sessionStore = useSessionStore();
     const postings = ref([]);
@@ -417,6 +445,16 @@ export default {
       localModal.value = true;
     };
 
+    const formatDate = (dateString) => {
+      if (!dateString) return "";
+      const date = new Date(dateString);
+      return date.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+      });
+    };
+
     const closeModal = () => {
       localModal.value = false;
       createError.value = "";
@@ -516,13 +554,22 @@ export default {
           gender: form.value.gender,
           age: form.value.age,
           description: form.value.description,
+          startDate: form.value.startDate,
+          endDate: form.value.endDate,
         };
 
         const result = await roommatePostings.create(postingData);
         console.log("Posting created successfully:", result);
 
         // Clear form and close modal
-        form.value = { city: "", gender: "", age: "", description: "" };
+        form.value = {
+          city: "",
+          gender: "",
+          age: "",
+          description: "",
+          startDate: "",
+          endDate: "",
+        };
         closeModal();
 
         // Refresh postings
@@ -582,6 +629,7 @@ export default {
       isContacting,
       isPoster,
       deletePosting,
+      formatDate,
     };
   },
 };
@@ -711,7 +759,8 @@ export default {
   gap: 0.75rem;
 }
 
-.info {
+.info,
+.dates {
   color: #555;
   font-size: 1rem;
   line-height: 1.6;
@@ -806,6 +855,12 @@ export default {
 
 .form-group {
   margin-bottom: 1.5rem;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
 }
 
 .form-group label {
