@@ -33,7 +33,7 @@
                     </span>
                   </div>
                 </div>
-                
+
                 <div class="card-actions" @click.stop>
                   <button
                     @click="removeFavorite(posting._id)"
@@ -78,7 +78,7 @@
                     <span class="price-preview">${{ listing.price }}/month</span>
                   </div>
                 </div>
-                
+
                 <div class="card-actions" @click.stop>
                   <button
                     @click="removeFavorite(listing._id)"

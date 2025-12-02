@@ -72,7 +72,7 @@
                 <span class="price-preview">${{ listing.price }}/month</span>
               </div>
             </div>
-            
+
             <div class="card-actions" @click.stop>
               <button
                 @click="toggleSavedItem(listing._id)"
@@ -917,8 +917,8 @@ export default {
           .filter((a) => a.title && a.title.trim() !== "")
           .map((a) => ({
             title: a.title,
-            distance: a.distance !== "" && a.distance !== null && a.distance !== undefined 
-              ? Number(a.distance) 
+            distance: a.distance !== "" && a.distance !== null && a.distance !== undefined
+              ? Number(a.distance)
               : 0,
           }));
 
@@ -1113,8 +1113,8 @@ export default {
         for (const newAmenity of newAmenities) {
           // If it doesn't have an _id, it's a new amenity
           if (!newAmenity._id && newAmenity.title) {
-            const distance = newAmenity.distance !== "" && 
-                           newAmenity.distance !== null && 
+            const distance = newAmenity.distance !== "" &&
+                           newAmenity.distance !== null &&
                            newAmenity.distance !== undefined
               ? Number(newAmenity.distance)
               : 0;
@@ -1129,8 +1129,8 @@ export default {
             const oldAmenity = oldAmenities.find(
               (a) => a._id === newAmenity._id
             );
-            const newDistance = newAmenity.distance !== "" && 
-                               newAmenity.distance !== null && 
+            const newDistance = newAmenity.distance !== "" &&
+                               newAmenity.distance !== null &&
                                newAmenity.distance !== undefined
               ? Number(newAmenity.distance)
               : 0;
