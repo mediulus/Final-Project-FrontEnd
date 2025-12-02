@@ -1,7 +1,7 @@
 <template>
   <main class="register-page">
     <div class="register-container">
-      <h1>Register for DAM Good Housing</h1>
+      <h1>Register for Dam Good Housing</h1>
   <form @submit.prevent="handleRegister" class="register-form">
         <div class="form-group">
           <label for="username">Username *</label>
@@ -153,21 +153,22 @@ export default {
   align-items: center;
   justify-content: center;
   padding: 2rem;
-  background: linear-gradient(135deg, #123619 0%, #1e5a2e 100%);
+  background: #f5f0e8;
 }
 
 .register-container {
   background: white;
   padding: 2.5rem;
   border-radius: 12px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
   width: 100%;
   max-width: 500px;
+  border: 1px solid rgba(47, 71, 62, 0.1);
 }
 
 h1 {
   text-align: center;
-  color: #123619;
+  color: rgb(47, 71, 62);
   margin-bottom: 2rem;
   font-size: 1.8rem;
 }
@@ -186,7 +187,7 @@ h1 {
 
 .form-group label {
   font-weight: 600;
-  color: #123619;
+  color: rgb(47, 71, 62);
   font-size: 0.95rem;
 }
 
@@ -202,7 +203,7 @@ h1 {
 .form-group input:focus,
 .form-group select:focus {
   outline: none;
-  border-color: #1e5a2e;
+  border-color: rgb(47, 71, 62);
 }
 
 .error-message {
@@ -216,20 +217,21 @@ h1 {
 
 .submit-btn {
   padding: 0.875rem;
-  background: linear-gradient(135deg, #123619 0%, #1e5a2e 100%);
+  background: rgb(47, 71, 62);
   color: white;
   border: none;
   border-radius: 6px;
   font-size: 1.05rem;
   font-weight: 600;
   cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
   margin-top: 0.5rem;
 }
 
 .submit-btn:hover:not(:disabled) {
+  background: rgb(22, 53, 27);
   transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(18, 54, 25, 0.4);
+  box-shadow: 0 5px 15px rgba(47, 71, 62, 0.3);
 }
 
 .submit-btn:disabled {
@@ -245,12 +247,13 @@ h1 {
 }
 
 .login-link a {
-  color: #1e5a2e;
+  color: rgb(22, 53, 27);
   text-decoration: none;
   font-weight: 600;
 }
 
 .login-link a:hover {
   text-decoration: underline;
+  color: rgb(47, 71, 62);
 }
 </style>

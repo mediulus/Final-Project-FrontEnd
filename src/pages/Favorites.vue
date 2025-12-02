@@ -19,8 +19,8 @@
             <div v-for="posting in roommatePostings" :key="posting._id" class="listing-card">
               <div class="listing-header">
                 <h3>{{ posting.city }}</h3>
-                <button 
-                  @click="removeFavorite(posting._id)" 
+                <button
+                  @click="removeFavorite(posting._id)"
                   class="favorite-btn"
                   title="Remove from favorites"
                 >
@@ -34,8 +34,8 @@
                 <div class="tags">
                   <span v-for="tag in getItemTags(posting._id)" :key="tag" class="tag" :class="{ 'tag-contacted': tag === 'Contacted' }">{{ tag }}</span>
                 </div>
-                <button 
-                  @click="contactPoster(posting._id)" 
+                <button
+                  @click="contactPoster(posting._id)"
                   class="contact-btn"
                   :disabled="isContacting[posting._id]"
                 >
@@ -53,8 +53,8 @@
             <div v-for="listing in housingListings" :key="listing._id" class="listing-card">
               <div class="listing-header">
                 <h3>{{ listing.title }}</h3>
-                <button 
-                  @click="removeFavorite(listing._id)" 
+                <button
+                  @click="removeFavorite(listing._id)"
                   class="favorite-btn"
                   title="Remove from favorites"
                 >
@@ -71,8 +71,8 @@
                 <div class="tags">
                   <span v-for="tag in getItemTags(listing._id)" :key="tag" class="tag" :class="{ 'tag-contacted': tag === 'Contacted' }">{{ tag }}</span>
                 </div>
-                <button 
-                  @click="sendInterest(listing._id)" 
+                <button
+                  @click="sendInterest(listing._id)"
                   class="interest-btn"
                   :disabled="isSendingInterest[listing._id]"
                 >
@@ -150,32 +150,32 @@ export default {
       try {
         const result = await savedItemsApi.getSavedItems(sessionStore.user.id);
         console.log('Fetched saved items raw result:', result);
-        
+
         // API returns {results: [...]} structure where each item is {user: "...", savedItem: {item: "id", tags: [...]}}
         const items = result?.results || result;
         console.log('Items to process:', items, 'Is array:', Array.isArray(items));
-        
+
         if (!Array.isArray(items)) {
           savedItems_data.value = [];
           return;
         }
-        
+
         // Extract item IDs and build tags map
         const itemIds = [];
         const tagsMap = new Map();
-        
+
         items.forEach(saved => {
           console.log('Processing saved item structure:', JSON.stringify(saved, null, 2));
           if (saved.savedItem && saved.savedItem.item) {
             const itemId = saved.savedItem.item;
             const tags = saved.savedItem.tags || [];
             console.log(`Found itemId: ${itemId}, tags:`, tags);
-            
+
             // Add itemId if not already in the list
             if (!itemIds.includes(itemId)) {
               itemIds.push(itemId);
             }
-            
+
             // Merge tags if item already exists in map
             if (tagsMap.has(itemId)) {
               const existingTags = tagsMap.get(itemId).tags;
@@ -189,21 +189,21 @@ export default {
             console.log('Saved item does not have expected structure');
           }
         });
-        
+
         savedItemsMap.value = tagsMap;
         console.log('Extracted item IDs:', itemIds);
         console.log('Tags map:', Array.from(tagsMap.entries()));
-        
+
         // Fetch the actual postings using the IDs
         // For now, fetch all postings and filter by IDs
         const [roommates, housing] = await Promise.all([
           roommatePostingsApi.getAll(),
           listingsApi.getAll()
         ]);
-        
+
         const allPostings = [...(roommates || []), ...(housing || [])];
         console.log('All postings:', allPostings);
-        
+
         // Filter to only saved items
         savedItems_data.value = allPostings.filter(posting => itemIds.includes(posting._id));
         console.log('Filtered saved items:', savedItems_data.value);
@@ -231,7 +231,7 @@ export default {
         const result = await roommatePostingsApi.contact(postingId);
         console.log('Contact sent successfully:', result);
         alert('Your interest has been sent to the posting owner!');
-        
+
         // Wait a moment for backend to process, then refetch saved items
         await new Promise(resolve => setTimeout(resolve, 500));
         await fetchSavedItems();
@@ -258,7 +258,7 @@ export default {
         const result = await listingsApi.sendInterest(listingId);
         console.log('Interest sent successfully:', result);
         alert('Your interest has been sent to the listing owner!');
-        
+
         // Wait a moment for backend to process, then refetch saved items
         await new Promise(resolve => setTimeout(resolve, 500));
         await fetchSavedItems();
@@ -318,39 +318,39 @@ export default {
 }
 
 .hero {
-  background: linear-gradient(135deg, #123619 0%, #1e5a2e 100%);
+  background: rgb(47, 71, 62);
   color: white;
-  padding: 3rem 2rem;
+  padding: 2rem 2rem;
   text-align: center;
 }
 
 .hero h2 {
-  font-size: 2.5rem;
+  font-size: 2rem;
   margin-bottom: 0.5rem;
   color: white;
 }
 
 .hero p {
-  font-size: 1.25rem;
+  font-size: 1.1rem;
   color: rgba(255, 255, 255, 0.9);
 }
 
 .listings-section {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 3rem 2rem;
+  padding: 2rem 2rem;
 }
 
 .section {
-  margin-top: 3rem;
+  margin-top: 2rem;
 }
 
 .section-title {
-  font-size: 1.8rem;
-  color: #123619;
-  margin-bottom: 1.5rem;
+  font-size: 1.6rem;
+  color: rgb(47, 71, 62);
+  margin-bottom: 1.25rem;
   padding-bottom: 0.5rem;
-  border-bottom: 3px solid #1e5a2e;
+  border-bottom: 3px solid rgb(47, 71, 62);
 }
 
 .loading,
@@ -401,8 +401,8 @@ export default {
 }
 
 .listing-header h3 {
-  color: #123619;
-  font-size: 1.4rem;
+  color: rgb(47, 71, 62);
+  font-size: 1.25rem;
   margin: 0;
 }
 
@@ -454,7 +454,7 @@ export default {
 }
 
 .tag {
-  background: #1e5a2e;
+  background: rgb(47, 71, 62);
   color: white;
   padding: 0.25rem 0.75rem;
   border-radius: 12px;
@@ -470,7 +470,7 @@ export default {
 .contact-btn,
 .interest-btn {
   width: 100%;
-  background: #1e5a2e;
+  background: rgb(22, 53, 27);
   color: white;
   border: none;
   padding: 0.75rem 1rem;
@@ -484,7 +484,7 @@ export default {
 
 .contact-btn:hover:not(:disabled),
 .interest-btn:hover:not(:disabled) {
-  background: #123619;
+  background: rgb(15, 38, 19);
 }
 
 .contact-btn:disabled,
@@ -503,4 +503,3 @@ export default {
   }
 }
 </style>
-

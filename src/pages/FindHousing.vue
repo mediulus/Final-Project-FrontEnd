@@ -8,15 +8,65 @@
       </button>
     </section>
 
+    <!-- Filter Bar -->
+    <section class="filter-bar">
+      <div class="filter-container">
+        <div class="filter-group">
+          <label for="minPrice">Min Price ($)</label>
+          <input
+            type="number"
+            id="minPrice"
+            v-model.number="filters.minPrice"
+            placeholder="0"
+            min="0"
+          />
+        </div>
+
+        <div class="filter-group">
+          <label for="maxPrice">Max Price ($)</label>
+          <input
+            type="number"
+            id="maxPrice"
+            v-model.number="filters.maxPrice"
+            placeholder="Any"
+            min="0"
+          />
+        </div>
+
+        <div class="filter-group">
+          <label for="filterStartDate">Available From</label>
+          <input
+            type="date"
+            id="filterStartDate"
+            v-model="filters.startDate"
+          />
+        </div>
+
+        <div class="filter-group">
+          <label for="filterEndDate">Available Until</label>
+          <input
+            type="date"
+            id="filterEndDate"
+            v-model="filters.endDate"
+          />
+        </div>
+
+        <div class="filter-actions">
+          <button @click="applyFilters" class="search-btn">Search</button>
+          <button @click="clearFilters" class="clear-btn">Clear</button>
+        </div>
+      </div>
+    </section>
+
     <section class="listings-section">
       <div v-if="loading" class="loading">Loading listings...</div>
       <div v-else-if="error" class="error-message">{{ error }}</div>
-      <div v-else-if="listings.length === 0" class="no-listings">
-        No listings available yet. Be the first to create one!
+      <div v-else-if="filteredListings.length === 0" class="no-listings">
+        No listings match your filters. Try adjusting your search criteria.
       </div>
       <div v-else class="listings-grid">
         <div
-          v-for="listing in listings"
+          v-for="listing in filteredListings"
           :key="listing._id"
           class="listing-card"
         >
@@ -324,7 +374,7 @@
 </template>
 
 <script>
-import { ref, onMounted, watch } from "vue";
+import { ref, onMounted, watch, computed } from "vue";
 import { useRoute } from "vue-router";
 import {
   listings,
@@ -358,6 +408,80 @@ export default {
       price: "",
       amenities: [],
     });
+
+    // Filter state
+    const filters = ref({
+      minPrice: null,
+      maxPrice: null,
+      startDate: "",
+      endDate: "",
+    });
+
+    const appliedFilters = ref({
+      minPrice: null,
+      maxPrice: null,
+      startDate: "",
+      endDate: "",
+    });
+
+    // Computed property for filtered listings
+    const filteredListings = computed(() => {
+      let result = [...listingsData.value];
+
+      // Apply price filters
+      if (appliedFilters.value.minPrice !== null && appliedFilters.value.minPrice !== "") {
+        result = result.filter(listing => listing.price >= appliedFilters.value.minPrice);
+      }
+
+      if (appliedFilters.value.maxPrice !== null && appliedFilters.value.maxPrice !== "") {
+        result = result.filter(listing => listing.price <= appliedFilters.value.maxPrice);
+      }
+
+      // Apply date filters
+      if (appliedFilters.value.startDate) {
+        const filterStartDate = new Date(appliedFilters.value.startDate);
+        result = result.filter(listing => {
+          const listingEndDate = new Date(listing.endDate);
+          // Listing should be available at or after the filter start date
+          return listingEndDate >= filterStartDate;
+        });
+      }
+
+      if (appliedFilters.value.endDate) {
+        const filterEndDate = new Date(appliedFilters.value.endDate);
+        result = result.filter(listing => {
+          const listingStartDate = new Date(listing.startDate);
+          // Listing should be available at or before the filter end date
+          return listingStartDate <= filterEndDate;
+        });
+      }
+
+      return result;
+    });
+
+    const applyFilters = () => {
+      appliedFilters.value = {
+        minPrice: filters.value.minPrice,
+        maxPrice: filters.value.maxPrice,
+        startDate: filters.value.startDate,
+        endDate: filters.value.endDate,
+      };
+    };
+
+    const clearFilters = () => {
+      filters.value = {
+        minPrice: null,
+        maxPrice: null,
+        startDate: "",
+        endDate: "",
+      };
+      appliedFilters.value = {
+        minPrice: null,
+        maxPrice: null,
+        startDate: "",
+        endDate: "",
+      };
+    };
 
     // Helper function to check if a string looks like a UUID (not a username)
     const isUUID = (str) => {
@@ -923,6 +1047,10 @@ export default {
 
     return {
       listings: listingsData,
+      filteredListings,
+      filters,
+      applyFilters,
+      clearFilters,
       loading,
       error,
       showCreateModal,
@@ -949,6 +1077,7 @@ export default {
       addEditAmenity,
       removeEditAmenity,
       handleEditListing,
+      sessionStore,
     };
   },
 };
@@ -962,21 +1091,21 @@ export default {
 }
 
 .hero {
-  background: linear-gradient(135deg, #123619 0%, #1e5a2e 100%);
+  background: rgb(47, 71, 62);
   color: white;
-  padding: 3rem 2rem;
+  padding: 2rem 2rem;
   text-align: center;
 }
 
 .hero h2 {
-  font-size: 2.5rem;
+  font-size: 2rem;
   margin-bottom: 0.5rem;
   color: white;
 }
 
 .hero p {
-  font-size: 1.25rem;
-  margin-bottom: 2rem;
+  font-size: 1.1rem;
+  margin-bottom: 1.5rem;
   color: rgba(255, 255, 255, 0.9);
 }
 
@@ -997,24 +1126,107 @@ export default {
   box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
 }
 
+/* Filter Bar Styles */
+.filter-bar {
+  background: rgb(47, 71, 62);
+  border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+  padding: 1.5rem 2rem;
+}
+
+.filter-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  gap: 1rem;
+  align-items: flex-end;
+  flex-wrap: wrap;
+}
+
+.filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 1;
+  min-width: 150px;
+}
+
+.filter-group label {
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 0.9rem;
+}
+
+.filter-group input {
+  padding: 0.625rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  font-size: 1rem;
+  transition: border-color 0.2s, background 0.2s;
+  background: rgba(255, 255, 255, 0.95);
+  color: #333;
+}
+
+.filter-group input:focus {
+  outline: none;
+  border-color: rgba(255, 255, 255, 0.5);
+  background: white;
+}
+
+.filter-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.search-btn,
+.clear-btn {
+  padding: 0.625rem 1.5rem;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.2s, background 0.2s;
+  font-size: 1rem;
+}
+
+.search-btn {
+  background: rgb(22, 53, 27);
+  color: white;
+}
+
+.search-btn:hover {
+  background: rgb(15, 38, 19);
+  transform: translateY(-1px);
+}
+
+.clear-btn {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.clear-btn:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateY(-1px);
+}
+
 .listings-section {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 3rem 2rem;
+  padding: 2rem 2rem;
 }
 
 .loading,
 .no-listings {
   text-align: center;
-  padding: 3rem;
-  font-size: 1.2rem;
+  padding: 2rem;
+  font-size: 1.1rem;
   color: #666;
 }
 
 .error-message {
   background-color: #fee;
   color: #c33;
-  padding: 1rem;
+  padding: 0.75rem;
   border-radius: 6px;
   margin-bottom: 1rem;
   border: 1px solid #fcc;
@@ -1023,13 +1235,13 @@ export default {
 .listings-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 2rem;
+  gap: 1.25rem;
 }
 
 .listing-card {
   background: white;
   border-radius: 12px;
-  padding: 1.5rem;
+  padding: 1rem;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   transition: transform 0.2s, box-shadow 0.2s;
 }
@@ -1043,14 +1255,14 @@ export default {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1rem;
-  padding-bottom: 1rem;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.75rem;
   border-bottom: 2px solid #f0f0f0;
 }
 
 .listing-header h3 {
-  color: #123619;
-  font-size: 1.5rem;
+  color: rgb(47, 71, 62);
+  font-size: 1.25rem;
   margin: 0;
 }
 
@@ -1089,59 +1301,60 @@ export default {
 }
 
 .owner-badge {
-  background: #1e5a2e;
+  background: rgb(47, 71, 62);
   color: white;
-  padding: 0.375rem 0.75rem;
+  padding: 0.25rem 0.625rem;
   border-radius: 20px;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   font-weight: 600;
 }
 
 .listing-details {
-  margin-bottom: 1rem;
+  margin-bottom: 0.75rem;
 }
 
 .listing-details p {
-  margin: 0.75rem 0;
+  margin: 0.5rem 0;
   color: #555;
-  font-size: 1rem;
+  font-size: 0.95rem;
 }
 
 .address {
-  font-size: 1.05rem;
+  font-size: 1rem;
 }
 
 .amenities {
-  margin-top: 1rem;
+  margin-top: 0.75rem;
 }
 
 .amenities ul {
   list-style: none;
   padding: 0;
-  margin: 0.5rem 0 0 0;
+  margin: 0.35rem 0 0 0;
 }
 
 .amenities li {
-  padding: 0.25rem 0;
+  padding: 0.2rem 0;
   color: #666;
+  font-size: 0.9rem;
 }
 
 .interest-btn {
   width: 100%;
-  background: #1e5a2e;
+  background: rgb(22, 53, 27);
   color: white;
   border: none;
-  padding: 0.75rem 1rem;
-  font-size: 1rem;
+  padding: 0.625rem 1rem;
+  font-size: 0.95rem;
   font-weight: 600;
   border-radius: 6px;
   cursor: pointer;
-  margin-top: 1rem;
+  margin-top: 0.75rem;
   transition: background 0.2s, opacity 0.2s;
 }
 
 .interest-btn:hover:not(:disabled) {
-  background: #123619;
+  background: rgb(15, 38, 19);
 }
 
 .interest-btn:disabled {
@@ -1151,25 +1364,26 @@ export default {
 
 .listing-actions {
   display: flex;
-  gap: 1rem;
-  margin-top: 1rem;
-  padding-top: 1rem;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+  padding-top: 0.75rem;
   border-top: 1px solid #f0f0f0;
 }
 
 .edit-btn,
 .delete-btn {
   flex: 1;
-  padding: 0.625rem;
+  padding: 0.5rem;
   border: none;
   border-radius: 6px;
   font-weight: 600;
   cursor: pointer;
   transition: opacity 0.2s;
+  font-size: 0.9rem;
 }
 
 .edit-btn {
-  background: #1e5a2e;
+  background: rgb(22, 53, 27);
   color: white;
 }
 
@@ -1208,7 +1422,7 @@ export default {
 }
 
 .modal-content h2 {
-  color: #123619;
+  color: rgb(47, 71, 62);
   margin-bottom: 1.5rem;
 }
 
@@ -1225,7 +1439,7 @@ export default {
 .form-group label {
   display: block;
   font-weight: 600;
-  color: #123619;
+  color: rgb(47, 71, 62);
   margin-bottom: 0.5rem;
 }
 
@@ -1240,7 +1454,7 @@ export default {
 
 .form-group input:focus {
   outline: none;
-  border-color: #1e5a2e;
+  border-color: rgb(47, 71, 62);
 }
 
 .amenities-list {
@@ -1269,7 +1483,7 @@ export default {
 .amenity-title:focus,
 .amenity-distance:focus {
   outline: none;
-  border-color: #1e5a2e;
+  border-color: rgb(47, 71, 62);
 }
 
 .remove-amenity-btn {
@@ -1294,7 +1508,7 @@ export default {
 
 .add-amenity-btn {
   padding: 0.625rem 1rem;
-  background: #1e5a2e;
+  background: rgb(22, 53, 27);
   color: white;
   border: none;
   border-radius: 6px;
@@ -1332,7 +1546,7 @@ export default {
 }
 
 .submit-btn {
-  background: #1e5a2e;
+  background: rgb(22, 53, 27);
   color: white;
 }
 
