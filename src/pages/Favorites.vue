@@ -113,6 +113,9 @@
                   >
                     <span>♥</span>
                   </button>
+                  <div v-if="isOwner(listing)" class="owner-badge">
+                    Your Listing
+                  </div>
                 </div>
               </div>
 
@@ -264,9 +267,9 @@
               <div class="info-section" v-if="getExpandedListing().photos && getExpandedListing().photos.length > 0">
                 <h3>Photos</h3>
                 <div class="photo-gallery">
-                  <div 
-                    v-for="(photo, index) in getExpandedListing().photos" 
-                    :key="index" 
+                  <div
+                    v-for="(photo, index) in getExpandedListing().photos"
+                    :key="index"
                     class="photo-item"
                   >
                     <img :src="getPhotoUrl(photo)" :alt="'Photo ' + (index + 1)" class="photo-preview" />
@@ -341,15 +344,20 @@
             <!-- Action Buttons -->
             <div class="detail-actions">
               <button
-                v-if="!getItemTags(getExpandedListing()._id).includes('Contacted')"
+                v-if="!isOwner(getExpandedListing()) && !getItemTags(getExpandedListing()._id).includes('Contacted')"
                 @click="sendInterest(getExpandedListing()._id)"
                 class="contact-btn"
                 :disabled="isSendingInterest[getExpandedListing()._id]"
               >
                 {{ isSendingInterest[getExpandedListing()._id] ? "Sending..." : "Send Interest" }}
               </button>
-              <div v-else class="contacted-message">
+              
+              <div v-if="!isOwner(getExpandedListing()) && getItemTags(getExpandedListing()._id).includes('Contacted')" class="contacted-message">
                 Already contacted
+              </div>
+              
+              <div v-if="isOwner(getExpandedListing())" class="owner-message">
+                This is your own listing
               </div>
             </div>
           </div>
@@ -472,12 +480,47 @@ export default {
       return typeof photo === 'string' ? photo : photo.url || photo.thumbUrl || '';
     };
 
+    const isOwner = (listing) => {
+      console.log("[Favorites] isOwner called for listing:", {
+        listingId: listing._id,
+        listingTitle: listing.title,
+        listingLister: listing.lister,
+        listingListerType: typeof listing.lister,
+      });
+
+      console.log("[Favorites] Session store user:", {
+        hasUser: !!sessionStore.user,
+        user: sessionStore.user,
+        userId: sessionStore.user?.id,
+        userIdType: typeof sessionStore.user?.id,
+      });
+
+      if (!sessionStore.user || !sessionStore.user.id) {
+        console.log("[Favorites] isOwner: No user in session store - returning false");
+        return false;
+      }
+
+      const userId = sessionStore.user.id || sessionStore.user.user;
+      console.log("[Favorites] Comparing IDs:", {
+        listingLister: listing.lister,
+        listingListerType: typeof listing.lister,
+        userId: userId,
+        userIdType: typeof userId,
+        areEqual: listing.lister === userId,
+      });
+
+      const isOwnerResult = listing.lister === userId;
+      console.log("[Favorites] isOwner result:", isOwnerResult);
+
+      return isOwnerResult;
+    };
+
     const fetchSavedItems = async () => {
       console.log("Starting fetchSavedItems, user:", sessionStore.user);
       console.log("Session store:", sessionStore);
       console.log("User ID:", sessionStore.user?.id);
       console.log("Session token:", sessionStore.token);
-      
+
       if (!sessionStore.user || !sessionStore.user.id) {
         error.value = "Please log in to view your favorites";
         isLoading.value = false;
@@ -489,13 +532,13 @@ export default {
 
       try {
         console.log("Calling savedItemsApi.getSavedItems with userId:", sessionStore.user.id);
-        
+
         // First, let's try to fetch listings to see if the backend is working at all
         console.log("Testing if backend is reachable by fetching listings...");
         const testTimeout = new Promise((_, reject) => {
           setTimeout(() => reject(new Error("Backend test timeout")), 3000);
         });
-        
+
         try {
           const testResult = await Promise.race([
             listingsApi.getAll(),
@@ -506,12 +549,12 @@ export default {
           console.error("Backend test failed:", testErr);
           throw new Error("Backend server is not responding. Please make sure the backend is running.");
         }
-        
+
         // Add a shorter timeout to prevent hanging
         const timeoutPromise = new Promise((_, reject) => {
           setTimeout(() => reject(new Error("SavedItems API timeout - this endpoint may have issues")), 5000);
         });
-        
+
         const result = await Promise.race([
           savedItemsApi.getSavedItems(sessionStore.user.id),
           timeoutPromise
@@ -710,6 +753,7 @@ export default {
       getExpandedListing,
       truncateText,
       getPhotoUrl,
+      isOwner,
     };
   },
 };
@@ -917,6 +961,16 @@ export default {
   border-radius: 8px;
   text-align: center;
   font-size: 0.9rem;
+}
+
+.owner-message {
+  padding: 0.75rem 1.5rem;
+  background: rgb(47, 71, 62);
+  color: white;
+  border-radius: 8px;
+  text-align: center;
+  font-size: 0.9rem;
+  font-weight: 600;
 }
 
 /* New Compact Card Design */
@@ -1253,6 +1307,15 @@ export default {
   object-fit: cover;
   display: block;
   cursor: pointer;
+}
+
+.owner-badge {
+  background: rgb(47, 71, 62);
+  color: white;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
 }
 
 @media (max-width: 768px) {

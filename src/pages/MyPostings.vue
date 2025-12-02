@@ -448,19 +448,19 @@
           <!-- Photo Management Section -->
           <div class="form-group">
             <label>Photos</label>
-            
+
             <!-- Current Photos -->
             <div v-if="editForm.photos && editForm.photos.length > 0" class="current-photos">
               <div class="photos-grid-edit">
-                <div 
-                  v-for="(photo, index) in editForm.photos" 
-                  :key="index" 
+                <div
+                  v-for="(photo, index) in editForm.photos"
+                  :key="index"
                   class="photo-item-edit"
                 >
                   <img :src="getPhotoUrl(photo)" :alt="'Photo ' + (index + 1)" class="photo-preview" />
-                  <button 
-                    type="button" 
-                    @click="removeEditPhoto(index)" 
+                  <button
+                    type="button"
+                    @click="removeEditPhoto(index)"
                     class="remove-photo-btn"
                     :disabled="editUploading"
                   >
@@ -480,7 +480,7 @@
                 @change="handleEditPhotoSelect"
                 style="display: none"
               />
-              
+
               <!-- Selected Photos Preview -->
               <div v-if="editSelectedPhotos && editSelectedPhotos.length > 0" class="selected-photos-preview">
                 <h4>Selected Photos:</h4>
@@ -492,9 +492,9 @@
                       <span v-else-if="photo.error" class="error">{{ photo.error }}</span>
                       <span v-else class="ready">Ready</span>
                     </div>
-                    <button 
-                      type="button" 
-                      @click="removeEditSelectedPhoto(index)" 
+                    <button
+                      type="button"
+                      @click="removeEditSelectedPhoto(index)"
                       class="remove-selected-photo-btn"
                       :disabled="photo.uploading"
                     >
@@ -508,10 +508,10 @@
                 <button type="button" @click="triggerEditPhotoSelect" class="photo-upload-btn" :disabled="editUploading">
                   📷 Select Photos
                 </button>
-                <button 
-                  type="button" 
-                  @click="uploadEditPhotos" 
-                  class="upload-photos-btn" 
+                <button
+                  type="button"
+                  @click="uploadEditPhotos"
+                  class="upload-photos-btn"
                   :disabled="!editSelectedPhotos || editSelectedPhotos.length === 0 || editUploading"
                 >
                   {{ editUploading ? 'Uploading...' : 'Upload Photos' }}
@@ -795,7 +795,7 @@ export default {
       amenities: [],
       photos: [],
     });
-    
+
     // Photo editing state
     const editPhotoInput = ref(null);
     const editSelectedPhotos = ref([]);
@@ -1358,7 +1358,7 @@ export default {
       try {
         const photo = editForm.value.photos[index];
         const listingId = editingListingId.value;
-        
+
         if (!listingId) {
           editForm.value.photos.splice(index, 1);
           return;
@@ -1373,7 +1373,7 @@ export default {
         }
 
         console.log('🗑️ Deleting photo:', { photoId, photo, listingId });
-        
+
         await listingsApi.deletePhoto(listingId, photoId);
         editForm.value.photos.splice(index, 1);
         console.log('✅ Photo deleted successfully');
@@ -1387,7 +1387,7 @@ export default {
       if (!editSelectedPhotos.value || editSelectedPhotos.value.length === 0) return;
 
       editUploading.value = true;
-      
+
       try {
         // Mark all photos as uploading
         editSelectedPhotos.value.forEach(photo => {
@@ -1408,7 +1408,7 @@ export default {
             try {
               const result = await listingsApi.addPhoto(editingListingId.value, url);
               console.log('Photo added via API:', result);
-              
+
               // Add the new photo to our local form state
               const newPhoto = {
                 url: url,
@@ -2234,7 +2234,7 @@ export default {
     grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
     gap: 0.5rem;
   }
-  
+
   .modal-photo {
     height: 120px;
   }
@@ -2407,15 +2407,15 @@ export default {
     padding: 1rem;
     max-height: 90vh;
   }
-  
+
   .form-row {
     grid-template-columns: 1fr;
   }
-  
+
   .modal-actions {
     flex-direction: column;
   }
-  
+
   .cancel-btn,
   .submit-btn {
     width: 100%;
