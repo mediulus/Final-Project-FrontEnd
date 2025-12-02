@@ -52,6 +52,9 @@
                   >
                     <span>♥</span>
                   </button>
+                  <div v-if="isPoster(posting)" class="owner-badge">
+                    Your Posting
+                  </div>
                 </div>
               </div>
 
@@ -240,15 +243,20 @@
             <!-- Action Buttons -->
             <div class="detail-actions">
               <button
-                v-if="!getItemTags(getExpandedPosting()._id).includes('Contacted')"
+                v-if="!isPoster(getExpandedPosting()) && !getItemTags(getExpandedPosting()._id).includes('Contacted')"
                 @click="contactPoster(getExpandedPosting()._id)"
                 class="contact-btn"
                 :disabled="isContacting[getExpandedPosting()._id]"
               >
                 {{ isContacting[getExpandedPosting()._id] ? "Sending..." : "Contact Me" }}
               </button>
-              <div v-else class="contacted-message">
+              
+              <div v-if="!isPoster(getExpandedPosting()) && getItemTags(getExpandedPosting()._id).includes('Contacted')" class="contacted-message">
                 Already contacted
+              </div>
+              
+              <div v-if="isPoster(getExpandedPosting())" class="owner-message">
+                This is your own posting
               </div>
             </div>
           </div>
@@ -515,6 +523,41 @@ export default {
       return isOwnerResult;
     };
 
+    const isPoster = (posting) => {
+      console.log("[Favorites] isPoster called for posting:", {
+        postingId: posting._id,
+        postingCity: posting.city,
+        postingPoster: posting.poster,
+        postingPosterType: typeof posting.poster,
+      });
+
+      console.log("[Favorites] Session store user:", {
+        hasUser: !!sessionStore.user,
+        user: sessionStore.user,
+        userId: sessionStore.user?.id,
+        userIdType: typeof sessionStore.user?.id,
+      });
+
+      if (!sessionStore.user || !sessionStore.user.id) {
+        console.log("[Favorites] isPoster: No user in session store - returning false");
+        return false;
+      }
+
+      const userId = sessionStore.user.id || sessionStore.user.user;
+      console.log("[Favorites] Comparing IDs:", {
+        postingPoster: posting.poster,
+        postingPosterType: typeof posting.poster,
+        userId: userId,
+        userIdType: typeof userId,
+        areEqual: posting.poster === userId,
+      });
+
+      const isPosterResult = posting.poster === userId;
+      console.log("[Favorites] isPoster result:", isPosterResult);
+
+      return isPosterResult;
+    };
+
     const fetchSavedItems = async () => {
       console.log("Starting fetchSavedItems, user:", sessionStore.user);
       console.log("Session store:", sessionStore);
@@ -754,6 +797,7 @@ export default {
       truncateText,
       getPhotoUrl,
       isOwner,
+      isPoster,
     };
   },
 };
