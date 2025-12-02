@@ -294,6 +294,24 @@
               </tbody>
             </table>
           </div>
+
+          <!-- Photos -->
+          <div class="info-section" v-if="getExpandedListing().photos && getExpandedListing().photos.length > 0">
+            <h3>Photos</h3>
+            <div class="photos-grid">
+              <div
+                v-for="(photo, index) in getExpandedListing().photos"
+                :key="index"
+                class="modal-photo-item"
+              >
+                <img
+                  :src="getPhotoUrl(photo)"
+                  :alt="getExpandedListing().title + ' photo ' + (index + 1)"
+                  class="modal-photo"
+                />
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- Action Buttons -->
@@ -2177,6 +2195,49 @@ export default {
   font-size: 12px;
   color: #666;
   font-style: italic;
+}
+
+/* Detail view photos styles */
+.photos-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.modal-photo-item {
+  border-radius: 8px;
+  overflow: hidden;
+  background: #f8f9fa;
+  transition: transform 0.2s ease;
+}
+
+.modal-photo-item:hover {
+  transform: scale(1.02);
+}
+
+.modal-photo {
+  width: 100%;
+  height: 150px;
+  object-fit: cover;
+  display: block;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.modal-photo:hover {
+  opacity: 0.9;
+}
+
+@media (max-width: 768px) {
+  .photos-grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 0.5rem;
+  }
+  
+  .modal-photo {
+    height: 120px;
+  }
 }
 
 /* Modal styles */
