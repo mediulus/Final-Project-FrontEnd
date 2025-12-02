@@ -975,6 +975,9 @@ export default {
     const handleEditAddressInput = (event) => {
       const input = event.target.value;
       editForm.value.address = input;
+      // Clear geocoded location when user starts typing manually
+      // This ensures geocoding will run if they don't select from autocomplete
+      editGeocodedLocation.value = null;
       fetchAutocompleteSuggestions(input);
     };
 
