@@ -47,9 +47,25 @@
               <strong>👤</strong> {{ posting.gender }}, {{ posting.age }} years
               old
             </p>
+            <p v-if="posting.numberOfRoommates" class="info">
+              <strong>👥</strong> Looking for {{ posting.numberOfRoommates }}
+              {{ posting.numberOfRoommates === 1 ? "roommate" : "roommates" }}
+            </p>
             <p v-if="posting.startDate && posting.endDate" class="dates">
               <strong>📅</strong> {{ formatDate(posting.startDate) }} -
               {{ formatDate(posting.endDate) }}
+            </p>
+            <p v-if="posting.dailyRhythm" class="info">
+              <strong>🌅</strong> {{ posting.dailyRhythm }}
+            </p>
+            <p v-if="posting.cleanlinessPreference" class="info">
+              <strong>🧹</strong> {{ posting.cleanlinessPreference }}
+            </p>
+            <p v-if="posting.homeEnvironment" class="info">
+              <strong>🏠</strong> {{ posting.homeEnvironment }}
+            </p>
+            <p v-if="posting.guestsVisitors" class="info">
+              <strong>👥</strong> {{ posting.guestsVisitors }}
             </p>
             <p class="description">{{ posting.description }}</p>
             <button
@@ -123,6 +139,19 @@
             />
           </div>
 
+          <div class="form-group">
+            <label for="numberOfRoommates">Number of Roommates *</label>
+            <input
+              type="number"
+              id="numberOfRoommates"
+              v-model.number="form.numberOfRoommates"
+              required
+              min="1"
+              max="10"
+              placeholder="e.g., 2"
+            />
+          </div>
+
           <div class="form-row">
             <div class="form-group">
               <label for="startDate">Start Date *</label>
@@ -141,13 +170,105 @@
           </div>
 
           <div class="form-group">
+            <label for="dailyRhythm">Daily Rhythm *</label>
+            <select id="dailyRhythm" v-model="form.dailyRhythm" required>
+              <option value="" disabled>Select your daily rhythm</option>
+              <option value="Morning-oriented (up early, asleep early)">
+                Morning-oriented (up early, asleep early)
+              </option>
+              <option value="Balanced / flexible schedule">
+                Balanced / flexible schedule
+              </option>
+              <option value="Night owl (up late, active later)">
+                Night owl (up late, active later)
+              </option>
+              <option value="Varies a lot week-to-week">
+                Varies a lot week-to-week
+              </option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="cleanlinessPreference">Cleanliness Preference *</label>
+            <select
+              id="cleanlinessPreference"
+              v-model="form.cleanlinessPreference"
+              required
+            >
+              <option value="" disabled>
+                Select your cleanliness preference
+              </option>
+              <option value="Very tidy (clean daily / everything in its place)">
+                Very tidy (clean daily / everything in its place)
+              </option>
+              <option value="Moderately tidy (clean weekly; some clutter okay)">
+                Moderately tidy (clean weekly; some clutter okay)
+              </option>
+              <option
+                value="Relaxed (don't mind clutter but clean occasionally)"
+              >
+                Relaxed (don't mind clutter but clean occasionally)
+              </option>
+              <option value="Messy (minimal cleaning unless necessary)">
+                Messy (minimal cleaning unless necessary)
+              </option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="homeEnvironment">Home Environment *</label>
+            <select
+              id="homeEnvironment"
+              v-model="form.homeEnvironment"
+              required
+            >
+              <option value="" disabled>
+                Select your home environment preference
+              </option>
+              <option value="Quiet (minimal noise, low visitors)">
+                Quiet (minimal noise, low visitors)
+              </option>
+              <option value="Moderate (some noise, occasional visitors)">
+                Moderate (some noise, occasional visitors)
+              </option>
+              <option value="Social / lively (friends over often)">
+                Social / lively (friends over often)
+              </option>
+              <option value="Flexible / depends on schedule">
+                Flexible / depends on schedule
+              </option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="guestsVisitors">Guests & Visitors *</label>
+            <select id="guestsVisitors" v-model="form.guestsVisitors" required>
+              <option value="" disabled>
+                Select your guests & visitors preference
+              </option>
+              <option value="Prefer few or no guests">
+                Prefer few or no guests
+              </option>
+              <option value="Occasional guests okay">
+                Occasional guests okay
+              </option>
+              <option value="Comfortable with frequent guests">
+                Comfortable with frequent guests
+              </option>
+              <option value="Comfortable with overnight guests">
+                Comfortable with overnight guests
+              </option>
+            </select>
+          </div>
+
+          <div class="form-group">
             <label for="description">Description *</label>
             <textarea
               id="description"
               v-model="form.description"
               required
               rows="4"
-              placeholder="Tell others about yourself and what you're looking for..."
+              placeholder="Tell us more about yourself and what you are looking for in a roommate"
             ></textarea>
           </div>
 
@@ -205,6 +326,19 @@
             />
           </div>
 
+          <div class="form-group">
+            <label for="edit-numberOfRoommates">Number of Roommates *</label>
+            <input
+              type="number"
+              id="edit-numberOfRoommates"
+              v-model.number="editForm.numberOfRoommates"
+              required
+              min="1"
+              max="10"
+              placeholder="e.g., 2"
+            />
+          </div>
+
           <div class="form-row">
             <div class="form-group">
               <label for="edit-startDate">Start Date *</label>
@@ -228,13 +362,115 @@
           </div>
 
           <div class="form-group">
+            <label for="edit-dailyRhythm">Daily Rhythm *</label>
+            <select
+              id="edit-dailyRhythm"
+              v-model="editForm.dailyRhythm"
+              required
+            >
+              <option value="" disabled>Select your daily rhythm</option>
+              <option value="Morning-oriented (up early, asleep early)">
+                Morning-oriented (up early, asleep early)
+              </option>
+              <option value="Balanced / flexible schedule">
+                Balanced / flexible schedule
+              </option>
+              <option value="Night owl (up late, active later)">
+                Night owl (up late, active later)
+              </option>
+              <option value="Varies a lot week-to-week">
+                Varies a lot week-to-week
+              </option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="edit-cleanlinessPreference"
+              >Cleanliness Preference *</label
+            >
+            <select
+              id="edit-cleanlinessPreference"
+              v-model="editForm.cleanlinessPreference"
+              required
+            >
+              <option value="" disabled>
+                Select your cleanliness preference
+              </option>
+              <option value="Very tidy (clean daily / everything in its place)">
+                Very tidy (clean daily / everything in its place)
+              </option>
+              <option value="Moderately tidy (clean weekly; some clutter okay)">
+                Moderately tidy (clean weekly; some clutter okay)
+              </option>
+              <option
+                value="Relaxed (don't mind clutter but clean occasionally)"
+              >
+                Relaxed (don't mind clutter but clean occasionally)
+              </option>
+              <option value="Messy (minimal cleaning unless necessary)">
+                Messy (minimal cleaning unless necessary)
+              </option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="edit-homeEnvironment">Home Environment *</label>
+            <select
+              id="edit-homeEnvironment"
+              v-model="editForm.homeEnvironment"
+              required
+            >
+              <option value="" disabled>
+                Select your home environment preference
+              </option>
+              <option value="Quiet (minimal noise, low visitors)">
+                Quiet (minimal noise, low visitors)
+              </option>
+              <option value="Moderate (some noise, occasional visitors)">
+                Moderate (some noise, occasional visitors)
+              </option>
+              <option value="Social / lively (friends over often)">
+                Social / lively (friends over often)
+              </option>
+              <option value="Flexible / depends on schedule">
+                Flexible / depends on schedule
+              </option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="edit-guestsVisitors">Guests & Visitors *</label>
+            <select
+              id="edit-guestsVisitors"
+              v-model="editForm.guestsVisitors"
+              required
+            >
+              <option value="" disabled>
+                Select your guests & visitors preference
+              </option>
+              <option value="Prefer few or no guests">
+                Prefer few or no guests
+              </option>
+              <option value="Occasional guests okay">
+                Occasional guests okay
+              </option>
+              <option value="Comfortable with frequent guests">
+                Comfortable with frequent guests
+              </option>
+              <option value="Comfortable with overnight guests">
+                Comfortable with overnight guests
+              </option>
+            </select>
+          </div>
+
+          <div class="form-group">
             <label for="edit-description">Description *</label>
             <textarea
               id="edit-description"
               v-model="editForm.description"
               required
               rows="4"
-              placeholder="Tell others about yourself and what you're looking for..."
+              placeholder="Tell us more about yourself and what you are looking for in a roommate"
             ></textarea>
           </div>
 
@@ -274,6 +510,11 @@ export default {
       description: "",
       startDate: "",
       endDate: "",
+      dailyRhythm: "",
+      cleanlinessPreference: "",
+      homeEnvironment: "",
+      guestsVisitors: "",
+      numberOfRoommates: "",
     });
     const sessionStore = useSessionStore();
     const postings = ref([]);
@@ -295,6 +536,11 @@ export default {
       description: "",
       startDate: "",
       endDate: "",
+      dailyRhythm: "",
+      cleanlinessPreference: "",
+      homeEnvironment: "",
+      guestsVisitors: "",
+      numberOfRoommates: "",
     });
 
     // Helper function to check if a string looks like a UUID (not a username)
@@ -578,6 +824,10 @@ export default {
         description: posting.description || "",
         startDate: formatDateForInput(posting.startDate),
         endDate: formatDateForInput(posting.endDate),
+        dailyRhythm: posting.dailyRhythm || "",
+        cleanlinessPreference: posting.cleanlinessPreference || "",
+        homeEnvironment: posting.homeEnvironment || "",
+        guestsVisitors: posting.guestsVisitors || "",
       };
       editError.value = "";
       showEditModal.value = true;
@@ -594,6 +844,11 @@ export default {
         description: "",
         startDate: "",
         endDate: "",
+        dailyRhythm: "",
+        cleanlinessPreference: "",
+        homeEnvironment: "",
+        guestsVisitors: "",
+        numberOfRoommates: "",
       };
     };
 
@@ -664,6 +919,40 @@ export default {
         } else if (editForm.value.endDate) {
           // Date didn't exist before, add it now
           await roommatePostings.editEndDate(userId, editForm.value.endDate);
+        }
+
+        // Update new fields if changed
+        if (editForm.value.dailyRhythm !== posting.dailyRhythm) {
+          await roommatePostings.editDailyRhythm(
+            userId,
+            editForm.value.dailyRhythm
+          );
+        }
+        if (
+          editForm.value.cleanlinessPreference !== posting.cleanlinessPreference
+        ) {
+          await roommatePostings.editCleanlinessPreference(
+            userId,
+            editForm.value.cleanlinessPreference
+          );
+        }
+        if (editForm.value.homeEnvironment !== posting.homeEnvironment) {
+          await roommatePostings.editHomeEnvironment(
+            userId,
+            editForm.value.homeEnvironment
+          );
+        }
+        if (editForm.value.guestsVisitors !== posting.guestsVisitors) {
+          await roommatePostings.editGuestsVisitors(
+            userId,
+            editForm.value.guestsVisitors
+          );
+        }
+        if (editForm.value.numberOfRoommates !== posting.numberOfRoommates) {
+          await roommatePostings.editNumberOfRoommates(
+            userId,
+            editForm.value.numberOfRoommates
+          );
         }
 
         // Refresh postings to get updated data
@@ -766,6 +1055,25 @@ export default {
       try {
         console.log("Creating roommate posting with data:", form.value);
 
+        // Validate required fields
+        if (
+          !form.value.city ||
+          !form.value.gender ||
+          !form.value.age ||
+          !form.value.description ||
+          !form.value.startDate ||
+          !form.value.endDate ||
+          !form.value.dailyRhythm ||
+          !form.value.cleanlinessPreference ||
+          !form.value.homeEnvironment ||
+          !form.value.guestsVisitors ||
+          !form.value.numberOfRoommates
+        ) {
+          createError.value = "Please fill in all required fields";
+          isCreating.value = false;
+          return;
+        }
+
         const postingData = {
           city: form.value.city,
           gender: form.value.gender,
@@ -773,9 +1081,34 @@ export default {
           description: form.value.description,
           startDate: form.value.startDate,
           endDate: form.value.endDate,
+          dailyRhythm: form.value.dailyRhythm,
+          cleanlinessPreference: form.value.cleanlinessPreference,
+          homeEnvironment: form.value.homeEnvironment,
+          guestsVisitors: form.value.guestsVisitors,
+          numberOfRoommates: form.value.numberOfRoommates,
         };
 
+        console.log("Sending posting data:", postingData);
         const result = await roommatePostings.create(postingData);
+        console.log("Posting create response:", result);
+
+        // Check for errors in the result
+        if (result && result.error) {
+          console.error("Backend returned error:", result.error);
+          createError.value = result.error;
+          isCreating.value = false;
+          return;
+        }
+
+        // Check if posting was created successfully
+        if (!result || (!result.posting && !result._id)) {
+          console.error("Unexpected response format:", result);
+          createError.value =
+            "Failed to create posting: Unexpected response from server";
+          isCreating.value = false;
+          return;
+        }
+
         console.log("Posting created successfully:", result);
 
         // Clear form and close modal
@@ -786,6 +1119,11 @@ export default {
           description: "",
           startDate: "",
           endDate: "",
+          dailyRhythm: "",
+          cleanlinessPreference: "",
+          homeEnvironment: "",
+          guestsVisitors: "",
+          numberOfRoommates: "",
         };
         closeModal();
 
@@ -793,7 +1131,8 @@ export default {
         await fetchPostings();
       } catch (err) {
         console.error("Error creating posting:", err);
-        createError.value = err.message || "Failed to create posting";
+        createError.value =
+          err.message || "Failed to create posting. Please try again.";
       } finally {
         isCreating.value = false;
       }

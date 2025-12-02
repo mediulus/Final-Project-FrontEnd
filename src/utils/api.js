@@ -562,6 +562,51 @@ export const roommatePostings = {
       session: sessionStore.token,
     });
   },
+
+  async editDailyRhythm(poster, newValue) {
+    const sessionStore = useSessionStore();
+    return await apiRequest("/RoommatePosting/editDailyRhythm", {
+      poster,
+      newValue,
+      session: sessionStore.token,
+    });
+  },
+
+  async editCleanlinessPreference(poster, newValue) {
+    const sessionStore = useSessionStore();
+    return await apiRequest("/RoommatePosting/editCleanlinessPreference", {
+      poster,
+      newValue,
+      session: sessionStore.token,
+    });
+  },
+
+  async editHomeEnvironment(poster, newValue) {
+    const sessionStore = useSessionStore();
+    return await apiRequest("/RoommatePosting/editHomeEnvironment", {
+      poster,
+      newValue,
+      session: sessionStore.token,
+    });
+  },
+
+  async editGuestsVisitors(poster, newValue) {
+    const sessionStore = useSessionStore();
+    return await apiRequest("/RoommatePosting/editGuestsVisitors", {
+      poster,
+      newValue,
+      session: sessionStore.token,
+    });
+  },
+
+  async editNumberOfRoommates(poster, newValue) {
+    const sessionStore = useSessionStore();
+    return await apiRequest("/RoommatePosting/editNumberOfRoommates", {
+      poster,
+      newValue,
+      session: sessionStore.token,
+    });
+  },
 };
 
 export default {
