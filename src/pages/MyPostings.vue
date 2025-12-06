@@ -1820,6 +1820,10 @@ export default {
   text-align: center;
 }
 
+.hero::after {
+  display: none;
+}
+
 .hero h2 {
   font-size: 2rem;
   margin-bottom: 0.5rem;
