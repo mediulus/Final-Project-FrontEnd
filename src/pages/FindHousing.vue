@@ -106,7 +106,7 @@
         >
           <div class="card-header">
             <div class="card-title">
-              <h3>{{ listing.title }}</h3>
+            <h3>{{ listing.title }}</h3>
               <div class="quick-info">
                 <span class="address-preview">
                   <svg class="info-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -214,7 +214,7 @@
                 />
               </div>
             </div>
-          </div>
+            </div>
 
           <!-- Property Information -->
           <div class="info-section">
@@ -265,7 +265,7 @@
               <tbody>
                 <tr v-for="amenity in getExpandedListing().amenities" :key="amenity._id">
                   <td>{{ amenity.title }}</td>
-                  <td>{{ amenity.distance && amenity.distance > 0 ? `${amenity.distance} miles away` : 'On-site' }}</td>
+                  <td>{{ amenity.distance && amenity.distance > 0 ? `${amenity.distance} miles from home` : 'On-site' }}</td>
                 </tr>
               </tbody>
             </table>
@@ -274,14 +274,14 @@
 
         <!-- Action Buttons -->
         <div class="detail-actions">
-          <button
+            <button
             v-if="!isOwner(getExpandedListing()) && !getItemTags(getExpandedListing()._id).includes('Contacted')"
             @click="sendInterest(getExpandedListing()._id)"
             class="contact-btn"
             :disabled="isSendingInterest[getExpandedListing()._id]"
           >
             {{ isSendingInterest[getExpandedListing()._id] ? "Sending..." : "Send Interest" }}
-          </button>
+            </button>
 
           <div v-if="!isOwner(getExpandedListing()) && getItemTags(getExpandedListing()._id).includes('Contacted')" class="contacted-message">
             Already contacted
@@ -291,9 +291,9 @@
             <button @click="editListing(getExpandedListing())" class="edit-btn">Edit Listing</button>
             <button @click="deleteListing(getExpandedListing()._id)" class="delete-btn">Delete Listing</button>
           </div>
+          </div>
         </div>
       </div>
-    </div>
 
     <!-- Create Listing Modal -->
     <div v-if="showCreateModal" class="modal-overlay" @click="closeCreateModal">
@@ -314,15 +314,15 @@
           <div class="form-group">
             <label for="address">Address *</label>
             <div class="autocomplete-wrapper">
-              <input
-                type="text"
-                id="address"
-                v-model="newListing.address"
+            <input
+              type="text"
+              id="address"
+              v-model="newListing.address"
                 @input="handleAddressInput"
                 @focus="showSuggestions = autocompleteSuggestions.length > 0"
                 @blur="handleAddressBlur"
-                required
-                placeholder="e.g., 123 Main St, Cambridge, MA"
+              required
+              placeholder="e.g., 123 Main St, Cambridge, MA"
                 autocomplete="off"
               />
               <ul v-if="showSuggestions && autocompleteSuggestions.length" class="suggestions-list">
@@ -408,9 +408,9 @@
                 <input
                   type="number"
                   v-model.number="amenity.distance"
-                  placeholder="Miles (optional)"
+                  placeholder="Miles from home (optional)"
                   min="0"
-                  step="0.1"
+                  step="0.01"
                   class="amenity-distance"
                 />
                 <button
@@ -517,15 +517,15 @@
           <div class="form-group">
             <label for="edit-address">Address *</label>
             <div class="autocomplete-wrapper">
-              <input
-                type="text"
-                id="edit-address"
-                v-model="editForm.address"
+            <input
+              type="text"
+              id="edit-address"
+              v-model="editForm.address"
                 @input="handleEditAddressInput"
                 @focus="showEditSuggestions = editAutocompleteSuggestions.length > 0"
                 @blur="handleEditAddressBlur"
-                required
-                placeholder="e.g., 123 Main St, Cambridge, MA"
+              required
+              placeholder="e.g., 123 Main St, Cambridge, MA"
                 autocomplete="off"
               />
               <ul v-if="showEditSuggestions && editAutocompleteSuggestions.length" class="suggestions-list">
@@ -610,9 +610,9 @@
                 <input
                   type="number"
                   v-model.number="amenity.distance"
-                  placeholder="Miles (optional)"
+                  placeholder="Miles from home (optional)"
                   min="0"
-                  step="0.1"
+                  step="0.01"
                   class="amenity-distance"
                 />
                 <button
@@ -1646,12 +1646,12 @@ export default {
           const tagsMap = new Map();
 
           items.forEach((saved) => {
-            console.log(
-              "Processing saved item:",
-              JSON.stringify(saved, null, 2)
-            );
-            // API returns: {user: "...", savedItem: {item: "id", tags: [...]}}
-            if (saved.savedItem && saved.savedItem.item) {
+              console.log(
+                "Processing saved item:",
+                JSON.stringify(saved, null, 2)
+              );
+              // API returns: {user: "...", savedItem: {item: "id", tags: [...]}}
+              if (saved.savedItem && saved.savedItem.item) {
               const itemId = saved.savedItem.item;
               const tags = saved.savedItem.tags || [];
               console.log(`Found itemId: ${itemId}, tags:`, tags);
@@ -1668,7 +1668,7 @@ export default {
               } else {
                 tagsMap.set(itemId, { tags: tags });
               }
-            } else if (saved._id) {
+              } else if (saved._id) {
               const itemId = saved._id;
               console.log("Using saved._id:", itemId);
               if (!ids.includes(itemId)) {
@@ -1677,7 +1677,7 @@ export default {
               if (!tagsMap.has(itemId)) {
                 tagsMap.set(itemId, { tags: [] });
               }
-            } else if (saved.item && saved.item.item) {
+              } else if (saved.item && saved.item.item) {
               const itemId = saved.item.item;
               console.log("Using saved.item.item:", itemId);
               if (!ids.includes(itemId)) {
@@ -3104,7 +3104,7 @@ export default {
 .close-btn {
   background: none;
   border: none;
-  font-size: 2rem;
+    font-size: 2rem;
   cursor: pointer;
   color: white;
   padding: 0.25rem;
