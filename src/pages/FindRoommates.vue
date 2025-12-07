@@ -112,7 +112,7 @@
             </div>
 
             <div class="card-preview">
-              <p class="description-preview">{{ truncateText(posting.description, 100) }}</p>
+              <p class="description-preview">{{ truncateText(posting.aboutYourself || posting.description || "", 100) }}</p>
               <div class="expand-hint">
                 <span>Click for details</span>
                 <span class="expand-icon">+</span>
@@ -181,11 +181,27 @@
                 </table>
               </div>
 
-              <!-- Description -->
-              <div class="info-section">
+              <!-- Description (old format) -->
+              <div class="info-section" v-if="getExpandedPosting().description && !getExpandedPosting().aboutYourself && !getExpandedPosting().lookingFor">
                 <h3>About</h3>
                 <div class="description-full">
                   {{ getExpandedPosting().description }}
+                </div>
+              </div>
+
+              <!-- About Me (new format) -->
+              <div class="info-section" v-if="getExpandedPosting().aboutYourself">
+                <h3>About This Person</h3>
+                <div class="description-full">
+                  {{ getExpandedPosting().aboutYourself }}
+                </div>
+              </div>
+
+              <!-- Looking For (new format) -->
+              <div class="info-section" v-if="getExpandedPosting().lookingFor">
+                <h3>What They're Looking For</h3>
+                <div class="description-full">
+                  {{ getExpandedPosting().lookingFor }}
                 </div>
               </div>
             </div>
@@ -369,13 +385,24 @@
           </div>
 
           <div class="form-group">
-            <label for="description">Description *</label>
+            <label for="aboutMe">Tell More About Yourself *</label>
             <textarea
-              id="description"
-              v-model="form.description"
+              id="aboutMe"
+              v-model="form.aboutMe"
               required
               rows="4"
-              placeholder="Tell us more about yourself and what you are looking for in a roommate"
+              placeholder="Tell us about yourself, your interests, lifestyle, etc."
+            ></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="lookingFor">What You Are Looking For in a Roommate *</label>
+            <textarea
+              id="lookingFor"
+              v-model="form.lookingFor"
+              required
+              rows="4"
+              placeholder="Describe what you're looking for in a roommate"
             ></textarea>
           </div>
 
@@ -555,13 +582,24 @@
           </div>
 
           <div class="form-group">
-            <label for="edit-description">Description *</label>
+            <label for="edit-aboutMe">Tell More About Yourself *</label>
             <textarea
-              id="edit-description"
-              v-model="editForm.description"
+              id="edit-aboutMe"
+              v-model="editForm.aboutMe"
               required
               rows="4"
-              placeholder="Tell us more about yourself and what you are looking for in a roommate"
+              placeholder="Tell us about yourself, your interests, lifestyle, etc."
+            ></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="edit-lookingFor">What You Are Looking For in a Roommate *</label>
+            <textarea
+              id="edit-lookingFor"
+              v-model="editForm.lookingFor"
+              required
+              rows="4"
+              placeholder="Describe what you're looking for in a roommate"
             ></textarea>
           </div>
 
@@ -598,7 +636,8 @@ export default {
       city: "",
       gender: "",
       age: "",
-      description: "",
+      aboutMe: "",
+      lookingFor: "",
       startDate: "",
       endDate: "",
       dailyRhythm: "",
@@ -624,7 +663,8 @@ export default {
       city: "",
       gender: "",
       age: "",
-      description: "",
+      aboutMe: "",
+      lookingFor: "",
       startDate: "",
       endDate: "",
       dailyRhythm: "",
@@ -761,11 +801,9 @@ export default {
         );
       }
 
-      // Sort by city
+      // Sort by most recent first (by _id descending, as MongoDB ObjectIds contain timestamp)
       return result.sort((a, b) => {
-        const cityA = (a.city || "").toLowerCase();
-        const cityB = (b.city || "").toLowerCase();
-        return cityA.localeCompare(cityB);
+        return b._id.localeCompare(a._id);
       });
     });
 
@@ -1016,6 +1054,7 @@ export default {
       return genderMap[genderNum] || "";
     };
 
+
     const openModal = async () => {
       // Ensure we have user info before opening modal
       await ensureValidUserId();
@@ -1072,6 +1111,17 @@ export default {
       return postings.value.find(p => p._id === expandedPosting.value) || {};
     };
 
+    // Helper functions to extract aboutMe and lookingFor for display
+    const getAboutMe = (posting) => {
+      if (!posting) return "";
+      return posting.aboutYourself || "";
+    };
+
+    const getLookingFor = (posting) => {
+      if (!posting) return "";
+      return posting.lookingFor || "";
+    };
+
     const truncateText = (text, maxLength) => {
       if (!text) return '';
       if (text.length <= maxLength) return text;
@@ -1086,7 +1136,8 @@ export default {
         city: "",
         gender: "",
         age: "",
-        description: "",
+        aboutMe: "",
+        lookingFor: "",
         startDate: "",
         endDate: "",
         dailyRhythm: "",
@@ -1098,11 +1149,16 @@ export default {
 
     const editPosting = (posting) => {
       editingPostingId.value = posting._id;
+      // Handle both old (description) and new (aboutYourself/lookingFor) formats
+      const aboutMe = posting.aboutYourself || (posting.description ? posting.description.split('\n\n---\n\n')[0] : "");
+      const lookingFor = posting.lookingFor || (posting.description && posting.description.includes('---') ? posting.description.split('\n\n---\n\n')[1] : "");
+      
       editForm.value = {
         city: posting.city || "",
         gender: posting.gender || "",
         age: posting.age || "",
-        description: posting.description || "",
+        aboutMe: aboutMe,
+        lookingFor: lookingFor,
         startDate: formatDateForInput(posting.startDate),
         endDate: formatDateForInput(posting.endDate),
         dailyRhythm: posting.dailyRhythm || "",
@@ -1122,7 +1178,8 @@ export default {
         city: "",
         gender: "",
         age: "",
-        description: "",
+        aboutMe: "",
+        lookingFor: "",
         startDate: "",
         endDate: "",
         dailyRhythm: "",
@@ -1165,10 +1222,29 @@ export default {
         if (editForm.value.age !== posting.age) {
           await roommatePostings.editAge(userId, editForm.value.age);
         }
-        if (editForm.value.description !== posting.description) {
-          await roommatePostings.editDescription(
+        // Edit aboutYourself if changed (only if posting has new format)
+        if (posting.aboutYourself !== undefined && editForm.value.aboutMe !== posting.aboutYourself) {
+          await roommatePostings.editAboutYourself(
             userId,
-            editForm.value.description
+            editForm.value.aboutMe
+          );
+        }
+        // Edit lookingFor if changed (only if posting has new format)
+        if (posting.lookingFor !== undefined && editForm.value.lookingFor !== posting.lookingFor) {
+          await roommatePostings.editLookingFor(
+            userId,
+            editForm.value.lookingFor
+          );
+        }
+        // If old format (description), update both fields to migrate to new format
+        if (posting.description && !posting.aboutYourself && !posting.lookingFor) {
+          await roommatePostings.editAboutYourself(
+            userId,
+            editForm.value.aboutMe
+          );
+          await roommatePostings.editLookingFor(
+            userId,
+            editForm.value.lookingFor
           );
         }
 
@@ -1334,7 +1410,8 @@ export default {
           !form.value.city ||
           !form.value.gender ||
           !form.value.age ||
-          !form.value.description ||
+          !form.value.aboutMe ||
+          !form.value.lookingFor ||
           !form.value.startDate ||
           !form.value.endDate ||
           !form.value.dailyRhythm ||
@@ -1351,12 +1428,14 @@ export default {
           city: form.value.city,
           gender: form.value.gender,
           age: form.value.age,
-          description: form.value.description,
+          aboutYourself: form.value.aboutMe,
+          lookingFor: form.value.lookingFor,
           startDate: form.value.startDate,
           endDate: form.value.endDate,
           dailyRhythm: form.value.dailyRhythm,
           cleanlinessPreference: form.value.cleanlinessPreference,
           homeEnvironment: form.value.homeEnvironment,
+          guestsVisitors: "", // Combined with homeEnvironment in UI
           numberOfRoommates: form.value.numberOfRoommates,
         };
 
@@ -1388,7 +1467,8 @@ export default {
           city: "",
           gender: "",
           age: "",
-          description: "",
+          aboutMe: "",
+          lookingFor: "",
           startDate: "",
           endDate: "",
           dailyRhythm: "",
@@ -1475,6 +1555,8 @@ export default {
       closeDetails,
       getExpandedPosting,
       truncateText,
+      getAboutMe,
+      getLookingFor,
     };
   },
 };

@@ -65,7 +65,7 @@
               </div>
 
               <div class="card-preview">
-                <p class="description-preview">{{ truncateText(posting.description, 100) }}</p>
+                <p class="description-preview">{{ truncateText(posting.aboutYourself || posting.description || "", 100) }}</p>
                 <div class="expand-hint">
                   <span>Click for details</span>
                   <span class="expand-icon">+</span>
@@ -232,11 +232,27 @@
             </table>
           </div>
 
-          <!-- Description -->
-          <div class="info-section">
+          <!-- Description (old format) -->
+          <div class="info-section" v-if="getExpandedPosting().description && !getExpandedPosting().aboutYourself && !getExpandedPosting().lookingFor">
             <h3>About</h3>
             <div class="description-full">
               {{ getExpandedPosting().description }}
+            </div>
+          </div>
+
+          <!-- About Yourself (new format) -->
+          <div class="info-section" v-if="getExpandedPosting().aboutYourself">
+            <h3>About This Person</h3>
+            <div class="description-full">
+              {{ getExpandedPosting().aboutYourself }}
+            </div>
+          </div>
+
+          <!-- Looking For (new format) -->
+          <div class="info-section" v-if="getExpandedPosting().lookingFor">
+            <h3>What They're Looking For</h3>
+            <div class="description-full">
+              {{ getExpandedPosting().lookingFor }}
             </div>
           </div>
         </div>
@@ -765,13 +781,24 @@
           </div>
 
           <div class="form-group">
-            <label for="edit-roommate-description">Description *</label>
+            <label for="edit-roommate-about-yourself">About Yourself *</label>
             <textarea
-              id="edit-roommate-description"
-              v-model="editRoommateForm.description"
+              id="edit-roommate-about-yourself"
+              v-model="editRoommateForm.aboutYourself"
               required
               rows="4"
-              placeholder="Tell us more about yourself and what you are looking for in a roommate"
+              placeholder="Tell us about yourself..."
+            ></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="edit-roommate-looking-for">What You're Looking For *</label>
+            <textarea
+              id="edit-roommate-looking-for"
+              v-model="editRoommateForm.lookingFor"
+              required
+              rows="4"
+              placeholder="What are you looking for in a roommate?"
             ></textarea>
           </div>
 
@@ -851,7 +878,8 @@ export default {
       city: "",
       gender: "",
       age: "",
-      description: "",
+      aboutYourself: "",
+      lookingFor: "",
       startDate: "",
       endDate: "",
       dailyRhythm: "",
@@ -1134,9 +1162,11 @@ export default {
           ? allRoommatePostings
           : [];
         // Filter by poster ID and ensure valid items
-        roommatePostings.value = allRoommateArray.filter(
-          (posting) => posting && posting._id && posting.poster === userId
-        );
+        roommatePostings.value = allRoommateArray
+          .filter(
+            (posting) => posting && posting._id && posting.poster === userId
+          )
+          .sort((a, b) => b._id.localeCompare(a._id)); // Sort by most recent first
         console.log(
           "[MyPostings] Filtered roommate postings:",
           roommatePostings.value
@@ -1190,11 +1220,16 @@ export default {
 
     const editRoommatePosting = (posting) => {
       editingRoommatePostingId.value = posting._id;
+      // Handle both old (description) and new (aboutYourself/lookingFor) formats
+      const aboutYourself = posting.aboutYourself || (posting.description ? posting.description.split('\n\n---\n\n')[0] : "");
+      const lookingFor = posting.lookingFor || (posting.description && posting.description.includes('---') ? posting.description.split('\n\n---\n\n')[1] : "");
+      
       editRoommateForm.value = {
         city: posting.city || "",
         gender: posting.gender || "",
         age: posting.age || "",
-        description: posting.description || "",
+        aboutYourself: aboutYourself,
+        lookingFor: lookingFor,
         startDate: formatDateForInput(posting.startDate),
         endDate: formatDateForInput(posting.endDate),
         dailyRhythm: posting.dailyRhythm || "",
@@ -1265,10 +1300,29 @@ export default {
         if (editRoommateForm.value.age !== posting.age) {
           await roommatePostingsApi.editAge(userId, editRoommateForm.value.age);
         }
-        if (editRoommateForm.value.description !== posting.description) {
-          await roommatePostingsApi.editDescription(
+        // Edit aboutYourself if changed (only if posting has new format)
+        if (posting.aboutYourself !== undefined && editRoommateForm.value.aboutYourself !== posting.aboutYourself) {
+          await roommatePostingsApi.editAboutYourself(
             userId,
-            editRoommateForm.value.description
+            editRoommateForm.value.aboutYourself
+          );
+        }
+        // Edit lookingFor if changed (only if posting has new format)
+        if (posting.lookingFor !== undefined && editRoommateForm.value.lookingFor !== posting.lookingFor) {
+          await roommatePostingsApi.editLookingFor(
+            userId,
+            editRoommateForm.value.lookingFor
+          );
+        }
+        // If old format (description), update both fields to migrate to new format
+        if (posting.description && !posting.aboutYourself && !posting.lookingFor) {
+          await roommatePostingsApi.editAboutYourself(
+            userId,
+            editRoommateForm.value.aboutYourself
+          );
+          await roommatePostingsApi.editLookingFor(
+            userId,
+            editRoommateForm.value.lookingFor
           );
         }
 

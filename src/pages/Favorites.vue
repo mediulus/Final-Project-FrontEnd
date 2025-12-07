@@ -29,7 +29,7 @@
             >
               <div class="card-header">
                 <div class="card-title">
-                  <h3>{{ posting.city }}</h3>
+                <h3>{{ posting.city }}</h3>
                   <div class="quick-info">
                     <span class="age-gender">
                       <svg class="info-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -45,13 +45,13 @@
                 </div>
 
                 <div class="card-actions" @click.stop>
-                  <button
-                    @click="removeFavorite(posting._id)"
+                <button
+                  @click="removeFavorite(posting._id)"
                     class="favorite-btn is-saved"
-                    title="Remove from favorites"
-                  >
-                    <span>♥</span>
-                  </button>
+                  title="Remove from favorites"
+                >
+                  <span>♥</span>
+                </button>
                   <div v-if="isPoster(posting)" class="owner-badge">
                     Your Posting
                   </div>
@@ -59,7 +59,7 @@
               </div>
 
               <div class="card-preview">
-                <p class="description-preview">{{ truncateText(posting.description, 100) }}</p>
+                <p class="description-preview">{{ truncateText(posting.aboutYourself || posting.description || "", 100) }}</p>
                 <div class="tags" v-if="getItemTags(posting._id).length > 0">
                   <span v-for="tag in getItemTags(posting._id)" :key="tag" class="tag" :class="{ 'tag-contacted': tag === 'Contacted' }">{{ tag }}</span>
                 </div>
@@ -89,7 +89,7 @@
             >
               <div class="card-header">
                 <div class="card-title">
-                  <h3>{{ listing.title }}</h3>
+                <h3>{{ listing.title }}</h3>
                   <div class="quick-info">
                     <span class="address-preview">
                       <svg class="info-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -109,13 +109,13 @@
                 </div>
 
                 <div class="card-actions" @click.stop>
-                  <button
-                    @click="removeFavorite(listing._id)"
+                <button
+                  @click="removeFavorite(listing._id)"
                     class="favorite-btn is-saved"
-                    title="Remove from favorites"
-                  >
-                    <span>♥</span>
-                  </button>
+                  title="Remove from favorites"
+                >
+                  <span>♥</span>
+                </button>
                   <div v-if="isOwner(listing)" class="owner-badge">
                     Your Listing
                   </div>
@@ -223,11 +223,27 @@
                 </table>
               </div>
 
-              <!-- Description -->
-              <div class="info-section">
+              <!-- Description (old format) -->
+              <div class="info-section" v-if="getExpandedPosting().description && !getExpandedPosting().aboutYourself && !getExpandedPosting().lookingFor">
                 <h3>About</h3>
                 <div class="description-full">
                   {{ getExpandedPosting().description }}
+                </div>
+              </div>
+
+              <!-- About Yourself (new format) -->
+              <div class="info-section" v-if="getExpandedPosting().aboutYourself">
+                <h3>About This Person</h3>
+                <div class="description-full">
+                  {{ getExpandedPosting().aboutYourself }}
+                </div>
+              </div>
+
+              <!-- Looking For (new format) -->
+              <div class="info-section" v-if="getExpandedPosting().lookingFor">
+                <h3>What They're Looking For</h3>
+                <div class="description-full">
+                  {{ getExpandedPosting().lookingFor }}
                 </div>
               </div>
 
@@ -253,7 +269,7 @@
 
               <div v-if="!isPoster(getExpandedPosting()) && getItemTags(getExpandedPosting()._id).includes('Contacted')" class="contacted-message">
                 Already contacted
-              </div>
+                </div>
 
               <div v-if="isPoster(getExpandedPosting())" class="owner-message">
                 This is your own posting
@@ -351,14 +367,14 @@
 
             <!-- Action Buttons -->
             <div class="detail-actions">
-              <button
+                <button
                 v-if="!isOwner(getExpandedListing()) && !getItemTags(getExpandedListing()._id).includes('Contacted')"
                 @click="sendInterest(getExpandedListing()._id)"
                 class="contact-btn"
                 :disabled="isSendingInterest[getExpandedListing()._id]"
               >
                 {{ isSendingInterest[getExpandedListing()._id] ? "Sending..." : "Send Interest" }}
-              </button>
+                </button>
 
               <div v-if="!isOwner(getExpandedListing()) && getItemTags(getExpandedListing()._id).includes('Contacted')" class="contacted-message">
                 Already contacted
@@ -410,7 +426,9 @@ export default {
 
     const roommatePostings = computed(() => {
       // Filter saved items that are roommate postings (have 'city' field)
-      return savedItems_data.value.filter((item) => item.city !== undefined);
+      return savedItems_data.value
+        .filter((item) => item.city !== undefined)
+        .sort((a, b) => b._id.localeCompare(a._id)); // Sort by most recent first
     });
 
     const housingListings = computed(() => {

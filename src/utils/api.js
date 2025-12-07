@@ -624,11 +624,20 @@ export const roommatePostings = {
     });
   },
 
-  async editDescription(poster, newDescription) {
+  async editAboutYourself(poster, newValue) {
     const sessionStore = useSessionStore();
-    return await apiRequest("/RoommatePosting/editDescription", {
+    return await apiRequest("/RoommatePosting/editAboutYourself", {
       poster,
-      newDescription,
+      newValue,
+      session: sessionStore.token,
+    });
+  },
+
+  async editLookingFor(poster, newValue) {
+    const sessionStore = useSessionStore();
+    return await apiRequest("/RoommatePosting/editLookingFor", {
+      poster,
+      newValue,
       session: sessionStore.token,
     });
   },
