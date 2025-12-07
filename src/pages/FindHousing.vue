@@ -265,7 +265,7 @@
               <tbody>
                 <tr v-for="amenity in getExpandedListing().amenities" :key="amenity._id">
                   <td>{{ amenity.title }}</td>
-                  <td>{{ amenity.distance && amenity.distance > 0 ? `${amenity.distance} miles from home` : 'On-site' }}</td>
+                  <td>{{ amenity.distance && amenity.distance > 0 ? `${amenity.distance} miles` : 'On-site' }}</td>
                 </tr>
               </tbody>
             </table>
@@ -393,6 +393,11 @@
 
           <div class="form-group">
             <label>Amenities</label>
+            <p class="amenities-description">
+              Add any perks about the house, such as in-house laundry or kitchen features, 
+              or convenient nearby locations like grocery stores. For locations, specify 
+              the distance in miles from home.
+            </p>
             <div class="amenities-list">
               <div
                 v-for="(amenity, index) in newListing.amenities"
@@ -408,7 +413,7 @@
                 <input
                   type="number"
                   v-model.number="amenity.distance"
-                  placeholder="Miles from home (optional)"
+                  placeholder="Miles (optional)"
                   min="0"
                   step="0.01"
                   class="amenity-distance"
@@ -595,6 +600,11 @@
 
           <div class="form-group">
             <label>Amenities</label>
+            <p class="amenities-description">
+              Add any perks about the house, such as in-house laundry or kitchen features, 
+              or convenient nearby locations like grocery stores. For locations, specify 
+              the distance in miles from home.
+            </p>
             <div class="amenities-list">
               <div
                 v-for="(amenity, index) in editForm.amenities"
@@ -610,7 +620,7 @@
                 <input
                   type="number"
                   v-model.number="amenity.distance"
-                  placeholder="Miles from home (optional)"
+                  placeholder="Miles (optional)"
                   min="0"
                   step="0.01"
                   class="amenity-distance"
@@ -2882,6 +2892,17 @@ export default {
   font-weight: 600;
   color: rgb(47, 71, 62);
   margin-bottom: 0.5rem;
+}
+
+.amenities-description {
+  font-size: 0.9rem;
+  color: #666;
+  line-height: 1.5;
+  margin: 0 0 1rem 0;
+  padding: 0.75rem;
+  background: #f8f9fa;
+  border-radius: 6px;
+  border-left: 3px solid rgb(47, 71, 62);
 }
 
 .form-group input,

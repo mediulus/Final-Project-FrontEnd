@@ -334,7 +334,7 @@
                   <tbody>
                     <tr v-for="amenity in getExpandedListing().amenities" :key="amenity._id">
                       <td>{{ amenity.title }}</td>
-                      <td>{{ amenity.distance && amenity.distance > 0 ? `${amenity.distance} miles from home` : 'On-site' }}</td>
+                      <td>{{ amenity.distance && amenity.distance > 0 ? `${amenity.distance} miles` : 'On-site' }}</td>
                     </tr>
                   </tbody>
                 </table>
