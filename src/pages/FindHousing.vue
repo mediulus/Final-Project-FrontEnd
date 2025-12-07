@@ -298,7 +298,10 @@
     <!-- Create Listing Modal -->
     <div v-if="showCreateModal" class="modal-overlay" @click="closeCreateModal">
       <div class="modal-content" @click.stop>
+        <div class="modal-header">
         <h2>Create New Listing</h2>
+          <button @click="closeCreateModal" class="close-btn">×</button>
+        </div>
         <form @submit.prevent="handleCreateListing">
           <div class="form-group">
             <label for="title">Title *</label>
@@ -2864,21 +2867,67 @@ export default {
 
 .modal-content {
   background: white;
-  padding: 2rem;
+  padding: 2rem 2.5rem;
   border-radius: 12px;
   width: 90%;
-  max-width: 600px;
+  max-width: 750px;
   max-height: 90vh;
   overflow-y: auto;
+  margin: 0 auto;
 }
 
-.modal-content h2 {
-  color: rgb(47, 71, 62);
+.modal-content form {
+  width: 100%;
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #f0f0f0;
+  width: 100%;
+}
+
+.modal-header h2 {
+  color: rgb(47, 71, 62);
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.modal-header .close-btn {
+  background: none;
+  border: none;
+  font-size: 2rem;
+  cursor: pointer;
+  color: #666;
+  padding: 0.25rem;
+  border-radius: 50%;
+  width: 2.5rem;
+  height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease, color 0.2s ease;
+  line-height: 1;
+}
+
+.modal-header .close-btn:hover {
+  background: #f0f0f0;
+  color: #333;
 }
 
 .form-group {
   margin-bottom: 1.25rem;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .form-row {
@@ -2908,7 +2957,8 @@ export default {
 .form-group input,
 .form-group select,
 .form-group textarea {
-  width: 100%;
+  width: 85%;
+  max-width: 500px;
   padding: 0.75rem;
   border: 2px solid #e0e0e0;
   border-radius: 6px;
@@ -3033,6 +3083,8 @@ export default {
   display: flex;
   gap: 1rem;
   margin-top: 2rem;
+  justify-content: center;
+  width: 100%;
 }
 
 .cancel-btn,
