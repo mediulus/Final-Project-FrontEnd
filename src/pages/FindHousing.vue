@@ -127,6 +127,7 @@
 
             <div class="card-actions" @click.stop>
               <button
+                v-if="!isOwner(listing)"
                 @click="toggleSavedItem(listing._id)"
                 class="favorite-btn"
                 :class="{ 'is-saved': isSaved(listing._id) }"

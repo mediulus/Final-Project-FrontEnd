@@ -101,6 +101,7 @@
 
               <div class="card-actions" @click.stop>
                 <button
+                  v-if="!isPoster(posting)"
                   @click="toggleSavedItem(posting._id)"
                   class="favorite-btn"
                   :class="{ 'is-saved': isSaved(posting._id) }"

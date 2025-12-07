@@ -50,7 +50,7 @@
                     class="favorite-btn is-saved"
                   title="Remove from favorites"
                 >
-                  <span>♥</span>
+                  <span class="heart-icon">❤</span>
                 </button>
                   <div v-if="isPoster(posting)" class="owner-badge">
                     Your Posting
@@ -114,7 +114,7 @@
                     class="favorite-btn is-saved"
                   title="Remove from favorites"
                 >
-                  <span>♥</span>
+                  <span class="heart-icon">❤</span>
                 </button>
                   <div v-if="isOwner(listing)" class="owner-badge">
                     Your Listing
@@ -936,12 +936,25 @@ export default {
 .favorite-btn {
   background: none;
   border: none;
-  font-size: 1.5rem;
+  font-size: 2.2rem;
   cursor: pointer;
   padding: 0.25rem;
   transition: transform 0.2s;
   line-height: 1;
-  color: #dc3545;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.favorite-btn .heart-icon {
+  color: #e74c3c;
+  -webkit-text-stroke: 1.5px #e74c3c;
+  -webkit-text-fill-color: #e74c3c;
+  transition: all 0.2s;
+  font-size: 2.2rem;
+  font-weight: 300;
+  letter-spacing: -0.1em;
+  transform: scaleX(0.85);
 }
 
 .favorite-btn:hover {
