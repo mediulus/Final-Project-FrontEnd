@@ -105,8 +105,7 @@
                   class="favorite-btn"
                   :class="{ 'is-saved': isSaved(posting._id) }"
                 >
-                  <span v-if="isSaved(posting._id)">♥</span>
-                  <span v-else>♡</span>
+                  <span class="heart-icon">❤</span>
                 </button>
                 <div v-if="isPoster(posting)" class="owner-badge">
                   Your Posting
@@ -215,6 +214,16 @@
 
             <!-- Action Buttons -->
             <div class="detail-actions">
+              <button
+                v-if="!isPoster(getExpandedPosting())"
+                @click.stop="toggleSavedItem(getExpandedPosting()._id)"
+                class="favorite-action-btn"
+                :class="{ 'is-saved': isSaved(getExpandedPosting()._id) }"
+              >
+                <span class="heart-icon">❤</span>
+                Favorite
+              </button>
+
               <button
                 v-if="!isPoster(getExpandedPosting()) && !getItemTags(getExpandedPosting()._id).includes('Contacted')"
                 @click="contactPoster(getExpandedPosting()._id)"
@@ -2045,7 +2054,7 @@ export default {
 .favorite-btn {
   background: none;
   border: none;
-  font-size: 1.5rem;
+  font-size: 2.2rem;
   cursor: pointer;
   padding: 0.25rem;
   transition: transform 0.2s;
@@ -2055,6 +2064,23 @@ export default {
   justify-content: center;
 }
 
+.favorite-btn .heart-icon {
+  color: #ccc;
+  -webkit-text-stroke: 1.5px #999;
+  -webkit-text-fill-color: transparent;
+  transition: all 0.2s;
+  font-size: 2.2rem;
+  font-weight: 300;
+  letter-spacing: -0.1em;
+  transform: scaleX(0.85);
+}
+
+.favorite-btn.is-saved .heart-icon {
+  color: #e74c3c;
+  -webkit-text-stroke: 1px #e74c3c;
+  -webkit-text-fill-color: #e74c3c;
+}
+
 .owner-badge {
   background: rgb(47, 71, 62);
   color: white;
@@ -2062,10 +2088,6 @@ export default {
   border-radius: 20px;
   font-size: 0.8rem;
   font-weight: 600;
-}
-
-.favorite-btn.is-saved {
-  color: #e74c3c;
 }
 
 .favorite-btn:hover {
@@ -2093,6 +2115,47 @@ export default {
   padding: 1rem;
   background: #f8f9fa;
   border-radius: 6px;
+}
+
+.favorite-action-btn {
+  width: 100%;
+  background: #ff69b4;
+  color: white;
+  border: none;
+  padding: 0.625rem 1rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-top: 0.75rem;
+  transition: background 0.2s, opacity 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.favorite-action-btn.is-saved {
+  background: #ff1493;
+}
+
+.favorite-action-btn:hover {
+  background: #ff1493;
+}
+
+.favorite-action-btn .heart-icon {
+  font-size: 1.6rem;
+  color: white;
+  -webkit-text-stroke: 1.5px white;
+  -webkit-text-fill-color: transparent;
+  transition: all 0.2s;
+  font-weight: 300;
+  letter-spacing: -0.1em;
+  transform: scaleX(0.85);
+}
+
+.favorite-action-btn.is-saved .heart-icon {
+  -webkit-text-fill-color: white;
 }
 
 .contact-btn {

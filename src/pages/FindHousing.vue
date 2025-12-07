@@ -136,8 +136,7 @@
                     : 'Add to favorites'
                 "
               >
-                <span v-if="isSaved(listing._id)">♥</span>
-                <span v-else>♡</span>
+                <span class="heart-icon">❤</span>
               </button>
               <div v-if="isOwner(listing)" class="owner-badge">
                 Your Listing
@@ -275,6 +274,16 @@
         <!-- Action Buttons -->
         <div class="detail-actions">
             <button
+            v-if="!isOwner(getExpandedListing())"
+            @click.stop="toggleSavedItem(getExpandedListing()._id)"
+            class="favorite-action-btn"
+            :class="{ 'is-saved': isSaved(getExpandedListing()._id) }"
+          >
+            <span class="heart-icon">❤</span>
+            Favorite
+            </button>
+
+          <button
             v-if="!isOwner(getExpandedListing()) && !getItemTags(getExpandedListing()._id).includes('Contacted')"
             @click="sendInterest(getExpandedListing()._id)"
             class="contact-btn"
@@ -291,8 +300,8 @@
             <button @click="editListing(getExpandedListing())" class="edit-btn">Edit Listing</button>
             <button @click="deleteListing(getExpandedListing()._id)" class="delete-btn">Delete Listing</button>
           </div>
-          </div>
         </div>
+      </div>
       </div>
 
     <!-- Create Listing Modal -->
@@ -3256,6 +3265,47 @@ export default {
   border-radius: 0 0 16px 16px;
 }
 
+.favorite-action-btn {
+  width: 100%;
+  background: #ff69b4;
+  color: white;
+  border: none;
+  padding: 0.625rem 1rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-top: 0.75rem;
+  transition: background 0.2s, opacity 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.favorite-action-btn.is-saved {
+  background: #ff1493;
+}
+
+.favorite-action-btn:hover {
+  background: #ff1493;
+}
+
+.favorite-action-btn .heart-icon {
+  font-size: 1.6rem;
+  color: white;
+  -webkit-text-stroke: 1.5px white;
+  -webkit-text-fill-color: transparent;
+  transition: all 0.2s;
+  font-weight: 300;
+  letter-spacing: -0.1em;
+  transform: scaleX(0.85);
+}
+
+.favorite-action-btn.is-saved .heart-icon {
+  -webkit-text-fill-color: white;
+}
+
 .contact-btn {
   width: 100%;
   background: rgb(22, 53, 27);
@@ -3323,7 +3373,7 @@ export default {
 .favorite-btn {
   background: none;
   border: none;
-  font-size: 1.5rem;
+  font-size: 2.2rem;
   cursor: pointer;
   padding: 0.25rem;
   transition: transform 0.2s ease;
@@ -3333,12 +3383,25 @@ export default {
   justify-content: center;
 }
 
-.favorite-btn:hover {
-  transform: scale(1.1);
+.favorite-btn .heart-icon {
+  color: #ccc;
+  -webkit-text-stroke: 1.5px #999;
+  -webkit-text-fill-color: transparent;
+  transition: all 0.2s;
+  font-size: 2.2rem;
+  font-weight: 300;
+  letter-spacing: -0.1em;
+  transform: scaleX(0.85);
 }
 
-.favorite-btn.is-saved {
+.favorite-btn.is-saved .heart-icon {
   color: #e74c3c;
+  -webkit-text-stroke: 1px #e74c3c;
+  -webkit-text-fill-color: #e74c3c;
+}
+
+.favorite-btn:hover {
+  transform: scale(1.1);
 }
 
 /* Photo Upload Styles */
