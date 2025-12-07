@@ -1,7 +1,7 @@
 <template>
   <main class="homepage">
     <section class="hero">
-      <h2>Find a Roommate</h2>
+      <h2>Roommates</h2>
       <p>Browse roommate postings or create your own</p>
       <button @click="openModal" class="create-btn">
         + Create New Posting

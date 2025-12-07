@@ -1,7 +1,7 @@
 <template>
   <main class="homepage">
     <section class="hero">
-      <h2>Find Summer Housing</h2>
+      <h2>Summer Housing</h2>
       <p>Browse available listings or create your own</p>
       <button @click="showCreateModal = true" class="create-btn">
         + Create New Listing
