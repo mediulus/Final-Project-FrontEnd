@@ -47,11 +47,14 @@
       </ul>
 
       <!-- Profile Section in Sidebar -->
-      <div class="sidebar-profile">
-        <div class="profile-circle" @click="toggleProfileDropdown">
-          {{ userInitial }}
+      <div class="sidebar-profile-wrapper">
+        <img src="./assets/beaver.png" alt="Beaver mascot" class="beaver-image" />
+        <div class="sidebar-profile">
+          <div class="profile-circle" @click="toggleProfileDropdown">
+            {{ userInitial }}
+          </div>
+          <div class="profile-name">{{ sessionStore.user?.username || "User" }}</div>
         </div>
-        <div class="profile-name">{{ sessionStore.user?.username || "User" }}</div>
       </div>
     </nav>
 
