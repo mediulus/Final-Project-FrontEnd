@@ -72,11 +72,11 @@
           </div>
         </div>
 
-        <!-- Housing Listings -->
+        <!-- Housing -->
         <div v-if="housingListings.length > 0" class="section listings-container">
           <h3 class="section-title">
             <span class="title-with-icon">
-              <span>Housing Listings</span>
+              <span>Housing</span>
             </span>
           </h3>
           <div class="listings-grid">
