@@ -642,6 +642,15 @@ export const roommatePostings = {
     });
   },
 
+  async editHousingStatus(poster, newValue) {
+    const sessionStore = useSessionStore();
+    return await apiRequest("/RoommatePosting/editHousingStatus", {
+      poster,
+      newValue,
+      session: sessionStore.token,
+    });
+  },
+
   async editStartDate(poster, newStartDate) {
     const sessionStore = useSessionStore();
     return await apiRequest("/RoommatePosting/editStartDate", {

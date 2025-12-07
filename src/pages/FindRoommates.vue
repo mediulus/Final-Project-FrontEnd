@@ -93,6 +93,9 @@
                   <span v-if="posting.numberOfRoommates" class="roommate-count">
                     Looking for {{ posting.numberOfRoommates }} roommate{{ posting.numberOfRoommates > 1 ? 's' : '' }}
                   </span>
+                  <span v-if="posting.housingStatus" class="housing-status-badge">
+                    {{ posting.housingStatus }}
+                  </span>
                 </div>
               </div>
 
@@ -176,6 +179,10 @@
                     <tr v-if="getExpandedPosting().homeEnvironment">
                       <td>Home Environment & Guests</td>
                       <td>{{ getExpandedPosting().homeEnvironment }}</td>
+                    </tr>
+                    <tr v-if="getExpandedPosting().housingStatus">
+                      <td>Housing Status</td>
+                      <td>{{ getExpandedPosting().housingStatus }}</td>
                     </tr>
                   </tbody>
                 </table>
@@ -406,6 +413,19 @@
             ></textarea>
           </div>
 
+          <div class="form-group">
+            <label for="housingStatus">Housing Status *</label>
+            <select
+              id="housingStatus"
+              v-model="form.housingStatus"
+              required
+            >
+              <option value="" disabled>Select your housing status</option>
+              <option value="Looking for housing">Looking for housing</option>
+              <option value="Found housing">Found housing</option>
+            </select>
+          </div>
+
           <div v-if="createError" class="error-message">{{ createError }}</div>
 
           <div class="modal-actions">
@@ -603,6 +623,19 @@
             ></textarea>
           </div>
 
+          <div class="form-group">
+            <label for="edit-housingStatus">Housing Status *</label>
+            <select
+              id="edit-housingStatus"
+              v-model="editForm.housingStatus"
+              required
+            >
+              <option value="" disabled>Select your housing status</option>
+              <option value="Looking for housing">Looking for housing</option>
+              <option value="Found housing">Found housing</option>
+            </select>
+          </div>
+
           <div v-if="editError" class="error-message">{{ editError }}</div>
 
           <div class="modal-actions">
@@ -638,6 +671,7 @@ export default {
       age: "",
       aboutMe: "",
       lookingFor: "",
+      housingStatus: "",
       startDate: "",
       endDate: "",
       dailyRhythm: "",
@@ -665,6 +699,7 @@ export default {
       age: "",
       aboutMe: "",
       lookingFor: "",
+      housingStatus: "",
       startDate: "",
       endDate: "",
       dailyRhythm: "",
@@ -1138,6 +1173,7 @@ export default {
         age: "",
         aboutMe: "",
         lookingFor: "",
+        housingStatus: "",
         startDate: "",
         endDate: "",
         dailyRhythm: "",
@@ -1234,6 +1270,13 @@ export default {
           await roommatePostings.editLookingFor(
             userId,
             editForm.value.lookingFor
+          );
+        }
+        // Edit housingStatus if changed
+        if (editForm.value.housingStatus !== posting.housingStatus) {
+          await roommatePostings.editHousingStatus(
+            userId,
+            editForm.value.housingStatus
           );
         }
         // If old format (description), update both fields to migrate to new format
@@ -1412,6 +1455,7 @@ export default {
           !form.value.age ||
           !form.value.aboutMe ||
           !form.value.lookingFor ||
+          !form.value.housingStatus ||
           !form.value.startDate ||
           !form.value.endDate ||
           !form.value.dailyRhythm ||
@@ -1430,6 +1474,7 @@ export default {
           age: form.value.age,
           aboutYourself: form.value.aboutMe,
           lookingFor: form.value.lookingFor,
+          housingStatus: form.value.housingStatus,
           startDate: form.value.startDate,
           endDate: form.value.endDate,
           dailyRhythm: form.value.dailyRhythm,
