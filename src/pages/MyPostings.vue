@@ -623,7 +623,7 @@
 
           <div class="form-group">
             <label for="edit-roommate-numberOfRoommates"
-              >Number of Roommates *</label
+              >Number of Roommates Looking For *</label
             >
             <input
               type="number"

@@ -174,12 +174,8 @@
                       <td>{{ getExpandedPosting().cleanlinessPreference }}</td>
                     </tr>
                     <tr v-if="getExpandedPosting().homeEnvironment">
-                      <td>Home Environment</td>
+                      <td>Home Environment & Guests</td>
                       <td>{{ getExpandedPosting().homeEnvironment }}</td>
-                    </tr>
-                    <tr v-if="getExpandedPosting().guestsVisitors">
-                      <td>Guests & Visitors</td>
-                      <td>{{ getExpandedPosting().guestsVisitors }}</td>
                     </tr>
                   </tbody>
                 </table>
@@ -222,7 +218,10 @@
     <!-- Create Posting Modal -->
     <div v-if="modalVisible" class="modal-overlay" @click="closeModal">
       <div class="modal-content" @click.stop>
-        <h2>Create Roommate Posting</h2>
+        <div class="modal-header">
+          <h2>Create Roommate Posting</h2>
+          <button @click="closeModal" class="close-btn">×</button>
+        </div>
         <form @submit.prevent="emitCreatePosting">
           <div class="form-group">
             <label for="city">City *</label>
@@ -260,7 +259,7 @@
           </div>
 
           <div class="form-group">
-            <label for="numberOfRoommates">Number of Roommates *</label>
+            <label for="numberOfRoommates">Number of Roommates Looking For *</label>
             <input
               type="number"
               id="numberOfRoommates"
@@ -336,47 +335,35 @@
           </div>
 
           <div class="form-group">
-            <label for="homeEnvironment">Home Environment *</label>
+            <label for="homeEnvironment">Home Environment & Guests *</label>
             <select
               id="homeEnvironment"
               v-model="form.homeEnvironment"
               required
             >
               <option value="" disabled>
-                Select your home environment preference
+                Select your living style preference
               </option>
-              <option value="Quiet (minimal noise, low visitors)">
-                Quiet (minimal noise, low visitors)
+              <option value="Quiet home, prefer few or no guests">
+                Quiet home, prefer few or no guests
               </option>
-              <option value="Moderate (some noise, occasional visitors)">
-                Moderate (some noise, occasional visitors)
+              <option value="Quiet home, occasional guests welcome">
+                Quiet home, occasional guests welcome
               </option>
-              <option value="Social / lively (friends over often)">
-                Social / lively (friends over often)
+              <option value="Moderate activity, occasional guests welcome">
+                Moderate activity, occasional guests welcome
               </option>
-              <option value="Flexible / depends on schedule">
-                Flexible / depends on schedule
+              <option value="Moderate activity, frequent guests welcome">
+                Moderate activity, frequent guests welcome
               </option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label for="guestsVisitors">Guests & Visitors *</label>
-            <select id="guestsVisitors" v-model="form.guestsVisitors" required>
-              <option value="" disabled>
-                Select your guests & visitors preference
+              <option value="Social/lively home, frequent guests welcome">
+                Social/lively home, frequent guests welcome
               </option>
-              <option value="Prefer few or no guests">
-                Prefer few or no guests
+              <option value="Social/lively home, overnight guests welcome">
+                Social/lively home, overnight guests welcome
               </option>
-              <option value="Occasional guests okay">
-                Occasional guests okay
-              </option>
-              <option value="Comfortable with frequent guests">
-                Comfortable with frequent guests
-              </option>
-              <option value="Comfortable with overnight guests">
-                Comfortable with overnight guests
+              <option value="Flexible - depends on schedule">
+                Flexible - depends on schedule
               </option>
             </select>
           </div>
@@ -447,7 +434,7 @@
           </div>
 
           <div class="form-group">
-            <label for="edit-numberOfRoommates">Number of Roommates *</label>
+            <label for="edit-numberOfRoommates">Number of Roommates Looking For *</label>
             <input
               type="number"
               id="edit-numberOfRoommates"
@@ -534,51 +521,35 @@
           </div>
 
           <div class="form-group">
-            <label for="edit-homeEnvironment">Home Environment *</label>
+            <label for="edit-homeEnvironment">Home Environment & Guests *</label>
             <select
               id="edit-homeEnvironment"
               v-model="editForm.homeEnvironment"
               required
             >
               <option value="" disabled>
-                Select your home environment preference
+                Select your living style preference
               </option>
-              <option value="Quiet (minimal noise, low visitors)">
-                Quiet (minimal noise, low visitors)
+              <option value="Quiet home, prefer few or no guests">
+                Quiet home, prefer few or no guests
               </option>
-              <option value="Moderate (some noise, occasional visitors)">
-                Moderate (some noise, occasional visitors)
+              <option value="Quiet home, occasional guests welcome">
+                Quiet home, occasional guests welcome
               </option>
-              <option value="Social / lively (friends over often)">
-                Social / lively (friends over often)
+              <option value="Moderate activity, occasional guests welcome">
+                Moderate activity, occasional guests welcome
               </option>
-              <option value="Flexible / depends on schedule">
-                Flexible / depends on schedule
+              <option value="Moderate activity, frequent guests welcome">
+                Moderate activity, frequent guests welcome
               </option>
-            </select>
-          </div>
-
-          <div class="form-group">
-            <label for="edit-guestsVisitors">Guests & Visitors *</label>
-            <select
-              id="edit-guestsVisitors"
-              v-model="editForm.guestsVisitors"
-              required
-            >
-              <option value="" disabled>
-                Select your guests & visitors preference
+              <option value="Social/lively home, frequent guests welcome">
+                Social/lively home, frequent guests welcome
               </option>
-              <option value="Prefer few or no guests">
-                Prefer few or no guests
+              <option value="Social/lively home, overnight guests welcome">
+                Social/lively home, overnight guests welcome
               </option>
-              <option value="Occasional guests okay">
-                Occasional guests okay
-              </option>
-              <option value="Comfortable with frequent guests">
-                Comfortable with frequent guests
-              </option>
-              <option value="Comfortable with overnight guests">
-                Comfortable with overnight guests
+              <option value="Flexible - depends on schedule">
+                Flexible - depends on schedule
               </option>
             </select>
           </div>
@@ -633,7 +604,6 @@ export default {
       dailyRhythm: "",
       cleanlinessPreference: "",
       homeEnvironment: "",
-      guestsVisitors: "",
       numberOfRoommates: "",
     });
     const sessionStore = useSessionStore();
@@ -660,7 +630,6 @@ export default {
       dailyRhythm: "",
       cleanlinessPreference: "",
       homeEnvironment: "",
-      guestsVisitors: "",
       numberOfRoommates: "",
     });
 
@@ -1034,7 +1003,36 @@ export default {
       }
     };
 
-    const openModal = () => {
+    // Convert gender number to string for form
+    // Form uses: "Male", "Female", "Non-binary", "Prefer not to say"
+    // Profile uses: 0=Male, 1=Female, 2=Non-binary, 3=Other
+    const getGenderString = (genderNum) => {
+      const genderMap = { 
+        0: "Male", 
+        1: "Female", 
+        2: "Non-binary", 
+        3: "Prefer not to say" // Map "Other" (3) to "Prefer not to say" for form
+      };
+      return genderMap[genderNum] || "";
+    };
+
+    const openModal = async () => {
+      // Ensure we have user info before opening modal
+      await ensureValidUserId();
+      
+      // Auto-populate age and gender from user profile
+      if (sessionStore.user) {
+        // Set age if available
+        if (sessionStore.user.age !== undefined && sessionStore.user.age !== null) {
+          form.value.age = sessionStore.user.age;
+        }
+        
+        // Set gender if available (convert from number to string)
+        if (sessionStore.user.gender !== undefined && sessionStore.user.gender !== null) {
+          form.value.gender = getGenderString(sessionStore.user.gender);
+        }
+      }
+      
       localModal.value = true;
     };
 
@@ -1083,6 +1081,19 @@ export default {
     const closeModal = () => {
       localModal.value = false;
       createError.value = "";
+      // Reset form but keep age and gender empty - they'll be auto-populated on next open
+      form.value = {
+        city: "",
+        gender: "",
+        age: "",
+        description: "",
+        startDate: "",
+        endDate: "",
+        dailyRhythm: "",
+        cleanlinessPreference: "",
+        homeEnvironment: "",
+        numberOfRoommates: "",
+      };
     };
 
     const editPosting = (posting) => {
@@ -1097,7 +1108,7 @@ export default {
         dailyRhythm: posting.dailyRhythm || "",
         cleanlinessPreference: posting.cleanlinessPreference || "",
         homeEnvironment: posting.homeEnvironment || "",
-        guestsVisitors: posting.guestsVisitors || "",
+        numberOfRoommates: posting.numberOfRoommates || "",
       };
       editError.value = "";
       showEditModal.value = true;
@@ -1117,7 +1128,6 @@ export default {
         dailyRhythm: "",
         cleanlinessPreference: "",
         homeEnvironment: "",
-        guestsVisitors: "",
         numberOfRoommates: "",
       };
     };
@@ -1210,12 +1220,6 @@ export default {
           await roommatePostings.editHomeEnvironment(
             userId,
             editForm.value.homeEnvironment
-          );
-        }
-        if (editForm.value.guestsVisitors !== posting.guestsVisitors) {
-          await roommatePostings.editGuestsVisitors(
-            userId,
-            editForm.value.guestsVisitors
           );
         }
         if (editForm.value.numberOfRoommates !== posting.numberOfRoommates) {
@@ -1336,7 +1340,6 @@ export default {
           !form.value.dailyRhythm ||
           !form.value.cleanlinessPreference ||
           !form.value.homeEnvironment ||
-          !form.value.guestsVisitors ||
           !form.value.numberOfRoommates
         ) {
           createError.value = "Please fill in all required fields";
@@ -1354,7 +1357,6 @@ export default {
           dailyRhythm: form.value.dailyRhythm,
           cleanlinessPreference: form.value.cleanlinessPreference,
           homeEnvironment: form.value.homeEnvironment,
-          guestsVisitors: form.value.guestsVisitors,
           numberOfRoommates: form.value.numberOfRoommates,
         };
 
@@ -1392,7 +1394,6 @@ export default {
           dailyRhythm: "",
           cleanlinessPreference: "",
           homeEnvironment: "",
-          guestsVisitors: "",
           numberOfRoommates: "",
         };
         closeModal();
@@ -2082,13 +2083,43 @@ export default {
   }
 }
 
-.modal-content h2 {
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #f0f0f0;
+  width: 100%;
+}
+
+.modal-header h2 {
   color: rgb(47, 71, 62);
-  margin-bottom: 2rem;
-  font-size: 1.875rem;
+  margin: 0;
+  font-size: 1.5rem;
   font-weight: 700;
-  border-bottom: 3px solid rgb(47, 71, 62);
-  padding-bottom: 0.75rem;
+}
+
+.modal-header .close-btn {
+  background: none;
+  border: none;
+  font-size: 2rem;
+  cursor: pointer;
+  color: #666;
+  padding: 0.25rem;
+  border-radius: 50%;
+  width: 2.5rem;
+  height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease, color 0.2s ease;
+  line-height: 1;
+}
+
+.modal-header .close-btn:hover {
+  background: #f0f0f0;
+  color: #333;
 }
 
 .form-group {
@@ -2113,7 +2144,8 @@ export default {
 .form-group input,
 .form-group select,
 .form-group textarea {
-  width: 100%;
+  width: 85%;
+  max-width: 500px;
   padding: 0.875rem 1rem;
   border: 2px solid #e0e0e0;
   border-radius: 8px;
