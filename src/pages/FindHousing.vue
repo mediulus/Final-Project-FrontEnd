@@ -1588,6 +1588,17 @@ export default {
           });
         }
 
+        // Sort listings by _id in descending order (newest first)
+        // MongoDB ObjectIds contain timestamps, so newer listings have higher _id values
+        if (result && Array.isArray(result)) {
+          result.sort((a, b) => {
+            // Compare _id strings in descending order (newest first)
+            if (a._id > b._id) return -1;
+            if (a._id < b._id) return 1;
+            return 0;
+          });
+        }
+
         listingsData.value = result;
 
         // Debug: After setting listings, check ownership
