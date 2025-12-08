@@ -87,12 +87,14 @@
                     </svg>
                     {{ posting.gender }}, {{ posting.age }}
                   </span>
-                  <span v-if="posting.numberOfRoommates" class="roommate-count">
-                    Looking for {{ posting.numberOfRoommates }} roommate{{ posting.numberOfRoommates > 1 ? 's' : '' }}
-                  </span>
-                  <span v-if="posting.housingStatus" class="housing-status-badge">
-                    {{ posting.housingStatus }}
-                  </span>
+                  <div class="tags-row">
+                    <span v-if="posting.numberOfRoommates" class="roommate-count">
+                      {{ posting.numberOfRoommates }} roommate{{ posting.numberOfRoommates > 1 ? 's' : '' }}
+                    </span>
+                    <span v-if="posting.housingStatus === 'Found housing'" class="housing-status-badge">
+                      Found housing
+                    </span>
+                  </div>
                 </div>
               </div>
 
@@ -1638,10 +1640,14 @@ export default {
 }
 
 .hero {
-  background: rgb(47, 71, 62);
+  background-color: rgb(47, 71, 62);
+  background-image: url('../assets/scene.png');
+  background-size: cover;
+  background-position: center bottom;
   color: white;
   padding: 2rem 2rem;
   text-align: center;
+  position: relative;
 }
 
 .hero h2 {
@@ -1877,6 +1883,15 @@ export default {
   font-weight: 600;
   padding: 0.15rem 0.5rem;
   background: #e8f5e9;
+  border-radius: 4px;
+}
+
+.housing-status-badge {
+  font-size: 0.85rem;
+  color: #0d47a1;
+  font-weight: 600;
+  padding: 0.15rem 0.5rem;
+  background: #e3f2fd;
   border-radius: 4px;
 }
 

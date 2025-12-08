@@ -121,6 +121,9 @@ h1, h2, h3, h4, h5, h6 {
 .sidebar-header {
   padding: 2rem 1.5rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
 }
 
 .logo {
@@ -196,14 +199,10 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Beaver Image */
 .beaver-image {
-  position: absolute;
-  bottom: 100%;
-  left: 1rem;
-  width: 80px;
+  width: 50px;
   height: auto;
-  z-index: 1200;
-  pointer-events: none;
   filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.3));
+  flex-shrink: 0;
 }
 
 /* Sidebar Profile Section */
@@ -783,21 +782,6 @@ h1, h2, h3, h4, h5, h6 {
   padding: 4rem 2rem;
   text-align: center;
   position: relative;
-}
-
-.hero::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  right: 0;
-  width: 350px;
-  height: 350px;
-  background-image: url('./assets/dam.png');
-  background-size: contain;
-  background-repeat: no-repeat;
-  background-position: bottom right;
-  pointer-events: none;
-  z-index: 1;
 }
 
 .hero h2 {

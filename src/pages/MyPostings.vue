@@ -2,7 +2,8 @@
   <main class="homepage">
     <section class="hero">
       <h2>My Postings</h2>
-      <p>All your housing listings and roommate postings</p>
+      <p>All your housing listings & roommate postings</p>
+      <div class="button-spacer"></div>
     </section>
 
     <section class="listings-section">
@@ -39,9 +40,14 @@
                       </svg>
                       {{ posting.gender }}, {{ posting.age }}
                     </span>
-                    <span v-if="posting.numberOfRoommates" class="roommate-count">
-                      Looking for {{ posting.numberOfRoommates }} roommate{{ posting.numberOfRoommates > 1 ? 's' : '' }}
-                    </span>
+                    <div class="tags-row">
+                      <span v-if="posting.numberOfRoommates" class="roommate-count">
+                        {{ posting.numberOfRoommates }} roommate{{ posting.numberOfRoommates > 1 ? 's' : '' }}
+                      </span>
+                      <span v-if="posting.housingStatus === 'Found housing'" class="housing-status-badge">
+                        Found housing
+                      </span>
+                    </div>
                   </div>
                 </div>
 
@@ -465,8 +471,8 @@
           <div class="form-group">
             <label>Amenities</label>
             <p class="amenities-description">
-              Add any perks about the house, such as in-house laundry or kitchen features, 
-              or convenient nearby locations like grocery stores. For locations, specify 
+              Add any perks about the house, such as in-house laundry or kitchen features,
+              or convenient nearby locations like grocery stores. For locations, specify
               the distance in miles from home.
             </p>
             <div class="amenities-list">
@@ -909,14 +915,14 @@ export default {
       try {
         const response = await apiRequest('/config/mapsKey', {});
         const apiKey = response.apiKey || import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
-        
+
         if (!apiKey) {
           console.error('Google Maps API key not available');
           return false;
         }
 
         const existingScript = document.querySelector('script[src*="maps.googleapis.com"]');
-        
+
         if (!existingScript) {
           await new Promise((resolve, reject) => {
             const script = document.createElement('script');
@@ -937,7 +943,7 @@ export default {
           await new Promise(resolve => setTimeout(resolve, 100));
           retries++;
         }
-        
+
         return false;
       } catch (error) {
         console.error('Error loading Google Maps API:', error);
@@ -981,7 +987,7 @@ export default {
         editAutocompleteSuggestions.value = suggestions.map(s => {
           const prediction = s.placePrediction;
           let displayText = 'Unknown location';
-          
+
           try {
             if (prediction && prediction.text) {
               displayText = String(prediction.text);
@@ -989,7 +995,7 @@ export default {
           } catch (e) {
             console.log('Error extracting text:', e.message);
           }
-          
+
           return {
             displayText: displayText,
             placePrediction: prediction,
@@ -1042,7 +1048,7 @@ export default {
         if (!suggestion) return;
 
         const prediction = suggestion.placePrediction || suggestion.rawSuggestion || suggestion;
-        
+
         let place;
         if (typeof prediction.toPlace === 'function') {
           place = prediction.toPlace();
@@ -1050,7 +1056,7 @@ export default {
           console.error('Prediction does not have toPlace method');
           return;
         }
-        
+
         await place.fetchFields({
           fields: ['displayName', 'formattedAddress', 'location'],
         });
@@ -1086,7 +1092,7 @@ export default {
         if (!window.google || !window.google.maps) {
           const response = await apiRequest('/config/mapsKey', {});
           const apiKey = response.apiKey || import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
-          
+
           if (!apiKey) {
             console.warn('Cannot geocode: API key not available');
             return null;
@@ -1230,7 +1236,7 @@ export default {
       // Handle both old (description) and new (aboutYourself/lookingFor) formats
       const aboutYourself = posting.aboutYourself || (posting.description ? posting.description.split('\n\n---\n\n')[0] : "");
       const lookingFor = posting.lookingFor || (posting.description && posting.description.includes('---') ? posting.description.split('\n\n---\n\n')[1] : "");
-      
+
       editRoommateForm.value = {
         city: posting.city || "",
         gender: posting.gender || "",
@@ -1493,7 +1499,7 @@ export default {
         if (editForm.value.address !== listing.address) {
           let latitude = null;
           let longitude = null;
-          
+
           if (editGeocodedLocation.value) {
             latitude = editGeocodedLocation.value.latitude;
             longitude = editGeocodedLocation.value.longitude;
@@ -1504,7 +1510,7 @@ export default {
               longitude = geocoded.longitude;
             }
           }
-          
+
           await listingsApi.editAddress(listingId, editForm.value.address, latitude, longitude);
         }
 
@@ -1878,28 +1884,15 @@ export default {
 }
 
 .hero {
-  background: rgb(47, 71, 62);
+  background-color: rgb(47, 71, 62);
+  background-image: url('../assets/scene.png');
+  background-size: cover;
+  background-position: center bottom;
   color: white;
   padding: 2rem 2rem;
   text-align: center;
   position: relative;
 }
-
-.hero::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  right: 0;
-  width: 350px;
-  height: 350px;
-  background-image: url('../assets/dam.png');
-  background-size: contain;
-  background-repeat: no-repeat;
-  background-position: bottom right;
-  pointer-events: none;
-  z-index: 1;
-}
-
 .hero h2 {
   font-size: 2rem;
   margin-bottom: 0.5rem;
@@ -1908,7 +1901,13 @@ export default {
 
 .hero p {
   font-size: 1.1rem;
+  margin-bottom: 1.5rem;
   color: rgba(255, 255, 255, 0.9);
+}
+
+.button-spacer {
+  height: 3.25rem;
+  margin-bottom: 0;
 }
 
 .listings-section {
@@ -2005,7 +2004,22 @@ export default {
   gap: 0.35rem;
 }
 
+.tags-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
 .roommate-count {
+  font-size: 0.85rem;
+  color: #1e5a2e;
+  font-weight: 600;
+  padding: 0.15rem 0.5rem;
+  background: #e8f5e9;
+  border-radius: 4px;
+}
+
+.housing-status-badge {
   font-size: 0.85rem;
   color: #1e5a2e;
   font-weight: 600;

@@ -2,7 +2,8 @@
   <main class="homepage">
     <section class="hero">
       <h2>Interested</h2>
-      <p>Favorited & contacted housing listings & roommate postings</p>
+      <p>All your favorites & contacted</p>
+      <div class="button-spacer"></div>
     </section>
 
     <section class="listings-section">
@@ -38,9 +39,14 @@
                       </svg>
                       {{ posting.gender }}, {{ posting.age }}
                     </span>
-                    <span v-if="posting.numberOfRoommates" class="roommate-count">
-                      Looking for {{ posting.numberOfRoommates }} roommate{{ posting.numberOfRoommates > 1 ? 's' : '' }}
-                    </span>
+                    <div class="tags-row">
+                      <span v-if="posting.numberOfRoommates" class="roommate-count">
+                        {{ posting.numberOfRoommates }} roommate{{ posting.numberOfRoommates > 1 ? 's' : '' }}
+                      </span>
+                      <span v-if="posting.housingStatus === 'Found housing'" class="housing-status-badge">
+                        Found housing
+                      </span>
+                    </div>
                   </div>
                 </div>
 
@@ -829,26 +835,14 @@ export default {
 }
 
 .hero {
-  background: rgb(47, 71, 62);
+  background-color: rgb(47, 71, 62);
+  background-image: url('../assets/scene.png');
+  background-size: cover;
+  background-position: center bottom;
   color: white;
   padding: 2rem 2rem;
   text-align: center;
   position: relative;
-}
-
-.hero::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  right: 0;
-  width: 350px;
-  height: 350px;
-  background-image: url('../assets/dam.png');
-  background-size: contain;
-  background-repeat: no-repeat;
-  background-position: bottom right;
-  pointer-events: none;
-  z-index: 1;
 }
 
 .hero h2 {
@@ -860,6 +854,11 @@ export default {
 .hero p {
   font-size: 1.1rem;
   color: rgba(255, 255, 255, 0.9);
+}
+
+.button-spacer {
+  height: 3.25rem;
+  margin-bottom: 0;
 }
 
 .listings-section {
@@ -1130,7 +1129,22 @@ export default {
   flex-shrink: 0;
 }
 
+.tags-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
 .roommate-count {
+  font-size: 0.85rem;
+  color: #1e5a2e;
+  font-weight: 600;
+  padding: 0.15rem 0.5rem;
+  background: #e8f5e9;
+  border-radius: 4px;
+}
+
+.housing-status-badge {
   font-size: 0.85rem;
   color: #1e5a2e;
   font-weight: 600;
