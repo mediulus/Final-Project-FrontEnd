@@ -839,20 +839,59 @@ export default {
       }
 
       // Apply date filters
-      if (appliedFilters.value.startDate) {
+      // For a listing to match, it must be available for the ENTIRE requested date range
+      if (appliedFilters.value.startDate && appliedFilters.value.endDate) {
         const filterStartDate = new Date(appliedFilters.value.startDate);
-        result = result.filter((listing) => {
-          const listingEndDate = new Date(listing.endDate);
-          // Listing should be available at or after the filter start date
-          return listingEndDate >= filterStartDate;
-        });
-      }
-
-      if (appliedFilters.value.endDate) {
         const filterEndDate = new Date(appliedFilters.value.endDate);
+        
+        // Set to midnight for consistent comparison
+        filterStartDate.setHours(0, 0, 0, 0);
+        filterEndDate.setHours(0, 0, 0, 0);
+        
         result = result.filter((listing) => {
           const listingStartDate = new Date(listing.startDate);
-          // Listing should be available at or before the filter end date
+          const listingEndDate = new Date(listing.endDate);
+          
+          // Set to midnight for consistent comparison
+          listingStartDate.setHours(0, 0, 0, 0);
+          listingEndDate.setHours(0, 0, 0, 0);
+          
+          // Listing must start on or before the requested start date
+          // AND listing must end on or after the requested end date
+          const isValid = listingStartDate <= filterStartDate && listingEndDate >= filterEndDate;
+          
+          // Debug logging
+          if (listing.title) {
+            console.log(`[Filter] Listing: ${listing.title}`);
+            console.log(`  Listing dates: ${listingStartDate.toLocaleDateString()} to ${listingEndDate.toLocaleDateString()}`);
+            console.log(`  Filter dates: ${filterStartDate.toLocaleDateString()} to ${filterEndDate.toLocaleDateString()}`);
+            console.log(`  Start check: ${listingStartDate.toISOString()} <= ${filterStartDate.toISOString()} = ${listingStartDate <= filterStartDate}`);
+            console.log(`  End check: ${listingEndDate.toISOString()} >= ${filterEndDate.toISOString()} = ${listingEndDate >= filterEndDate}`);
+            console.log(`  Result: ${isValid ? 'PASS' : 'FAIL'}`);
+          }
+          
+          return isValid;
+        });
+      } else if (appliedFilters.value.startDate) {
+        // If only start date is provided, listing must be available at that date or later
+        const filterStartDate = new Date(appliedFilters.value.startDate);
+        filterStartDate.setHours(0, 0, 0, 0);
+        
+        result = result.filter((listing) => {
+          const listingEndDate = new Date(listing.endDate);
+          listingEndDate.setHours(0, 0, 0, 0);
+          // Listing must end on or after the requested start date
+          return listingEndDate >= filterStartDate;
+        });
+      } else if (appliedFilters.value.endDate) {
+        // If only end date is provided, listing must be available at that date or earlier
+        const filterEndDate = new Date(appliedFilters.value.endDate);
+        filterEndDate.setHours(0, 0, 0, 0);
+        
+        result = result.filter((listing) => {
+          const listingStartDate = new Date(listing.startDate);
+          listingStartDate.setHours(0, 0, 0, 0);
+          // Listing must start on or before the requested end date
           return listingStartDate <= filterEndDate;
         });
       }
@@ -2026,6 +2065,9 @@ export default {
 
       try {
         await listings.delete(listingId);
+        // Close the detail modal
+        expandedListing.value = null;
+        // Refresh the listings
         await fetchListings();
       } catch (err) {
         alert("Failed to delete listing: " + (err.message || "Unknown error"));
