@@ -11,28 +11,25 @@
     <!-- Filter Bar -->
     <section class="filter-bar">
       <div class="filter-container">
-        <div class="filter-group">
-          <label for="minAge">Min Age</label>
-          <input
-            type="number"
-            id="minAge"
-            v-model.number="filters.minAge"
-            placeholder="18"
-            min="18"
-            max="120"
-          />
-        </div>
-
-        <div class="filter-group">
-          <label for="maxAge">Max Age</label>
-          <input
-            type="number"
-            id="maxAge"
-            v-model.number="filters.maxAge"
-            placeholder="Any"
-            min="18"
-            max="120"
-          />
+        <div class="filter-group age-range-group">
+          <label>Age Range</label>
+          <div class="age-range-inputs">
+            <input
+              type="number"
+              v-model.number="filters.minAge"
+              placeholder="Min"
+              min="18"
+              max="120"
+            />
+            <span class="age-separator">-</span>
+            <input
+              type="number"
+              v-model.number="filters.maxAge"
+              placeholder="Max"
+              min="18"
+              max="120"
+            />
+          </div>
         </div>
 
         <div class="filter-group">
@@ -47,12 +44,12 @@
         </div>
 
         <div class="filter-group">
-          <label for="filterCity">City</label>
+          <label for="filterLocation">Location</label>
           <input
             type="text"
-            id="filterCity"
-            v-model="filters.city"
-            placeholder="e.g., Cambridge"
+            id="filterLocation"
+            v-model="filters.location"
+            placeholder="e.g., Cambridge, Kendall Square"
           />
         </div>
 
@@ -736,14 +733,14 @@ export default {
       minAge: null,
       maxAge: null,
       gender: "",
-      city: "",
+      location: "",
     });
 
     const appliedFilters = ref({
       minAge: null,
       maxAge: null,
       gender: "",
-      city: "",
+      location: "",
     });
 
     // Helper function to check if a string looks like a UUID (not a username)
@@ -848,11 +845,12 @@ export default {
         );
       }
 
-      // Apply city filter (case-insensitive partial match)
-      if (appliedFilters.value.city) {
-        const cityFilter = appliedFilters.value.city.toLowerCase();
+      // Apply location filter (case-insensitive partial match) - searches both city and location fields
+      if (appliedFilters.value.location) {
+        const locationFilter = appliedFilters.value.location.toLowerCase();
         result = result.filter((posting) =>
-          (posting.city || "").toLowerCase().includes(cityFilter)
+          (posting.city || "").toLowerCase().includes(locationFilter) ||
+          (posting.location || "").toLowerCase().includes(locationFilter)
         );
       }
 
@@ -867,7 +865,7 @@ export default {
         minAge: filters.value.minAge,
         maxAge: filters.value.maxAge,
         gender: filters.value.gender,
-        city: filters.value.city,
+        location: filters.value.location,
       };
     };
 
@@ -876,13 +874,13 @@ export default {
         minAge: null,
         maxAge: null,
         gender: "",
-        city: "",
+        location: "",
       };
       appliedFilters.value = {
         minAge: null,
         maxAge: null,
         gender: "",
-        city: "",
+        location: "",
       };
     };
 
@@ -1100,10 +1098,10 @@ export default {
     // Form uses: "Male", "Female", "Non-binary", "Prefer not to say"
     // Profile uses: 0=Male, 1=Female, 2=Non-binary, 3=Other
     const getGenderString = (genderNum) => {
-      const genderMap = { 
-        0: "Male", 
-        1: "Female", 
-        2: "Non-binary", 
+      const genderMap = {
+        0: "Male",
+        1: "Female",
+        2: "Non-binary",
         3: "Prefer not to say" // Map "Other" (3) to "Prefer not to say" for form
       };
       return genderMap[genderNum] || "";
@@ -1113,20 +1111,20 @@ export default {
     const openModal = async () => {
       // Ensure we have user info before opening modal
       await ensureValidUserId();
-      
+
       // Auto-populate age and gender from user profile
       if (sessionStore.user) {
         // Set age if available
         if (sessionStore.user.age !== undefined && sessionStore.user.age !== null) {
           form.value.age = sessionStore.user.age;
         }
-        
+
         // Set gender if available (convert from number to string)
         if (sessionStore.user.gender !== undefined && sessionStore.user.gender !== null) {
           form.value.gender = getGenderString(sessionStore.user.gender);
         }
       }
-      
+
       localModal.value = true;
     };
 
@@ -1208,7 +1206,7 @@ export default {
       // Handle both old (description) and new (aboutYourself/lookingFor) formats
       const aboutMe = posting.aboutYourself || (posting.description ? posting.description.split('\n\n---\n\n')[0] : "");
       const lookingFor = posting.lookingFor || (posting.description && posting.description.includes('---') ? posting.description.split('\n\n---\n\n')[1] : "");
-      
+
       editForm.value = {
         city: posting.city || "",
         gender: posting.gender || "",
@@ -1721,6 +1719,41 @@ export default {
   outline: none;
   border-color: rgba(255, 255, 255, 0.5);
   background: white;
+}
+
+.age-range-inputs {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  padding: 0.25rem 0.5rem;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.age-range-inputs:focus-within {
+  border-color: rgba(255, 255, 255, 0.5);
+  background: white;
+}
+
+.age-range-inputs input {
+  border: none;
+  padding: 0.375rem;
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+}
+
+.age-range-inputs input:focus {
+  border: none;
+  background: transparent;
+}
+
+.age-separator {
+  color: #666;
+  font-weight: 500;
+  user-select: none;
 }
 
 .filter-actions {

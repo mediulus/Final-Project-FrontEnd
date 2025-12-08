@@ -1,8 +1,8 @@
 <template>
   <main class="homepage">
     <section class="hero">
-      <h2>Summer Housing</h2>
-      <p>Browse available listings or create your own</p>
+      <h2>Housing</h2>
+      <p>Browse available housing listings or create your own</p>
       <button @click="showCreateModal = true" class="create-btn">
         + Create New Listing
       </button>
@@ -11,36 +11,42 @@
     <!-- Filter Bar -->
     <section class="filter-bar">
       <div class="filter-container">
+        <div class="filter-group price-range-group">
+          <label>Price Range ($)</label>
+          <div class="price-range-inputs">
+            <input
+              type="number"
+              v-model.number="filters.minPrice"
+              placeholder="Min"
+              min="0"
+            />
+            <span class="price-separator">-</span>
+            <input
+              type="number"
+              v-model.number="filters.maxPrice"
+              placeholder="Max"
+              min="0"
+            />
+          </div>
+        </div>
+
+        <div class="filter-group date-range-group">
+          <label>Date Range</label>
+          <div class="date-range-inputs">
+            <input type="date" v-model="filters.startDate" />
+            <span class="date-separator">-</span>
+            <input type="date" v-model="filters.endDate" />
+          </div>
+        </div>
+
         <div class="filter-group">
-          <label for="minPrice">Min Price ($)</label>
+          <label for="filterLocation">Location</label>
           <input
-            type="number"
-            id="minPrice"
-            v-model.number="filters.minPrice"
-            placeholder="0"
-            min="0"
+            type="text"
+            id="filterLocation"
+            v-model="filters.location"
+            placeholder="e.g., Cambridge, Kendall Square"
           />
-        </div>
-
-        <div class="filter-group">
-          <label for="maxPrice">Max Price ($)</label>
-          <input
-            type="number"
-            id="maxPrice"
-            v-model.number="filters.maxPrice"
-            placeholder="Any"
-            min="0"
-          />
-        </div>
-
-        <div class="filter-group">
-          <label for="filterStartDate">Available From</label>
-          <input type="date" id="filterStartDate" v-model="filters.startDate" />
-        </div>
-
-        <div class="filter-group">
-          <label for="filterEndDate">Available Until</label>
-          <input type="date" id="filterEndDate" v-model="filters.endDate" />
         </div>
 
         <div class="filter-actions">
@@ -53,8 +59,8 @@
     <section class="listings-section">
       <!-- Map View Toggle -->
       <div class="view-toggle">
-        <button 
-          @click="showMapView = !showMapView" 
+        <button
+          @click="showMapView = !showMapView"
           class="toggle-btn"
           :class="{ active: showMapView }"
         >
@@ -83,7 +89,7 @@
 
       <!-- Map View -->
       <div v-if="showMapView && !loading" class="map-view-container">
-        <GoogleMap 
+        <GoogleMap
           :center="{ lat: 42.3601, lng: -71.0942 }"
           :zoom="13"
           :markers="mapMarkers"
@@ -407,8 +413,8 @@
           <div class="form-group">
             <label>Amenities</label>
             <p class="amenities-description">
-              Add any perks about the house, such as in-house laundry or kitchen features, 
-              or convenient nearby locations like grocery stores. For locations, specify 
+              Add any perks about the house, such as in-house laundry or kitchen features,
+              or convenient nearby locations like grocery stores. For locations, specify
               the distance in miles from home.
             </p>
             <div class="amenities-list">
@@ -617,8 +623,8 @@
           <div class="form-group">
             <label>Amenities</label>
             <p class="amenities-description">
-              Add any perks about the house, such as in-house laundry or kitchen features, 
-              or convenient nearby locations like grocery stores. For locations, specify 
+              Add any perks about the house, such as in-house laundry or kitchen features,
+              or convenient nearby locations like grocery stores. For locations, specify
               the distance in miles from home.
             </p>
             <div class="amenities-list">
@@ -781,6 +787,7 @@ export default {
       maxPrice: null,
       startDate: "",
       endDate: "",
+      location: "",
     });
 
     const appliedFilters = ref({
@@ -788,6 +795,7 @@ export default {
       maxPrice: null,
       startDate: "",
       endDate: "",
+      location: "",
     });
 
     // Expanded view state
@@ -849,6 +857,15 @@ export default {
         });
       }
 
+      // Apply location filter (case-insensitive partial match) - searches both city and location fields
+      if (appliedFilters.value.location) {
+        const locationFilter = appliedFilters.value.location.toLowerCase();
+        result = result.filter((listing) =>
+          (listing.city || "").toLowerCase().includes(locationFilter) ||
+          (listing.location || "").toLowerCase().includes(locationFilter)
+        );
+      }
+
       return result;
     });
 
@@ -862,13 +879,13 @@ export default {
           title: listing.title,
           listing: listing
         }));
-      
+
       console.log('[FindHousing] mapMarkers computed:', {
         totalListings: filteredListings.value.length,
         listingsWithCoords: markers.length,
         markers: markers
       });
-      
+
       return markers;
     });
 
@@ -879,6 +896,7 @@ export default {
         maxPrice: filters.value.maxPrice,
         startDate: filters.value.startDate,
         endDate: filters.value.endDate,
+        location: filters.value.location,
       };
       console.log('[FindHousing] Applied filters:', appliedFilters.value);
       console.log('[FindHousing] Filtered listings count:', filteredListings.value.length);
@@ -890,12 +908,14 @@ export default {
         maxPrice: null,
         startDate: "",
         endDate: "",
+        location: "",
       };
       appliedFilters.value = {
         minPrice: null,
         maxPrice: null,
         startDate: "",
         endDate: "",
+        location: "",
       };
     };
 
@@ -1206,7 +1226,7 @@ export default {
       try {
         const response = await apiRequest('/config/mapsKey', {});
         const apiKey = response.apiKey || import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
-        
+
         if (!apiKey) {
           console.error('Google Maps API key not available for autocomplete');
           return false;
@@ -1214,7 +1234,7 @@ export default {
 
         // Check if script tag already exists
         const existingScript = document.querySelector('script[src*="maps.googleapis.com"]');
-        
+
         if (!existingScript) {
           console.log('Loading Google Maps API...');
           await new Promise((resolve, reject) => {
@@ -1244,7 +1264,7 @@ export default {
           await new Promise(resolve => setTimeout(resolve, 100));
           retries++;
         }
-        
+
         console.error('Google Maps API failed to initialize after waiting');
         return false;
       } catch (error) {
@@ -1258,7 +1278,7 @@ export default {
      */
     const fetchAutocompleteSuggestions = async (input, isEditMode = false) => {
       console.log('fetchAutocompleteSuggestions called with input:', input, 'isEditMode:', isEditMode);
-      
+
       if (!input || input.length < 2) {
         console.log('Input too short, clearing suggestions');
         if (isEditMode) {
@@ -1278,7 +1298,7 @@ export default {
           console.error('Failed to load Google Maps API');
           return;
         }
-        
+
         console.log('Google Maps loaded, checking API availability...');
         if (!google.maps.places.AutocompleteSuggestion) {
           console.error('AutocompleteSuggestion not available');
@@ -1314,25 +1334,25 @@ export default {
         const { suggestions } = await google.maps.places.AutocompleteSuggestion.fetchAutocompleteSuggestions(request);
 
         console.log('Autocomplete API response:', { suggestions, count: suggestions?.length });
-        
+
         if (suggestions && suggestions.length > 0) {
           const first = suggestions[0];
           console.log('First suggestion structure:', first);
-          
+
           // Check if it has a placePrediction property
           if (first.placePrediction) {
             console.log('Has placePrediction property');
             const pred = first.placePrediction;
-            
+
             // Try to log text via toString or valueOf
             console.log('placePrediction.text:', pred.text);
             console.log('placePrediction.text type:', typeof pred.text);
-            
+
             if (pred.text && typeof pred.text === 'object') {
               console.log('text.toString():', pred.text.toString());
               console.log('text keys:', Object.keys(pred.text));
             }
-            
+
             console.log('placePrediction.structuredFormat:', pred.structuredFormat);
             if (pred.structuredFormat?.mainText) {
               console.log('mainText:', pred.structuredFormat.mainText);
@@ -1349,7 +1369,7 @@ export default {
           editAutocompleteSuggestions.value = suggestions.map(s => {
             const prediction = s.placePrediction;
             let displayText = 'Unknown location';
-            
+
             try {
               if (prediction && prediction.text) {
                 displayText = String(prediction.text);
@@ -1357,7 +1377,7 @@ export default {
             } catch (e) {
               console.log('Error extracting text:', e.message);
             }
-            
+
             return {
               displayText: displayText,
               placePrediction: prediction,
@@ -1371,7 +1391,7 @@ export default {
           autocompleteSuggestions.value = suggestions.map(s => {
             const prediction = s.placePrediction;
             let displayText = 'Unknown location';
-            
+
             try {
               if (prediction && prediction.text) {
                 displayText = String(prediction.text);
@@ -1379,7 +1399,7 @@ export default {
             } catch (e) {
               console.log('Error extracting text:', e.message);
             }
-            
+
             return {
               displayText: displayText,
               placePrediction: prediction,
@@ -1441,12 +1461,12 @@ export default {
       if (!suggestion) {
         return '';
       }
-      
+
       // We now cache displayText directly in the suggestion object
       if (suggestion.displayText) {
         return suggestion.displayText;
       }
-      
+
       return 'Unknown location';
     };
 
@@ -1461,11 +1481,11 @@ export default {
         }
 
         console.log('Selecting suggestion:', suggestion);
-        
+
         // Get the actual prediction from our wrapper
         const prediction = suggestion.placePrediction || suggestion.rawSuggestion || suggestion;
         console.log('Using prediction for toPlace:', prediction);
-        
+
         // The prediction should have a toPlace() method
         let place;
         if (typeof prediction.toPlace === 'function') {
@@ -1475,9 +1495,9 @@ export default {
           console.error('Available methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(prediction)));
           return;
         }
-        
+
         console.log('Place object created:', place);
-        
+
         await place.fetchFields({
           fields: ['displayName', 'formattedAddress', 'location'],
         });
@@ -1538,7 +1558,7 @@ export default {
         if (!window.google || !window.google.maps) {
           const response = await apiRequest('/config/mapsKey', {});
           const apiKey = response.apiKey || import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
-          
+
           if (!apiKey) {
             console.warn('Cannot geocode: API key not available');
             return null;
@@ -1600,7 +1620,7 @@ export default {
         if (result && Array.isArray(result)) {
           const listingsWithCoords = result.filter(l => l.latitude && l.longitude);
           console.log(`[FindHousing] Listings with coordinates: ${listingsWithCoords.length}/${result.length}`);
-          
+
           result.forEach((listing, index) => {
             console.log(`[FindHousing] Listing ${index}:`, {
               _id: listing._id,
@@ -1952,7 +1972,7 @@ export default {
         // Geocode address if not already geocoded
         let latitude = null;
         let longitude = null;
-        
+
         if (geocodedLocation.value) {
           latitude = geocodedLocation.value.latitude;
           longitude = geocodedLocation.value.longitude;
@@ -2113,7 +2133,7 @@ export default {
         if (editForm.value.address !== listing.address) {
           let latitude = null;
           let longitude = null;
-          
+
           if (editGeocodedLocation.value) {
             latitude = editGeocodedLocation.value.latitude;
             longitude = editGeocodedLocation.value.longitude;
@@ -2124,7 +2144,7 @@ export default {
               longitude = geocoded.longitude;
             }
           }
-          
+
           await listings.editAddress(listingId, editForm.value.address, latitude, longitude);
         }
         if (
@@ -2503,6 +2523,46 @@ export default {
   outline: none;
   border-color: rgba(255, 255, 255, 0.5);
   background: white;
+}
+
+.price-range-inputs,
+.date-range-inputs {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  padding: 0.25rem 0.5rem;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.price-range-inputs:focus-within,
+.date-range-inputs:focus-within {
+  border-color: rgba(255, 255, 255, 0.5);
+  background: white;
+}
+
+.price-range-inputs input,
+.date-range-inputs input {
+  border: none;
+  padding: 0.375rem;
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+}
+
+.price-range-inputs input:focus,
+.date-range-inputs input:focus {
+  border: none;
+  background: transparent;
+}
+
+.price-separator,
+.date-separator {
+  color: #666;
+  font-weight: 500;
+  user-select: none;
 }
 
 .filter-actions {

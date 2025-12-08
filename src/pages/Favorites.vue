@@ -1,8 +1,8 @@
 <template>
   <main class="homepage">
     <section class="hero">
-      <h2>Favorites</h2>
-      <p>All your tagged listings and roommates</p>
+      <h2>Interested</h2>
+      <p>Favorited & contacted housing listings & roommate postings</p>
     </section>
 
     <section class="listings-section">
