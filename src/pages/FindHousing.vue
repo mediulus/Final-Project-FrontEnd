@@ -499,9 +499,6 @@
 
               <div class="photo-upload-info">
                 <p>• Max 5 photos • Each photo max 10MB • JPG, PNG, GIF supported</p>
-                <button type="button" @click="testImageServiceWrapper" class="test-connection-btn" style="margin-top: 8px; font-size: 12px; padding: 4px 8px; background: #e3f2fd; color: #1976d2; border: 1px solid #1976d2;">
-                  🔧 Test Photo Upload
-                </button>
               </div>
             </div>
           </div>
@@ -749,7 +746,7 @@ import {
 } from "../utils/api.js";
 import { apiRequest } from "../utils/api.js";
 import { useSessionStore } from "../stores/session.js";
-import { uploadMultipleImages, testImageService } from "../services/imageService.js";
+import { uploadMultipleImages } from "../services/imageService.js";
 import GoogleMap from "../components/GoogleMap.vue";
 
 export default {
@@ -860,10 +857,11 @@ export default {
         });
       }
 
-      // Apply location filter (case-insensitive partial match) - searches both city and location fields
+      // Apply location filter (case-insensitive partial match) - searches address, city, and location fields
       if (appliedFilters.value.location) {
         const locationFilter = appliedFilters.value.location.toLowerCase();
         result = result.filter((listing) =>
+          (listing.address || "").toLowerCase().includes(locationFilter) ||
           (listing.city || "").toLowerCase().includes(locationFilter) ||
           (listing.location || "").toLowerCase().includes(locationFilter)
         );
@@ -1107,18 +1105,6 @@ export default {
         alert(`Failed to upload photos: ${error.message || 'Unknown error'}. Please try again.`);
       } finally {
         uploading.value = false;
-      }
-    };
-
-    // Test image hosting connection
-    const testImageServiceWrapper = async () => {
-      try {
-        console.log('Testing image hosting services...');
-        const result = await testImageService();
-        alert(`✅ Photo upload is working!\n\nService: ${result.service}\nCloud Name: ${result.cloudName}\n\nYou can now upload photos successfully.`);
-      } catch (error) {
-        console.error('Image hosting test failed:', error);
-        alert(`❌ Photo upload test failed: ${error.message}\n\nPlease try again later or check your internet connection.`);
       }
     };
 
@@ -2409,7 +2395,6 @@ export default {
       removeSelectedPhoto,
       removeUploadedPhoto,
       uploadSelectedPhotos,
-      testImageServiceWrapper,
       // Edit photo handling
       editSelectedPhotos,
       editUploading,
