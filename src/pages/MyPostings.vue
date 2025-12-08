@@ -1882,10 +1882,22 @@ export default {
   color: white;
   padding: 2rem 2rem;
   text-align: center;
+  position: relative;
 }
 
 .hero::after {
-  display: none;
+  content: '';
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 350px;
+  height: 350px;
+  background-image: url('../assets/dam.png');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: bottom right;
+  pointer-events: none;
+  z-index: 1;
 }
 
 .hero h2 {
