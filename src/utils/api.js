@@ -48,6 +48,16 @@ export async function apiRequest(endpoint, body = {}, timeout = 30000) {
       status: response.status,
       data: response.data,
     });
+    
+    // Check if the response contains an error even with successful HTTP status
+    if (response.data && response.data.error) {
+      console.error("[api.js] Backend returned error in response:", response.data.error);
+      throw new Error(response.data.error);
+    }
+    
+    // Additional debugging: log what we're returning
+    console.log("[api.js] Returning successful response data:", response.data);
+    
     return response.data;
   } catch (error) {
     console.error("[api.js] API Request Error:", {

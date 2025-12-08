@@ -81,6 +81,10 @@
           </select>
         </div>
 
+        <div v-if="successMessage" class="success-message">
+          {{ successMessage }}
+        </div>
+
         <div v-if="errorMessage" class="error-message">
           {{ errorMessage }}
         </div>
@@ -116,6 +120,7 @@ export default {
     const sessionStore = useSessionStore();
     const isLoading = ref(false);
     const errorMessage = ref('');
+    const successMessage = ref('');
 
     const formData = ref({
       username: '',
@@ -126,9 +131,41 @@ export default {
       affiliation: ''
     });
 
+    const parseErrorMessage = (error) => {
+      const message = error.message || 'Unknown error';
+      
+      // Parse common backend error messages and make them user-friendly
+      if (message.toLowerCase().includes('username') && message.toLowerCase().includes('already')) {
+        return 'This username is already taken. Please choose a different one.';
+      }
+      if (message.toLowerCase().includes('email') && message.toLowerCase().includes('already')) {
+        return 'An account with this email address already exists.';
+      }
+      if (message.toLowerCase().includes('invalid') && message.toLowerCase().includes('email')) {
+        return 'Please enter a valid email address.';
+      }
+      if (message.toLowerCase().includes('password') && message.toLowerCase().includes('weak')) {
+        return 'Password is too weak. Please choose a stronger password.';
+      }
+      if (message.toLowerCase().includes('age') && message.toLowerCase().includes('invalid')) {
+        return 'Please enter a valid age between 18 and 120.';
+      }
+      if (message.toLowerCase().includes('required') || message.toLowerCase().includes('missing')) {
+        return 'Please fill in all required fields.';
+      }
+      
+      // Return a generic error if no specific match
+      return 'Registration failed. Please check your information and try again.';
+    };
+
+    const clearMessages = () => {
+      errorMessage.value = '';
+      successMessage.value = '';
+    };
+
     const handleRegister = async () => {
       isLoading.value = true;
-      errorMessage.value = '';
+      clearMessages();
 
       try {
         const result = await auth.register(
@@ -140,10 +177,30 @@ export default {
           formData.value.emailAddress
         );
 
-        // Registration successful, redirect to login
-        router.push('/login');
+        console.log('Registration result:', result);
+
+        // Check if registration was actually successful
+        // If we get here without an exception, and there's no error in the result, it's successful
+        if (!result || typeof result !== 'object' || result.error) {
+          // Handle case where result indicates failure
+          const errorMsg = result?.error || 'Registration failed - no response from server';
+          console.error('Registration failed:', errorMsg);
+          errorMessage.value = parseErrorMessage({ message: errorMsg });
+        } else {
+          // Registration successful - we got a valid response without error
+          successMessage.value = 'Account created successfully! You should receive a confirmation email shortly. Redirecting to login...';
+          
+          // Clear any previous errors
+          errorMessage.value = '';
+          
+          // Wait a bit to show success message, then redirect
+          setTimeout(() => {
+            router.push('/login');
+          }, 3000);
+        }
       } catch (error) {
-        errorMessage.value = error.message || 'Registration failed. Please try again.';
+        console.error('Registration error:', error);
+        errorMessage.value = parseErrorMessage(error);
       } finally {
         isLoading.value = false;
       }
@@ -153,7 +210,9 @@ export default {
       formData,
       isLoading,
       errorMessage,
-      handleRegister
+      successMessage,
+      handleRegister,
+      clearMessages
     };
   }
 };
@@ -272,6 +331,16 @@ h2 {
 .form-group select:focus {
   outline: none;
   border-color: rgb(47, 71, 62);
+}
+
+.success-message {
+  background-color: #efe;
+  color: #363;
+  padding: 0.75rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  border: 1px solid #cfc;
+  margin-bottom: 1rem;
 }
 
 .error-message {
