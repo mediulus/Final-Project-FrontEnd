@@ -9,6 +9,10 @@
       </div>
 
       <ul class="nav-menu">
+        <li class="nav-section-header">
+          <span class="section-header-text">Browsing</span>
+          <div class="section-header-line"></div>
+        </li>
         <li>
           <router-link to="/home">
             <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -26,6 +30,10 @@
             </svg>
             <span class="nav-text">Roommates</span>
           </router-link>
+        </li>
+        <li class="nav-section-header">
+          <span class="section-header-text">For Me</span>
+          <div class="section-header-line"></div>
         </li>
         <li>
           <router-link to="/favorites">

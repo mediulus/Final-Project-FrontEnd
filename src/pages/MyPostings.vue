@@ -2,88 +2,48 @@
   <main class="homepage">
     <section class="hero">
       <h2>My Postings</h2>
-      <p>All your housing listings & roommate postings</p>
+      <p>Create and manage your housing and roommate postings</p>
       <div class="button-spacer"></div>
+    </section>
+
+    <!-- Tab Navigation -->
+    <section class="tabs-section">
+      <div class="tabs-container">
+        <button
+          @click="activeTab = 'housing'"
+          class="tab-btn"
+          :class="{ active: activeTab === 'housing' }"
+        >
+          Housing Listings
+        </button>
+        <button
+          @click="activeTab = 'roommates'"
+          class="tab-btn"
+          :class="{ active: activeTab === 'roommates' }"
+        >
+          Roommate Postings
+        </button>
+      </div>
     </section>
 
     <section class="listings-section">
       <div v-if="isLoading" class="loading">Loading your postings...</div>
       <div v-else-if="error" class="error-message">{{ error }}</div>
-      <div
-        v-else-if="
-          roommatePostings.length === 0 && housingListings.length === 0
-        "
-        class="no-listings"
-      >
-        No postings yet. Start creating listings or roommate postings!
-      </div>
-      <div v-else>
-        <!-- Roommate Postings -->
-        <div v-if="roommatePostings.length > 0" class="listings-container">
-          <h3 class="section-title">My Roommate Postings</h3>
-          <div class="listings-grid">
-            <div
-              v-for="posting in roommatePostings"
-              :key="posting?._id || posting"
-              class="posting-card"
-              :class="{ 'expanded': expandedPosting === posting._id }"
-              @click="togglePostingDetails(posting._id)"
-            >
-              <div class="card-header">
-                <div class="card-title">
-                  <h3>{{ posting.city }}</h3>
-                  <div class="quick-info">
-                    <span class="age-gender">
-                      <svg class="info-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                        <circle cx="12" cy="7" r="4"></circle>
-                      </svg>
-                      {{ posting.gender }}, {{ posting.age }}
-                    </span>
-                    <div class="tags-row">
-                      <span v-if="posting.numberOfRoommates" class="roommate-count">
-                        {{ posting.numberOfRoommates }} roommate{{ posting.numberOfRoommates > 1 ? 's' : '' }}
-                      </span>
-                      <span v-if="posting.housingStatus === 'Found housing'" class="housing-status-badge">
-                        Found housing
-                      </span>
-                    </div>
-                  </div>
-                </div>
 
-                <div class="card-actions" @click.stop>
-                  <div class="owner-badge">Your Posting</div>
-                  <button @click="editRoommatePosting(posting)" class="icon-btn edit-icon-btn" title="Edit">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                    </svg>
-                  </button>
-                  <button @click="deleteRoommatePosting(posting._id)" class="icon-btn delete-icon-btn" title="Delete">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <polyline points="3 6 5 6 21 6"></polyline>
-                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                      <line x1="10" y1="11" x2="10" y2="17"></line>
-                      <line x1="14" y1="11" x2="14" y2="17"></line>
-                    </svg>
-                  </button>
-                </div>
-              </div>
+      <!-- Housing Tab Content -->
+      <div v-show="activeTab === 'housing'" class="tab-content">
+        <div class="create-header">
+          <button @click="openHousingModal" class="create-new-btn">
+            + Create New Housing Listing
+          </button>
+        </div>
 
-              <div class="card-preview">
-                <p class="description-preview">{{ truncateText(posting.aboutYourself || posting.description || "", 100) }}</p>
-                <div class="expand-hint">
-                  <span>Click for details</span>
-                  <span class="expand-icon">+</span>
-                </div>
-              </div>
-            </div>
-          </div>
+        <div v-if="housingListings.length === 0" class="no-listings">
+          No housing listings yet. Click the button above to create your first listing!
         </div>
 
         <!-- Housing Listings -->
         <div v-if="housingListings.length > 0" class="section listings-container">
-          <h3 class="section-title">My Housing Listings</h3>
           <div class="listings-grid">
             <div
               v-for="listing in housingListings"
@@ -104,11 +64,11 @@
                       {{ listing.address }}
                     </span>
                     <span class="price-preview">
-                      <svg class="info-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <svg class="info-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgb(22, 53, 27)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <line x1="12" y1="1" x2="12" y2="23"></line>
                         <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
                       </svg>
-                      ${{ listing.price }}/month
+                      {{ listing.price }}/month
                     </span>
                   </div>
                 </div>
@@ -163,6 +123,79 @@
                   </span>
                   <span class="type-preview">{{ listing.type === "sublet" ? "Sublet" : "Renting" }}</span>
                 </div>
+                <div class="expand-hint">
+                  <span>Click for details</span>
+                  <span class="expand-icon">+</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Roommate Tab Content -->
+      <div v-show="activeTab === 'roommates'" class="tab-content">
+        <div class="create-header">
+          <button @click="openRoommateModal" class="create-new-btn">
+            + Create New Roommate Posting
+          </button>
+        </div>
+
+        <div v-if="roommatePostings.length === 0" class="no-listings">
+          No roommate postings yet. Click the button above to create your first posting!
+        </div>
+        <div v-else class="listings-container">
+          <div class="listings-grid">
+            <div
+              v-for="posting in roommatePostings"
+              :key="posting?._id || posting"
+              class="posting-card"
+              :class="{ 'expanded': expandedPosting === posting._id }"
+              @click="togglePostingDetails(posting._id)"
+            >
+              <div class="card-header">
+                <div class="card-title">
+                  <h3>{{ posting.city }}</h3>
+                  <div class="quick-info">
+                    <span class="age-gender">
+                      <svg class="info-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                      </svg>
+                      {{ posting.gender }}, {{ posting.age }}
+                    </span>
+                    <div class="tags-row">
+                      <span v-if="posting.numberOfRoommates" class="roommate-count">
+                        {{ posting.numberOfRoommates }} roommate{{ posting.numberOfRoommates > 1 ? 's' : '' }}
+                      </span>
+                      <span v-if="posting.housingStatus === 'Found housing'" class="housing-status-badge">
+                        Found housing
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="card-actions" @click.stop>
+                  <div class="owner-badge">Your Posting</div>
+                  <button @click="editRoommatePosting(posting)" class="icon-btn edit-icon-btn" title="Edit">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                    </svg>
+                  </button>
+                  <button @click="deleteRoommatePosting(posting._id)" class="icon-btn delete-icon-btn" title="Delete">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="3 6 5 6 21 6"></polyline>
+                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                      <line x1="10" y1="11" x2="10" y2="17"></line>
+                      <line x1="14" y1="11" x2="14" y2="17"></line>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              <div class="card-preview">
+                <p class="description-preview">{{ truncateText(posting.aboutYourself || posting.description || "", 100) }}</p>
                 <div class="expand-hint">
                   <span>Click for details</span>
                   <span class="expand-icon">+</span>
@@ -859,6 +892,10 @@ export default {
     const housingListings = ref([]);
     const isLoading = ref(false);
     const error = ref("");
+
+    // Tab state
+    const activeTab = ref('housing');
+
     const showEditModal = ref(false);
     const isEditing = ref(false);
     const editError = ref("");
@@ -1821,7 +1858,23 @@ export default {
       }
     };
 
+    // Modal opening functions
+    const openHousingModal = () => {
+      // This will be used to redirect to FindHousing page or open a modal
+      // For now, we'll use the router to navigate
+      window.location.href = '/home';
+    };
+
+    const openRoommateModal = () => {
+      // This will be used to redirect to FindRoommates page or open a modal
+      // For now, we'll use the router to navigate
+      window.location.href = '/find-roommates';
+    };
+
     return {
+      activeTab,
+      openHousingModal,
+      openRoommateModal,
       roommatePostings,
       housingListings,
       isLoading,
@@ -1908,6 +1961,93 @@ export default {
 .button-spacer {
   height: 3.25rem;
   margin-bottom: 0;
+}
+
+/* Tabs Section */
+.tabs-section {
+  background: transparent;
+  border-bottom: none;
+}
+
+.tabs-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  gap: 0.5rem;
+  padding: 0 2rem;
+}
+
+.tab-btn {
+  padding: 1rem 2rem;
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #6c757d;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  flex: 0 0 auto;
+  width: auto;
+}
+
+.tab-btn:hover {
+  background: rgba(30, 90, 46, 0.05);
+  color: rgb(30, 90, 46);
+}
+
+.tab-btn.active {
+  color: rgb(30, 90, 46);
+  border-bottom-color: rgb(30, 90, 46);
+  background: white;
+}
+
+.tab-content {
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Create Header */
+.create-header {
+  margin-bottom: 2rem;
+  display: flex;
+  justify-content: flex-start;
+  padding: 1.5rem 2rem;
+  border-bottom: none;
+}
+
+.create-new-btn {
+  background: white;
+  color: rgb(30, 90, 46);
+  border: 2px solid rgb(30, 90, 46);
+  padding: 1rem 2.5rem;
+  font-size: 1.2rem;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(30, 90, 46, 0.2);
+}
+
+.create-new-btn:hover {
+  background: rgb(240, 255, 243);
+  color: rgb(22, 70, 36);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(30, 90, 46, 0.3);
+}
+
+.create-new-btn:active {
+  transform: translateY(0);
 }
 
 .listings-section {

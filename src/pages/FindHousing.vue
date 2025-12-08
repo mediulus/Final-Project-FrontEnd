@@ -2,10 +2,8 @@
   <main class="homepage">
     <section class="hero">
       <h2>Housing</h2>
-      <p>Browse available housing listings or create your own</p>
-      <button @click="showCreateModal = true" class="create-btn">
-        + Create New Listing
-      </button>
+      <p>Browse housing listings</p>
+      <div class="button-spacer"></div>
     </section>
 
     <!-- Filter Bar -->
@@ -122,11 +120,11 @@
                   {{ listing.address }}
                 </span>
                 <span class="price-preview">
-                  <svg class="info-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <svg class="info-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgb(22, 53, 27)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <line x1="12" y1="1" x2="12" y2="23"></line>
                     <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
                   </svg>
-                  ${{ listing.price }}/month
+                  {{ listing.price }}/month
                 </span>
               </div>
             </div>
@@ -732,6 +730,11 @@
         </form>
       </div>
     </div>
+
+    <!-- Floating Create Button -->
+    <button @click="showCreateModal = true" class="floating-create-btn" title="Create New Listing">
+      +
+    </button>
   </main>
 </template>
 
@@ -2466,21 +2469,41 @@ export default {
   color: rgba(255, 255, 255, 0.9);
 }
 
-.create-btn {
-  background: white;
-  color: #123619;
-  border: none;
-  padding: 0.875rem 2rem;
-  font-size: 1.1rem;
-  font-weight: 600;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
+.button-spacer {
+  height: 3.25rem;
+  margin-bottom: 0;
 }
 
-.create-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+.floating-create-btn {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  width: 60px;
+  height: 60px;
+  background: rgb(30, 90, 46);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  font-size: 2rem;
+  font-weight: 300;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transition: transform 0.2s, box-shadow 0.3s, background 0.2s;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.floating-create-btn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+  background: rgb(22, 70, 36);
+}
+
+.floating-create-btn:active {
+  transform: scale(1.05);
 }
 
 /* Filter Bar Styles */
@@ -2614,11 +2637,10 @@ export default {
 
 .view-toggle {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-start;
   align-items: center;
+  gap: 1rem;
   margin-bottom: 1.5rem;
-  padding-bottom: 1rem;
-  border-bottom: 2px solid #e9ecef;
 }
 
 .toggle-btn {
@@ -2632,9 +2654,10 @@ export default {
   font-family: Helvetica, Arial, sans-serif;
   cursor: pointer;
   transition: all 0.3s ease;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 0.5rem;
+  width: auto;
 }
 
 .toggle-btn:hover {

@@ -2,10 +2,8 @@
   <main class="homepage">
     <section class="hero">
       <h2>Roommates</h2>
-      <p>Browse roommate postings or create your own</p>
-      <button @click="openModal" class="create-btn">
-        + Create New Posting
-      </button>
+      <p>Browse roommate postings</p>
+      <div class="button-spacer"></div>
     </section>
 
     <!-- Filter Bar -->
@@ -668,6 +666,11 @@
         </form>
       </div>
     </div>
+
+    <!-- Floating Create Button -->
+    <button @click="openModal" class="floating-create-btn" title="Create New Posting">
+      +
+    </button>
   </main>
 </template>
 
@@ -1662,21 +1665,41 @@ export default {
   color: rgba(255, 255, 255, 0.9);
 }
 
-.create-btn {
-  background: white;
-  color: rgb(47, 71, 62);
-  border: none;
-  padding: 0.875rem 2rem;
-  font-size: 1.1rem;
-  font-weight: 600;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
+.button-spacer {
+  height: 3.25rem;
+  margin-bottom: 0;
 }
 
-.create-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+.floating-create-btn {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  width: 60px;
+  height: 60px;
+  background: rgb(30, 90, 46);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  font-size: 2rem;
+  font-weight: 300;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transition: transform 0.2s, box-shadow 0.3s, background 0.2s;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.floating-create-btn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+  background: rgb(22, 70, 36);
+}
+
+.floating-create-btn:active {
+  transform: scale(1.05);
 }
 
 /* Filter Bar Styles */

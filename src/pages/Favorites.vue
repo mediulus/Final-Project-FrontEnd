@@ -6,6 +6,26 @@
       <div class="button-spacer"></div>
     </section>
 
+    <!-- Tab Navigation -->
+    <section class="tabs-section">
+      <div class="tabs-container">
+        <button
+          @click="activeTab = 'housing'"
+          class="tab-btn"
+          :class="{ active: activeTab === 'housing' }"
+        >
+          Housing Listings
+        </button>
+        <button
+          @click="activeTab = 'roommates'"
+          class="tab-btn"
+          :class="{ active: activeTab === 'roommates' }"
+        >
+          Roommate Postings
+        </button>
+      </div>
+    </section>
+
     <section class="listings-section">
       <div v-if="isLoading" class="loading">Loading your favorites...</div>
       <div v-else-if="error" class="error-message">{{ error }}</div>
@@ -13,79 +33,15 @@
         No favorites yet. Start exploring and save items you like!
       </div>
       <div v-else>
-        <!-- Roommate Postings -->
-        <div v-if="roommatePostings.length > 0" class="listings-container">
-          <h3 class="section-title">
-            <span class="title-with-icon">
-              <span>Roommate Postings</span>
-            </span>
-          </h3>
-          <div class="listings-grid">
-            <div
-              v-for="posting in roommatePostings"
-              :key="posting._id"
-              class="posting-card"
-              :class="{ 'expanded': expandedPosting === posting._id }"
-              @click="togglePostingDetails(posting._id)"
-            >
-              <div class="card-header">
-                <div class="card-title">
-                <h3>{{ posting.city }}</h3>
-                  <div class="quick-info">
-                    <span class="age-gender">
-                      <svg class="info-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                        <circle cx="12" cy="7" r="4"></circle>
-                      </svg>
-                      {{ posting.gender }}, {{ posting.age }}
-                    </span>
-                    <div class="tags-row">
-                      <span v-if="posting.numberOfRoommates" class="roommate-count">
-                        {{ posting.numberOfRoommates }} roommate{{ posting.numberOfRoommates > 1 ? 's' : '' }}
-                      </span>
-                      <span v-if="posting.housingStatus === 'Found housing'" class="housing-status-badge">
-                        Found housing
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                <div class="card-actions" @click.stop>
-                <button
-                  @click="removeFavorite(posting._id)"
-                    class="favorite-btn is-saved"
-                  title="Remove from favorites"
-                >
-                  <span class="heart-icon">❤</span>
-                </button>
-                  <div v-if="isPoster(posting)" class="owner-badge">
-                    Your Posting
-                  </div>
-                </div>
-              </div>
-
-              <div class="card-preview">
-                <p class="description-preview">{{ truncateText(posting.aboutYourself || posting.description || "", 100) }}</p>
-                <div class="tags" v-if="getItemTags(posting._id).length > 0">
-                  <span v-for="tag in getItemTags(posting._id)" :key="tag" class="tag" :class="{ 'tag-contacted': tag === 'Contacted' }">{{ tag }}</span>
-                </div>
-                <div class="expand-hint">
-                  <span>Click for details</span>
-                  <span class="expand-icon">+</span>
-                </div>
-              </div>
-            </div>
+        <!-- Housing Tab Content -->
+        <div v-show="activeTab === 'housing'" class="tab-content">
+          <div v-if="housingListings.length === 0" class="no-listings">
+            No housing favorites yet. Start exploring housing listings!
           </div>
-        </div>
 
-        <!-- Housing -->
-        <div v-if="housingListings.length > 0" class="section listings-container">
-          <h3 class="section-title">
-            <span class="title-with-icon">
-              <span>Housing</span>
-            </span>
-          </h3>
-          <div class="listings-grid">
+          <!-- Housing -->
+          <div v-if="housingListings.length > 0" class="section listings-container">
+            <div class="listings-grid">
             <div
               v-for="listing in housingListings"
               :key="listing._id"
@@ -105,11 +61,11 @@
                       {{ listing.address }}
                     </span>
                     <span class="price-preview">
-                      <svg class="info-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <svg class="info-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgb(22, 53, 27)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <line x1="12" y1="1" x2="12" y2="23"></line>
                         <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
                       </svg>
-                      ${{ listing.price }}/month
+                      {{ listing.price }}/month
                     </span>
                   </div>
                 </div>
@@ -159,6 +115,74 @@
                 <div class="expand-hint">
                   <span>Click for details</span>
                   <span class="expand-icon">+</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        </div>
+
+        <!-- Roommate Tab Content -->
+        <div v-show="activeTab === 'roommates'" class="tab-content">
+          <div v-if="roommatePostings.length === 0" class="no-listings">
+            No roommate favorites yet. Start exploring roommate postings!
+          </div>
+
+          <!-- Roommate Postings -->
+          <div v-if="roommatePostings.length > 0" class="listings-container">
+            <div class="listings-grid">
+              <div
+                v-for="posting in roommatePostings"
+                :key="posting._id"
+                class="posting-card"
+                :class="{ 'expanded': expandedPosting === posting._id }"
+                @click="togglePostingDetails(posting._id)"
+              >
+                <div class="card-header">
+                  <div class="card-title">
+                  <h3>{{ posting.city }}</h3>
+                    <div class="quick-info">
+                      <span class="age-gender">
+                        <svg class="info-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                          <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                        {{ posting.gender }}, {{ posting.age }}
+                      </span>
+                      <div class="tags-row">
+                        <span v-if="posting.numberOfRoommates" class="roommate-count">
+                          {{ posting.numberOfRoommates }} roommate{{ posting.numberOfRoommates > 1 ? 's' : '' }}
+                        </span>
+                        <span v-if="posting.housingStatus === 'Found housing'" class="housing-status-badge">
+                          Found housing
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="card-actions" @click.stop>
+                  <button
+                    @click="removeFavorite(posting._id)"
+                      class="favorite-btn is-saved"
+                    title="Remove from favorites"
+                  >
+                    <span class="heart-icon">❤</span>
+                  </button>
+                    <div v-if="isPoster(posting)" class="owner-badge">
+                      Your Posting
+                    </div>
+                  </div>
+                </div>
+
+                <div class="card-preview">
+                  <p class="description-preview">{{ truncateText(posting.aboutYourself || posting.description || "", 100) }}</p>
+                  <div class="tags" v-if="getItemTags(posting._id).length > 0">
+                    <span v-for="tag in getItemTags(posting._id)" :key="tag" class="tag" :class="{ 'tag-contacted': tag === 'Contacted' }">{{ tag }}</span>
+                  </div>
+                  <div class="expand-hint">
+                    <span>Click for details</span>
+                    <span class="expand-icon">+</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -413,6 +437,7 @@ export default {
   name: "Favorites",
   setup() {
     const sessionStore = useSessionStore();
+    const activeTab = ref('housing');
     const savedItems_data = ref([]);
     const savedItemsMap = ref(new Map()); // Map of itemId -> {tags: []}
     const allRoommatePostings = ref([]);
@@ -432,15 +457,19 @@ export default {
 
     const roommatePostings = computed(() => {
       // Filter saved items that are roommate postings (have 'city' field)
+      // Exclude posts that the user owns
+      const userId = sessionStore.user?.id || sessionStore.user?.user;
       return savedItems_data.value
-        .filter((item) => item.city !== undefined)
+        .filter((item) => item.city !== undefined && item.poster !== userId)
         .sort((a, b) => b._id.localeCompare(a._id)); // Sort by most recent first
     });
 
     const housingListings = computed(() => {
       // Filter saved items that are housing listings (have 'title' and 'address' fields)
+      // Exclude listings that the user owns
+      const userId = sessionStore.user?.id || sessionStore.user?.user;
       return savedItems_data.value.filter(
-        (item) => item.title !== undefined && item.address !== undefined
+        (item) => item.title !== undefined && item.address !== undefined && item.lister !== userId
       );
     });
 
@@ -798,6 +827,7 @@ export default {
     });
 
     return {
+      activeTab,
       savedItems,
       roommatePostings,
       housingListings,
@@ -1427,6 +1457,60 @@ export default {
   border-radius: 12px;
   font-size: 0.75rem;
   font-weight: 600;
+}
+
+/* Tab Navigation Styles */
+.tabs-section {
+  background: transparent;
+  border-bottom: none;
+}
+
+.tabs-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  gap: 0.5rem;
+  padding: 0 2rem;
+}
+
+.tab-btn {
+  padding: 1rem 2rem;
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #6c757d;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  flex: 0 0 auto;
+  width: auto;
+}
+
+.tab-btn:hover {
+  background: rgba(30, 90, 46, 0.05);
+  color: rgb(30, 90, 46);
+}
+
+.tab-btn.active {
+  color: rgb(30, 90, 46);
+  border-bottom-color: rgb(30, 90, 46);
+  background: white;
+}
+
+.tab-content {
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @media (max-width: 768px) {
