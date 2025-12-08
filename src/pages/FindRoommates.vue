@@ -138,9 +138,13 @@
                 <h3>Personal Information</h3>
                 <table class="info-table">
                   <tbody>
-                    <tr>
-                      <td>Profile</td>
-                      <td>{{ getExpandedPosting().gender }}, {{ getExpandedPosting().age }} years old</td>
+                    <tr v-if="getExpandedPosting().gender || getExpandedPosting().age">
+                      <td>Gender & Age</td>
+                      <td>
+                        <span v-if="getExpandedPosting().gender">{{ getExpandedPosting().gender }}</span>
+                        <span v-if="getExpandedPosting().gender && getExpandedPosting().age">, </span>
+                        <span v-if="getExpandedPosting().age">{{ getExpandedPosting().age }} years old</span>
+                      </td>
                     </tr>
                     <tr v-if="getExpandedPosting().numberOfRoommates">
                       <td>Looking for</td>
@@ -453,7 +457,10 @@
     <!-- Edit Posting Modal -->
     <div v-if="showEditModal" class="modal-overlay" @click="closeEditModal">
       <div class="modal-content" @click.stop>
-        <h2>Edit Roommate Posting</h2>
+        <div class="modal-header">
+          <h2>Edit Roommate Posting</h2>
+          <button @click="closeEditModal" class="close-btn">×</button>
+        </div>
         <form @submit.prevent="handleEditPosting">
           <div class="form-group">
             <label for="edit-city">City *</label>
@@ -578,35 +585,51 @@
           </div>
 
           <div class="form-group">
-            <label for="edit-homeEnvironment">Home Environment & Guests *</label>
+            <label for="edit-homeEnvironment">Home Environment *</label>
             <select
               id="edit-homeEnvironment"
               v-model="editForm.homeEnvironment"
               required
             >
               <option value="" disabled>
-                Select your living style preference
+                Select your home environment preference
               </option>
-              <option value="Quiet home, prefer few or no guests">
-                Quiet home, prefer few or no guests
+              <option value="Quiet (minimal noise, low visitors)">
+                Quiet (minimal noise, low visitors)
               </option>
-              <option value="Quiet home, occasional guests welcome">
-                Quiet home, occasional guests welcome
+              <option value="Moderate (some noise, occasional visitors)">
+                Moderate (some noise, occasional visitors)
               </option>
-              <option value="Moderate activity, occasional guests welcome">
-                Moderate activity, occasional guests welcome
+              <option value="Social / lively (friends over often)">
+                Social / lively (friends over often)
               </option>
-              <option value="Moderate activity, frequent guests welcome">
-                Moderate activity, frequent guests welcome
+              <option value="Flexible / depends on schedule">
+                Flexible / depends on schedule
               </option>
-              <option value="Social/lively home, frequent guests welcome">
-                Social/lively home, frequent guests welcome
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="edit-guestsVisitors">Guests & Visitors *</label>
+            <select
+              id="edit-guestsVisitors"
+              v-model="editForm.guestsVisitors"
+              required
+            >
+              <option value="" disabled>
+                Select your guests & visitors preference
               </option>
-              <option value="Social/lively home, overnight guests welcome">
-                Social/lively home, overnight guests welcome
+              <option value="Prefer few or no guests">
+                Prefer few or no guests
               </option>
-              <option value="Flexible - depends on schedule">
-                Flexible - depends on schedule
+              <option value="Occasional guests okay">
+                Occasional guests okay
+              </option>
+              <option value="Comfortable with frequent guests">
+                Comfortable with frequent guests
+              </option>
+              <option value="Comfortable with overnight guests">
+                Comfortable with overnight guests
               </option>
             </select>
           </div>
@@ -631,19 +654,6 @@
               rows="4"
               placeholder="Describe what you're looking for in a roommate"
             ></textarea>
-          </div>
-
-          <div class="form-group">
-            <label for="edit-housingStatus">Housing Status *</label>
-            <select
-              id="edit-housingStatus"
-              v-model="editForm.housingStatus"
-              required
-            >
-              <option value="" disabled>Select your housing status</option>
-              <option value="Looking for housing">Looking for housing</option>
-              <option value="Found housing">Found housing</option>
-            </select>
           </div>
 
           <div v-if="editError" class="error-message">{{ editError }}</div>
@@ -709,12 +719,12 @@ export default {
       age: "",
       aboutMe: "",
       lookingFor: "",
-      housingStatus: "",
       startDate: "",
       endDate: "",
       dailyRhythm: "",
       cleanlinessPreference: "",
       homeEnvironment: "",
+      guestsVisitors: "",
       numberOfRoommates: "",
     });
 
@@ -1210,6 +1220,7 @@ export default {
         dailyRhythm: posting.dailyRhythm || "",
         cleanlinessPreference: posting.cleanlinessPreference || "",
         homeEnvironment: posting.homeEnvironment || "",
+        guestsVisitors: posting.guestsVisitors || "",
         numberOfRoommates: posting.numberOfRoommates || "",
       };
       editError.value = "";
@@ -1231,6 +1242,7 @@ export default {
         dailyRhythm: "",
         cleanlinessPreference: "",
         homeEnvironment: "",
+        guestsVisitors: "",
         numberOfRoommates: "",
       };
     };
@@ -1282,11 +1294,11 @@ export default {
             editForm.value.lookingFor
           );
         }
-        // Edit housingStatus if changed
-        if (editForm.value.housingStatus !== posting.housingStatus) {
-          await roommatePostings.editHousingStatus(
+        // Edit guestsVisitors if changed
+        if (editForm.value.guestsVisitors !== posting.guestsVisitors) {
+          await roommatePostings.editGuestsVisitors(
             userId,
-            editForm.value.housingStatus
+            editForm.value.guestsVisitors
           );
         }
         // If old format (description), update both fields to migrate to new format
@@ -1415,8 +1427,11 @@ export default {
 
       try {
         await roommatePostings.delete(postingId);
+        // Close the expanded view if this posting was expanded
+        if (expandedPosting.value === postingId) {
+          expandedPosting.value = null;
+        }
         await fetchPostings();
-        alert("Posting deleted successfully");
       } catch (err) {
         console.error("Error deleting posting:", err);
         alert("Failed to delete posting: " + (err.message || "Unknown error"));

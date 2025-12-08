@@ -221,12 +221,12 @@
                   <td>{{ getExpandedPosting().cleanlinessPreference }}</td>
                 </tr>
                 <tr v-if="getExpandedPosting().homeEnvironment">
-                  <td>Home Environment</td>
+                  <td>Home Environment & Guests</td>
                   <td>{{ getExpandedPosting().homeEnvironment }}</td>
                 </tr>
-                <tr v-if="getExpandedPosting().guestsVisitors">
-                  <td>Guests & Visitors</td>
-                  <td>{{ getExpandedPosting().guestsVisitors }}</td>
+                <tr v-if="getExpandedPosting().housingStatus">
+                  <td>Housing Status</td>
+                  <td>{{ getExpandedPosting().housingStatus }}</td>
                 </tr>
               </tbody>
             </table>
@@ -367,7 +367,10 @@
     <!-- Edit Listing Modal -->
     <div v-if="showEditModal" class="modal-overlay" @click="closeEditModal">
       <div class="modal-content" @click.stop>
-        <h2>Edit Listing</h2>
+        <div class="modal-header">
+          <h2>Edit Listing</h2>
+          <button @click="closeEditModal" class="close-btn">×</button>
+        </div>
         <form @submit.prevent="handleEditListing">
           <div class="form-group">
             <label for="edit-title">Title *</label>
@@ -461,6 +464,11 @@
 
           <div class="form-group">
             <label>Amenities</label>
+            <p class="amenities-description">
+              Add any perks about the house, such as in-house laundry or kitchen features, 
+              or convenient nearby locations like grocery stores. For locations, specify 
+              the distance in miles from home.
+            </p>
             <div class="amenities-list">
               <div
                 v-for="(amenity, index) in editForm.amenities"
@@ -470,15 +478,15 @@
                 <input
                   type="text"
                   v-model="amenity.title"
-                  placeholder="e.g., T Stop"
+                  placeholder="e.g., Laundry or T Stop"
                   class="amenity-title"
                 />
                 <input
                   type="number"
                   v-model.number="amenity.distance"
-                  placeholder="Miles"
+                  placeholder="Miles (optional)"
                   min="0"
-                  step="0.1"
+                  step="0.01"
                   class="amenity-distance"
                 />
                 <button
@@ -596,7 +604,10 @@
       @click="closeEditRoommateModal"
     >
       <div class="modal-content" @click.stop>
-        <h2>Edit Roommate Posting</h2>
+        <div class="modal-header">
+          <h2>Edit Roommate Posting</h2>
+          <button @click="closeEditRoommateModal" class="close-btn">×</button>
+        </div>
         <form @submit.prevent="handleEditRoommatePosting">
           <div class="form-group">
             <label for="edit-roommate-city">City *</label>
@@ -727,9 +738,7 @@
           </div>
 
           <div class="form-group">
-            <label for="edit-roommate-homeEnvironment"
-              >Home Environment *</label
-            >
+            <label for="edit-roommate-homeEnvironment">Home Environment *</label>
             <select
               id="edit-roommate-homeEnvironment"
               v-model="editRoommateForm.homeEnvironment"
@@ -754,9 +763,7 @@
           </div>
 
           <div class="form-group">
-            <label for="edit-roommate-guestsVisitors"
-              >Guests & Visitors *</label
-            >
+            <label for="edit-roommate-guestsVisitors">Guests & Visitors *</label>
             <select
               id="edit-roommate-guestsVisitors"
               v-model="editRoommateForm.guestsVisitors"
@@ -781,24 +788,24 @@
           </div>
 
           <div class="form-group">
-            <label for="edit-roommate-about-yourself">About Yourself *</label>
+            <label for="edit-roommate-about-yourself">Tell More About Yourself *</label>
             <textarea
               id="edit-roommate-about-yourself"
               v-model="editRoommateForm.aboutYourself"
               required
               rows="4"
-              placeholder="Tell us about yourself..."
+              placeholder="Tell us about yourself, your interests, lifestyle, etc."
             ></textarea>
           </div>
 
           <div class="form-group">
-            <label for="edit-roommate-looking-for">What You're Looking For *</label>
+            <label for="edit-roommate-looking-for">What You Are Looking For in a Roommate *</label>
             <textarea
               id="edit-roommate-looking-for"
               v-model="editRoommateForm.lookingFor"
               required
               rows="4"
-              placeholder="What are you looking for in a roommate?"
+              placeholder="Describe what you're looking for in a roommate"
             ></textarea>
           </div>
 
@@ -1250,7 +1257,8 @@ export default {
         city: "",
         gender: "",
         age: "",
-        description: "",
+        aboutYourself: "",
+        lookingFor: "",
         startDate: "",
         endDate: "",
         dailyRhythm: "",
@@ -1383,7 +1391,9 @@ export default {
             editRoommateForm.value.homeEnvironment
           );
         }
-        if (editRoommateForm.value.guestsVisitors !== posting.guestsVisitors) {
+        if (
+          editRoommateForm.value.guestsVisitors !== posting.guestsVisitors
+        ) {
           await roommatePostingsApi.editGuestsVisitors(
             userId,
             editRoommateForm.value.guestsVisitors
@@ -2659,59 +2669,135 @@ export default {
 
 .modal-content {
   background: white;
-  border-radius: 12px;
-  padding: 2rem;
+  border-radius: 16px;
+  padding: 2.5rem;
   width: 90%;
   max-width: 600px;
-  max-height: 80vh;
+  max-height: 90vh;
   overflow-y: auto;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.3s ease;
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
-.modal-content h2 {
-  margin-top: 0;
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #f0f0f0;
+  width: 100%;
+}
+
+.modal-header h2 {
+  color: rgb(47, 71, 62);
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.modal-header .close-btn {
+  background: none;
+  border: none;
+  font-size: 2rem;
+  cursor: pointer;
+  color: #666;
+  padding: 0.25rem;
+  border-radius: 50%;
+  width: 2.5rem;
+  height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease, color 0.2s ease;
+  line-height: 1;
+}
+
+.modal-header .close-btn:hover {
+  background: #f0f0f0;
   color: #333;
 }
 
 .form-group {
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.75rem;
 }
 
 .form-group label {
   display: block;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.625rem;
+  color: rgb(47, 71, 62);
   font-weight: 600;
-  color: #333;
+  font-size: 0.95rem;
+  letter-spacing: 0.3px;
 }
 
 .form-group input,
 .form-group select,
 .form-group textarea {
-  width: 100%;
-  padding: 0.75rem;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  font-size: 16px;
-  box-sizing: border-box;
+  width: 85%;
+  max-width: 500px;
+  padding: 0.875rem 1rem;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  background: #fafafa;
+}
+
+.form-group input:hover,
+.form-group select:hover,
+.form-group textarea:hover {
+  border-color: #c0c0c0;
+  background: white;
 }
 
 .form-group input:focus,
 .form-group select:focus,
 .form-group textarea:focus {
   outline: none;
-  border-color: #007bff;
-  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+  border-color: rgb(47, 71, 62);
+  background: white;
+  box-shadow: 0 0 0 3px rgba(47, 71, 62, 0.1);
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 120px;
+  line-height: 1.6;
 }
 
 .form-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1rem;
+  gap: 1.25rem;
 }
 
 .amenities-list {
   margin-bottom: 1rem;
+}
+
+.amenities-description {
+  font-size: 0.9rem;
+  color: #666;
+  line-height: 1.5;
+  margin: 0 0 1rem 0;
+  padding: 0.75rem;
+  background: #f8f9fa;
+  border-radius: 6px;
+  border-left: 3px solid rgb(47, 71, 62);
 }
 
 .amenity-item {
@@ -2764,44 +2850,50 @@ export default {
 
 .modal-actions {
   display: flex;
-  justify-content: flex-end;
   gap: 1rem;
-  margin-top: 2rem;
-  padding-top: 1rem;
-  border-top: 1px solid #eee;
+  margin-top: 2.5rem;
+  padding-top: 1.5rem;
+  border-top: 2px solid #f0f0f0;
+}
+
+.cancel-btn,
+.submit-btn {
+  flex: 1;
+  padding: 0.875rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 1.05rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .cancel-btn {
   background: #6c757d;
   color: white;
-  border: none;
-  border-radius: 6px;
-  padding: 0.75rem 1.5rem;
-  cursor: pointer;
-  font-size: 16px;
 }
 
 .cancel-btn:hover {
   background: #5a6268;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
 .submit-btn {
-  background: #007bff;
+  background: rgb(22, 53, 27);
   color: white;
-  border: none;
-  border-radius: 6px;
-  padding: 0.75rem 1.5rem;
-  cursor: pointer;
-  font-size: 16px;
 }
 
 .submit-btn:hover:not(:disabled) {
-  background: #0056b3;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(22, 53, 27, 0.3);
 }
 
 .submit-btn:disabled {
-  background: #ccc;
+  opacity: 0.6;
   cursor: not-allowed;
+  transform: none;
 }
 
 /* Autocomplete Styles */

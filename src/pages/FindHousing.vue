@@ -519,7 +519,10 @@
     <!-- Edit Listing Modal -->
     <div v-if="showEditModal" class="modal-overlay" @click="closeEditModal">
       <div class="modal-content" @click.stop>
-        <h2>Edit Listing</h2>
+        <div class="modal-header">
+          <h2>Edit Listing</h2>
+          <button @click="closeEditModal" class="close-btn">×</button>
+        </div>
         <form @submit.prevent="handleEditListing">
           <div class="form-group">
             <label for="edit-title">Title *</label>
