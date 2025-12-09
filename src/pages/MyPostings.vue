@@ -698,19 +698,6 @@
             />
           </div>
 
-          <div class="form-group">
-            <label for="edit-roommate-housingStatus">Housing Status *</label>
-            <select
-              id="edit-roommate-housingStatus"
-              v-model="editRoommateForm.housingStatus"
-              required
-            >
-              <option value="" disabled>Select your housing status</option>
-              <option value="Looking for housing">Looking for housing</option>
-              <option value="Found housing">Found housing</option>
-            </select>
-          </div>
-
           <div class="form-row">
             <div class="form-group">
               <label for="edit-roommate-startDate">Start Date *</label>
@@ -832,6 +819,19 @@
               <option value="Comfortable with overnight guests">
                 Comfortable with overnight guests
               </option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="edit-roommate-housingStatus">Housing Status *</label>
+            <select
+              id="edit-roommate-housingStatus"
+              v-model="editRoommateForm.housingStatus"
+              required
+            >
+              <option value="" disabled>Select your housing status</option>
+              <option value="Looking for housing">Looking for housing</option>
+              <option value="Found housing">Found housing</option>
             </select>
           </div>
 

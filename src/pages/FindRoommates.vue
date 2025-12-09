@@ -444,6 +444,19 @@
           </div>
 
           <div class="form-group">
+            <label for="housingStatus">Housing Status *</label>
+            <select
+              id="housingStatus"
+              v-model="form.housingStatus"
+              required
+            >
+              <option value="" disabled>Select your housing status</option>
+              <option value="Looking for housing">Looking for housing</option>
+              <option value="Found housing">Found housing</option>
+            </select>
+          </div>
+
+          <div class="form-group">
             <label for="aboutMe">Tell More About Yourself *</label>
             <textarea
               id="aboutMe"
@@ -463,19 +476,6 @@
               rows="4"
               placeholder="Describe what you're looking for in a roommate"
             ></textarea>
-          </div>
-
-          <div class="form-group">
-            <label for="housingStatus">Housing Status *</label>
-            <select
-              id="housingStatus"
-              v-model="form.housingStatus"
-              required
-            >
-              <option value="" disabled>Select your housing status</option>
-              <option value="Looking for housing">Looking for housing</option>
-              <option value="Found housing">Found housing</option>
-            </select>
           </div>
 
           <div v-if="createError" class="error-message">{{ createError }}</div>
@@ -546,19 +546,6 @@
               max="10"
               placeholder="e.g., 2"
             />
-          </div>
-
-          <div class="form-group">
-            <label for="edit-housingStatus">Housing Status *</label>
-            <select
-              id="edit-housingStatus"
-              v-model="editForm.housingStatus"
-              required
-            >
-              <option value="" disabled>Select your housing status</option>
-              <option value="Looking for housing">Looking for housing</option>
-              <option value="Found housing">Found housing</option>
-            </select>
           </div>
 
           <div class="form-row">
@@ -682,6 +669,19 @@
               <option value="Comfortable with overnight guests">
                 Comfortable with overnight guests
               </option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="edit-housingStatus">Housing Status *</label>
+            <select
+              id="edit-housingStatus"
+              v-model="editForm.housingStatus"
+              required
+            >
+              <option value="" disabled>Select your housing status</option>
+              <option value="Looking for housing">Looking for housing</option>
+              <option value="Found housing">Found housing</option>
             </select>
           </div>
 
