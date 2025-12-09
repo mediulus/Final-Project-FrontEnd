@@ -74,7 +74,6 @@
                 </div>
 
                 <div class="card-actions" @click.stop>
-                  <div class="owner-badge">Your Listing</div>
                   <button @click="editListing(listing)" class="icon-btn edit-icon-btn" title="Edit">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                       <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
@@ -125,7 +124,6 @@
                 </div>
                 <div class="expand-hint">
                   <span>Click for details</span>
-                  <span class="expand-icon">+</span>
                 </div>
               </div>
             </div>
@@ -176,7 +174,6 @@
                 </div>
 
                 <div class="card-actions" @click.stop>
-                  <div class="owner-badge">Your Posting</div>
                   <button @click="editRoommatePosting(posting)" class="icon-btn edit-icon-btn" title="Edit">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                       <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
@@ -198,7 +195,6 @@
                 <p class="description-preview">{{ truncateText(posting.aboutYourself || posting.description || "", 100) }}</p>
                 <div class="expand-hint">
                   <span>Click for details</span>
-                  <span class="expand-icon">+</span>
                 </div>
               </div>
             </div>
@@ -211,7 +207,7 @@
     <div v-if="expandedPosting" class="detail-overlay" @click="closeDetails">
       <div class="detail-panel" @click.stop>
         <div class="detail-header">
-          <h2>{{ getExpandedPosting().city }} - My Roommate Posting</h2>
+          <h2>{{ getExpandedPosting().city }}</h2>
           <button @click="closeDetails" class="close-btn">×</button>
         </div>
 
@@ -312,7 +308,7 @@
     <div v-if="expandedListing" class="detail-overlay" @click="closeListing">
       <div class="detail-panel" @click.stop>
         <div class="detail-header">
-          <h2>{{ getExpandedListing().title }} - My Housing Listing</h2>
+          <h2>{{ getExpandedListing().title }}</h2>
           <button @click="closeListing" class="close-btn">×</button>
         </div>
 
@@ -2018,36 +2014,42 @@ export default {
 }
 
 /* Create Header */
+
 .create-header {
   margin-bottom: 2rem;
   display: flex;
   justify-content: flex-start;
-  padding: 1.5rem 2rem;
   border-bottom: none;
 }
 
 .create-new-btn {
-  background: white;
-  color: rgb(30, 90, 46);
-  border: 2px solid rgb(30, 90, 46);
-  padding: 1rem 2.5rem;
-  font-size: 1.2rem;
-  font-weight: 600;
+  padding: 0.75rem 1.5rem;
+  background: rgb(47, 71, 62);
+  color: white;
+  border: 2px solid rgb(47, 71, 62);
   border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  font-family: Helvetica, Arial, sans-serif;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(30, 90, 46, 0.2);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: auto;
 }
 
 .create-new-btn:hover {
-  background: rgb(240, 255, 243);
-  color: rgb(22, 70, 36);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(30, 90, 46, 0.3);
+  background: rgb(37, 62, 53);
+  border-color: rgb(37, 62, 53);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(47, 71, 62, 0.3);
 }
 
 .create-new-btn:active {
-  transform: translateY(0);
+  background: rgb(22, 53, 27);
+  border-color: rgb(22, 53, 27);
+  color: white;
 }
 
 .listings-section {
@@ -2383,7 +2385,7 @@ export default {
   align-items: center;
   padding: 1.5rem 2rem;
   border-bottom: 2px solid #f8f9fa;
-  background: linear-gradient(135deg, #1e5a2e, #2d7a3d);
+  background: rgb(47, 71, 62);
   color: white;
   border-radius: 16px 16px 0 0;
 }

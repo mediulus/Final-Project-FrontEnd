@@ -202,7 +202,6 @@
             </p>
             <div class="expand-hint">
               <span>Click for details</span>
-              <span class="expand-icon">+</span>
             </div>
           </div>
         </div>
@@ -294,27 +293,37 @@
 
         <!-- Action Buttons -->
         <div class="detail-actions">
+          <div v-if="!isOwner(getExpandedListing())" class="action-buttons-grid">
             <button
-            v-if="!isOwner(getExpandedListing())"
-            @click.stop="toggleSavedItem(getExpandedListing()._id)"
-            class="favorite-action-btn"
-            :class="{ 'is-saved': isSaved(getExpandedListing()._id) }"
-          >
-            <span class="heart-icon">❤</span>
-            Favorite
+              v-if="!isSaved(getExpandedListing()._id)"
+              @click.stop="toggleSavedItem(getExpandedListing()._id)"
+              class="favorite-action-btn"
+            >
+              <svg class="btn-icon" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+              </svg>
+              <span>Favorite</span>
             </button>
 
-          <button
-            v-if="!isOwner(getExpandedListing()) && !getItemTags(getExpandedListing()._id).includes('Contacted')"
-            @click="sendInterest(getExpandedListing()._id)"
-            class="contact-btn"
-            :disabled="isSendingInterest[getExpandedListing()._id]"
-          >
-            {{ isSendingInterest[getExpandedListing()._id] ? "Sending..." : "Send Interest" }}
+            <div v-if="isSaved(getExpandedListing()._id)" class="favorited-message">
+              Already favorited
+            </div>
+
+            <button
+              v-if="!getItemTags(getExpandedListing()._id).includes('Contacted')"
+              @click="sendInterest(getExpandedListing()._id)"
+              class="contact-btn"
+              :disabled="isSendingInterest[getExpandedListing()._id]"
+            >
+              <svg class="btn-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+              </svg>
+              <span>{{ isSendingInterest[getExpandedListing()._id] ? "Contacting..." : "Contact" }}</span>
             </button>
 
-          <div v-if="!isOwner(getExpandedListing()) && getItemTags(getExpandedListing()._id).includes('Contacted')" class="contacted-message">
-            Already contacted
+            <div v-if="getItemTags(getExpandedListing()._id).includes('Contacted')" class="contacted-message">
+              Already contacted
+            </div>
           </div>
 
           <div v-if="isOwner(getExpandedListing())" class="owner-actions">
@@ -2442,7 +2451,7 @@ export default {
 
     const sendInterest = async (listingId) => {
       if (!sessionStore.user || !sessionStore.user.id) {
-        alert("Please log in to send interest");
+        alert("Please log in to contact");
         return;
       }
 
@@ -2459,7 +2468,7 @@ export default {
         await fetchSavedItems();
       } catch (err) {
         console.error("Error sending interest:", err);
-        alert("Failed to send interest: " + (err.message || "Unknown error"));
+        alert("Failed to contact: " + (err.message || "Unknown error"));
       } finally {
         // Clear loading state for this specific listing
         isSendingInterest.value[listingId] = false;
@@ -3430,7 +3439,7 @@ export default {
   align-items: center;
   padding: 1.5rem 2rem;
   border-bottom: 2px solid #f8f9fa;
-  background: linear-gradient(135deg, #1e5a2e, #2d7a3d);
+  background: rgb(47, 71, 62);
   color: white;
   border-radius: 16px 16px 0 0;
 }
@@ -3523,63 +3532,51 @@ export default {
   border-radius: 0 0 16px 16px;
 }
 
-.favorite-action-btn {
+.action-buttons-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
   width: 100%;
-  background: #ff69b4;
+}
+
+.favorite-action-btn,
+.contact-btn {
+  background: rgb(22, 53, 27);
   color: white;
   border: none;
-  padding: 0.625rem 1rem;
+  padding: 0.75rem 1rem;
   font-size: 0.95rem;
   font-weight: 600;
   border-radius: 6px;
   cursor: pointer;
-  margin-top: 0.75rem;
-  transition: background 0.2s, opacity 0.2s;
+  transition: background 0.2s, opacity 0.2s, transform 0.1s;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
 }
 
-.favorite-action-btn.is-saved {
-  background: #ff1493;
-}
-
-.favorite-action-btn:hover {
-  background: #ff1493;
-}
-
-.favorite-action-btn .heart-icon {
-  font-size: 1.6rem;
-  color: white;
-  -webkit-text-stroke: 1.5px white;
-  -webkit-text-fill-color: transparent;
-  transition: all 0.2s;
-  font-weight: 300;
-  letter-spacing: -0.1em;
-  transform: scaleX(0.85);
-}
-
-.favorite-action-btn.is-saved .heart-icon {
-  -webkit-text-fill-color: white;
-}
-
-.contact-btn {
-  width: 100%;
-  background: rgb(22, 53, 27);
-  color: white;
-  border: none;
-  padding: 0.625rem 1rem;
-  font-size: 0.95rem;
-  font-weight: 600;
-  border-radius: 6px;
-  cursor: pointer;
-  margin-top: 0.75rem;
-  transition: background 0.2s, opacity 0.2s;
-}
-
+.favorite-action-btn:hover,
 .contact-btn:hover:not(:disabled) {
   background: rgb(15, 38, 19);
+  transform: translateY(-2px);
+}
+
+.favorite-action-btn:active,
+.contact-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.favorite-action-btn.is-saved {
+  background: rgb(30, 90, 46);
+}
+
+.favorite-action-btn.is-saved:hover {
+  background: rgb(22, 53, 27);
+}
+
+.btn-icon {
+  flex-shrink: 0;
 }
 
 .contact-btn:disabled {
@@ -3587,6 +3584,7 @@ export default {
   cursor: not-allowed;
 }
 
+.favorited-message,
 .contacted-message {
   padding: 0.75rem 1.5rem;
   background: #f5f5f5;
@@ -3594,6 +3592,9 @@ export default {
   border-radius: 8px;
   text-align: center;
   font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .owner-actions {

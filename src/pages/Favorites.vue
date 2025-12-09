@@ -84,18 +84,6 @@
                 </div>
               </div>
 
-              <!-- Photo Preview Section -->
-              <div v-if="listing.photos && listing.photos.length > 0" class="photo-preview-section">
-                <img
-                  :src="getPhotoUrl(listing.photos[0])"
-                  :alt="listing.title"
-                  class="card-photo-preview"
-                />
-                <div v-if="listing.photos.length > 1" class="photo-count">
-                  +{{ listing.photos.length - 1 }} more
-                </div>
-              </div>
-
               <div class="card-preview">
                 <div class="listing-summary">
                   <span class="dates-preview">
@@ -109,12 +97,33 @@
                   </span>
                   <span class="type-preview">{{ listing.type === "sublet" ? "Sublet" : "Renting" }}</span>
                 </div>
-                <div class="tags" v-if="getItemTags(listing._id).length > 0">
-                  <span v-for="tag in getItemTags(listing._id)" :key="tag" class="tag" :class="{ 'tag-contacted': tag === 'Contacted' }">{{ tag }}</span>
+
+                <!-- Photo Preview -->
+                <div v-if="listing.photos && listing.photos.length > 0" class="card-photos">
+                  <div
+                    v-for="(photo, index) in listing.photos.slice(0, 2)"
+                    :key="index"
+                    class="card-photo-item"
+                  >
+                    <img
+                      :src="getPhotoUrl(photo)"
+                      :alt="listing.title + ' photo ' + (index + 1)"
+                      class="card-photo-main"
+                    />
+                  </div>
+                  <div v-if="listing.photos.length > 2" class="photo-count-badge">
+                    +{{ listing.photos.length - 2 }} more
+                  </div>
+                </div>
+
+                <p class="description-preview" v-if="listing.description && listing.description.trim()">
+                  {{ truncateText(listing.description, 100) }}
+                </p>
+                <div class="tags" v-if="getItemTags(listing._id).filter(tag => tag !== 'Favorite').length > 0">
+                  <span v-for="tag in getItemTags(listing._id).filter(tag => tag !== 'Favorite')" :key="tag" class="tag" :class="{ 'tag-contacted': tag === 'Contacted' }">{{ tag }}</span>
                 </div>
                 <div class="expand-hint">
                   <span>Click for details</span>
-                  <span class="expand-icon">+</span>
                 </div>
               </div>
             </div>
@@ -176,12 +185,11 @@
 
                 <div class="card-preview">
                   <p class="description-preview">{{ truncateText(posting.aboutYourself || posting.description || "", 100) }}</p>
-                  <div class="tags" v-if="getItemTags(posting._id).length > 0">
-                    <span v-for="tag in getItemTags(posting._id)" :key="tag" class="tag" :class="{ 'tag-contacted': tag === 'Contacted' }">{{ tag }}</span>
+                  <div class="tags" v-if="getItemTags(posting._id).filter(tag => tag !== 'Favorite').length > 0">
+                    <span v-for="tag in getItemTags(posting._id).filter(tag => tag !== 'Favorite')" :key="tag" class="tag" :class="{ 'tag-contacted': tag === 'Contacted' }">{{ tag }}</span>
                   </div>
                   <div class="expand-hint">
                     <span>Click for details</span>
-                    <span class="expand-icon">+</span>
                   </div>
                 </div>
               </div>
@@ -278,28 +286,37 @@
               </div>
 
               <!-- Tags -->
-              <div class="info-section" v-if="getItemTags(getExpandedPosting()._id).length > 0">
+              <div class="info-section" v-if="getItemTags(getExpandedPosting()._id).filter(tag => tag !== 'Favorite').length > 0">
                 <h3>Status</h3>
                 <div class="tags">
-                  <span v-for="tag in getItemTags(getExpandedPosting()._id)" :key="tag" class="tag" :class="{ 'tag-contacted': tag === 'Contacted' }">{{ tag }}</span>
+                  <span v-for="tag in getItemTags(getExpandedPosting()._id).filter(tag => tag !== 'Favorite')" :key="tag" class="tag" :class="{ 'tag-contacted': tag === 'Contacted' }">{{ tag }}</span>
                 </div>
               </div>
             </div>
 
             <!-- Action Buttons -->
             <div class="detail-actions">
-              <button
-                v-if="!isPoster(getExpandedPosting()) && !getItemTags(getExpandedPosting()._id).includes('Contacted')"
-                @click="contactPoster(getExpandedPosting()._id)"
-                class="contact-btn"
-                :disabled="isContacting[getExpandedPosting()._id]"
-              >
-                {{ isContacting[getExpandedPosting()._id] ? "Sending..." : "Contact Me" }}
-              </button>
-
-              <div v-if="!isPoster(getExpandedPosting()) && getItemTags(getExpandedPosting()._id).includes('Contacted')" class="contacted-message">
-                Already contacted
+              <div v-if="!isPoster(getExpandedPosting())" class="action-buttons-grid">
+                <div class="favorited-message">
+                  Already favorited
                 </div>
+
+                <button
+                  v-if="!getItemTags(getExpandedPosting()._id).includes('Contacted')"
+                  @click="contactPoster(getExpandedPosting()._id)"
+                  class="contact-btn"
+                  :disabled="isContacting[getExpandedPosting()._id]"
+                >
+                  <svg class="btn-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                  </svg>
+                  <span>{{ isContacting[getExpandedPosting()._id] ? "Contacting..." : "Contact" }}</span>
+                </button>
+
+                <div v-if="getItemTags(getExpandedPosting()._id).includes('Contacted')" class="contacted-message">
+                  Already contacted
+                </div>
+              </div>
 
               <div v-if="isPoster(getExpandedPosting())" class="owner-message">
                 This is your own posting
@@ -387,27 +404,36 @@
               </div>
 
               <!-- Tags -->
-              <div class="info-section" v-if="getItemTags(getExpandedListing()._id).length > 0">
+              <div class="info-section" v-if="getItemTags(getExpandedListing()._id).filter(tag => tag !== 'Favorite').length > 0">
                 <h3>Status</h3>
                 <div class="tags">
-                  <span v-for="tag in getItemTags(getExpandedListing()._id)" :key="tag" class="tag" :class="{ 'tag-contacted': tag === 'Contacted' }">{{ tag }}</span>
+                  <span v-for="tag in getItemTags(getExpandedListing()._id).filter(tag => tag !== 'Favorite')" :key="tag" class="tag" :class="{ 'tag-contacted': tag === 'Contacted' }">{{ tag }}</span>
                 </div>
               </div>
             </div>
 
             <!-- Action Buttons -->
             <div class="detail-actions">
+              <div v-if="!isOwner(getExpandedListing())" class="action-buttons-grid">
+                <div class="favorited-message">
+                  Already favorited
+                </div>
+
                 <button
-                v-if="!isOwner(getExpandedListing()) && !getItemTags(getExpandedListing()._id).includes('Contacted')"
-                @click="sendInterest(getExpandedListing()._id)"
-                class="contact-btn"
-                :disabled="isSendingInterest[getExpandedListing()._id]"
-              >
-                {{ isSendingInterest[getExpandedListing()._id] ? "Sending..." : "Send Interest" }}
+                  v-if="!getItemTags(getExpandedListing()._id).includes('Contacted')"
+                  @click="sendInterest(getExpandedListing()._id)"
+                  class="contact-btn"
+                  :disabled="isSendingInterest[getExpandedListing()._id]"
+                >
+                  <svg class="btn-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                  </svg>
+                  <span>{{ isSendingInterest[getExpandedListing()._id] ? "Contacting..." : "Contact" }}</span>
                 </button>
 
-              <div v-if="!isOwner(getExpandedListing()) && getItemTags(getExpandedListing()._id).includes('Contacted')" class="contacted-message">
-                Already contacted
+                <div v-if="getItemTags(getExpandedListing()._id).includes('Contacted')" class="contacted-message">
+                  Already contacted
+                </div>
               </div>
 
               <div v-if="isOwner(getExpandedListing())" class="owner-message">
@@ -778,7 +804,7 @@ export default {
 
     const sendInterest = async (listingId) => {
       if (!sessionStore.user || !sessionStore.user.id) {
-        alert("Please log in to send interest");
+        alert("Please log in to contact");
         return;
       }
 
@@ -796,7 +822,7 @@ export default {
         await fetchSavedItems();
       } catch (err) {
         console.error("Error sending interest:", err);
-        alert("Failed to send interest: " + (err.message || "Unknown error"));
+        alert("Failed to contact: " + (err.message || "Unknown error"));
       } finally {
         // Clear loading state for this specific listing
         isSendingInterest.value[listingId] = false;
@@ -1074,6 +1100,7 @@ export default {
   cursor: not-allowed;
 }
 
+.favorited-message,
 .contacted-message {
   padding: 0.75rem 1.5rem;
   background: #f5f5f5;
@@ -1081,6 +1108,9 @@ export default {
   border-radius: 8px;
   text-align: center;
   font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .owner-message {
@@ -1165,16 +1195,7 @@ export default {
   align-items: center;
 }
 
-.roommate-count {
-  font-size: 0.85rem;
-  color: #1e5a2e;
-  font-weight: 600;
-  padding: 0.15rem 0.5rem;
-  background: #e8f5e9;
-  border-radius: 4px;
-}
-
-.housing-status-badge {
+.roommate-count, .housing-status-badge {
   font-size: 0.85rem;
   color: #1e5a2e;
   font-weight: 600;
@@ -1303,7 +1324,7 @@ export default {
   align-items: center;
   padding: 1.5rem 2rem;
   border-bottom: 2px solid #f8f9fa;
-  background: linear-gradient(135deg, #1e5a2e, #2d7a3d);
+  background: rgb(47, 71, 62);
   color: white;
   border-radius: 16px 16px 0 0;
 }
@@ -1396,7 +1417,91 @@ export default {
   border-radius: 0 0 16px 16px;
 }
 
+.action-buttons-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.favorite-action-btn,
+.contact-btn {
+  padding: 0.875rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: rgb(22, 53, 27);
+  color: white;
+}
+
+.favorite-action-btn:hover,
+.contact-btn:hover {
+  background: rgb(15, 38, 19);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(22, 53, 27, 0.3);
+}
+
+.favorite-action-btn:active,
+.contact-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(22, 53, 27, 0.2);
+}
+
+.favorite-action-btn.favorited {
+  background: rgb(22, 53, 27);
+}
+
+.btn-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
 /* Photo Display Styles */
+.card-photos {
+  position: relative;
+  margin: 1rem 0;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #f8f9fa;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem;
+  padding: 0.5rem;
+}
+
+.card-photo-item {
+  border-radius: 6px;
+  overflow: hidden;
+  background: white;
+}
+
+.card-photo-main {
+  width: 100%;
+  height: 140px;
+  object-fit: cover;
+  display: block;
+}
+
+.photo-count-badge {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
 .photo-preview-section {
   position: relative;
   margin: 0 1.25rem 1rem;
