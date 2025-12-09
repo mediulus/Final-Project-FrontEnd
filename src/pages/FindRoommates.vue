@@ -41,14 +41,30 @@
           </select>
         </div>
 
-        <div class="filter-group">
+        <div class="filter-group location-filter-group">
           <label for="filterLocation">Location</label>
-          <input
-            type="text"
-            id="filterLocation"
-            v-model="filters.location"
-            placeholder="e.g., Cambridge, Kendall Square"
-          />
+          <div class="autocomplete-wrapper">
+            <input
+              type="text"
+              id="filterLocation"
+              v-model="filters.location"
+              @input="handleFilterLocationInput"
+              @focus="showFilterSuggestions = filterAutocompleteSuggestions.length > 0"
+              @blur="handleFilterLocationBlur"
+              placeholder="e.g., San Francisco"
+              autocomplete="off"
+            />
+            <ul v-if="showFilterSuggestions && filterAutocompleteSuggestions.length" class="suggestions-list filter-suggestions-list">
+              <li
+                v-for="(suggestion, index) in filterAutocompleteSuggestions"
+                :key="index"
+                @click="selectFilterSuggestion(suggestion)"
+                class="suggestion-item"
+              >
+                {{ getSuggestionText(suggestion) }}
+              </li>
+            </ul>
+          </div>
         </div>
 
         <div class="filter-actions">
@@ -125,7 +141,7 @@
         <div v-if="expandedPosting" class="detail-overlay" @click="closeDetails">
           <div class="detail-panel" @click.stop>
             <div class="detail-header">
-              <h2>{{ getExpandedPosting().city }} - Roommate Details</h2>
+              <h2>{{ getExpandedPosting().city }}</h2>
               <button @click="closeDetails" class="close-btn">×</button>
             </div>
 
@@ -264,7 +280,7 @@
               id="city"
               v-model="form.city"
               required
-              placeholder="e.g., Cambridge"
+              placeholder="e.g., San Francisco"
             />
           </div>
 
@@ -466,7 +482,7 @@
               id="edit-city"
               v-model="editForm.city"
               required
-              placeholder="e.g., Cambridge"
+              placeholder="e.g., San Francisco"
             />
           </div>
 
@@ -682,6 +698,7 @@ import {
   roommatePostings,
   savedItems,
   userInfo as userInfoApi,
+  apiRequest,
 } from "../utils/api.js";
 
 export default {
@@ -747,6 +764,11 @@ export default {
       gender: "",
       location: "",
     });
+
+    // Filter location autocomplete state
+    const filterAutocompleteSuggestions = ref([]);
+    const showFilterSuggestions = ref(false);
+    let filterSessionToken = null;
 
     // Helper function to check if a string looks like a UUID (not a username)
     const isUUID = (str) => {
@@ -887,6 +909,175 @@ export default {
         gender: "",
         location: "",
       };
+    };
+
+    /**
+     * Load Google Maps API if not already loaded
+     */
+    const ensureGoogleMapsLoaded = async () => {
+      if (window.google?.maps?.places?.AutocompleteSuggestion) {
+        return true;
+      }
+
+      try {
+        const response = await apiRequest('/config/mapsKey', {});
+        const apiKey = response.apiKey || import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+
+        if (!apiKey) {
+          console.error('Google Maps API key not available for autocomplete');
+          return false;
+        }
+
+        const existingScript = document.querySelector('script[src*="maps.googleapis.com"]');
+
+        if (!existingScript) {
+          await new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&loading=async&callback=Function.prototype`;
+            script.async = true;
+            script.defer = true;
+            script.onload = () => resolve();
+            script.onerror = (error) => reject(error);
+            document.head.appendChild(script);
+          });
+        }
+
+        let retries = 0;
+        while (retries < 50) {
+          if (window.google?.maps?.places?.AutocompleteSuggestion) {
+            return true;
+          }
+          await new Promise(resolve => setTimeout(resolve, 100));
+          retries++;
+        }
+
+        return false;
+      } catch (error) {
+        console.error('Error loading Google Maps API:', error);
+        return false;
+      }
+    };
+
+    /**
+     * Handle filter location input changes
+     */
+    const handleFilterLocationInput = (event) => {
+      const input = event.target.value;
+      filters.value.location = input;
+      fetchFilterLocationSuggestions(input);
+    };
+
+    /**
+     * Handle blur event for filter location autocomplete
+     */
+    const handleFilterLocationBlur = () => {
+      setTimeout(() => {
+        showFilterSuggestions.value = false;
+      }, 200);
+    };
+
+    /**
+     * Fetch autocomplete suggestions for filter location
+     */
+    const fetchFilterLocationSuggestions = async (input) => {
+      if (!input || input.length < 2) {
+        filterAutocompleteSuggestions.value = [];
+        showFilterSuggestions.value = false;
+        return;
+      }
+
+      try {
+        const isLoaded = await ensureGoogleMapsLoaded();
+        if (!isLoaded || !google.maps.places.AutocompleteSuggestion) {
+          return;
+        }
+
+        if (!filterSessionToken) {
+          filterSessionToken = new google.maps.places.AutocompleteSessionToken();
+        }
+
+        const request = {
+          input: input,
+          sessionToken: filterSessionToken,
+          locationBias: {
+            west: -71.15,
+            north: 42.40,
+            east: -71.05,
+            south: 42.35,
+          },
+        };
+
+        const { suggestions } = await google.maps.places.AutocompleteSuggestion.fetchAutocompleteSuggestions(request);
+
+        filterAutocompleteSuggestions.value = suggestions.map(s => {
+          const prediction = s.placePrediction;
+          let displayText = 'Unknown location';
+
+          try {
+            if (prediction && prediction.text) {
+              displayText = String(prediction.text);
+            }
+          } catch (e) {
+            console.log('Error extracting text:', e.message);
+          }
+
+          return {
+            displayText: displayText,
+            placePrediction: prediction,
+            rawSuggestion: s
+          };
+        });
+        showFilterSuggestions.value = suggestions && suggestions.length > 0;
+      } catch (err) {
+        console.error('Error fetching filter location suggestions:', err);
+        filterAutocompleteSuggestions.value = [];
+        showFilterSuggestions.value = false;
+      }
+    };
+
+    /**
+     * Select a filter location suggestion
+     */
+    const selectFilterSuggestion = async (suggestion) => {
+      try {
+        if (!suggestion) return;
+
+        const prediction = suggestion.placePrediction || suggestion.rawSuggestion || suggestion;
+        let place;
+
+        if (typeof prediction.toPlace === 'function') {
+          place = prediction.toPlace();
+        } else {
+          return;
+        }
+
+        await place.fetchFields({
+          fields: ['displayName', 'formattedAddress', 'location'],
+        });
+
+        const address = place.formattedAddress || place.displayName;
+        filters.value.location = address;
+        showFilterSuggestions.value = false;
+        filterAutocompleteSuggestions.value = [];
+        filterSessionToken = null;
+      } catch (err) {
+        console.error('Error selecting filter location:', err);
+      }
+    };
+
+    /**
+     * Get suggestion display text safely
+     */
+    const getSuggestionText = (suggestion) => {
+      if (!suggestion) {
+        return '';
+      }
+
+      if (suggestion.displayText) {
+        return suggestion.displayText;
+      }
+
+      return 'Unknown location';
     };
 
     const sortedPostings = computed(() => {
@@ -1604,6 +1795,12 @@ export default {
       filters,
       applyFilters,
       clearFilters,
+      filterAutocompleteSuggestions,
+      showFilterSuggestions,
+      handleFilterLocationInput,
+      handleFilterLocationBlur,
+      selectFilterSuggestion,
+      getSuggestionText,
       isLoading,
       error,
       isCreating,
@@ -1729,6 +1926,11 @@ export default {
   gap: 0.5rem;
   flex: 1;
   min-width: 150px;
+}
+
+.location-filter-group {
+  flex: 1.5;
+  min-width: 200px;
 }
 
 .filter-group label {
@@ -2693,5 +2895,53 @@ export default {
   border-radius: 50%;
   top: 8px;
   left: 6px;
+}
+
+/* Autocomplete Suggestions Styles */
+.autocomplete-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.suggestions-list {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 2px solid #e0e0e0;
+  border-top: none;
+  border-radius: 0 0 6px 6px;
+  max-height: 250px;
+  overflow-y: auto;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.suggestion-item {
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.suggestion-item:last-child {
+  border-bottom: none;
+}
+
+.suggestion-item:hover {
+  background-color: #f8f9fa;
+  color: #1e5a2e;
+}
+
+.suggestion-item:active {
+  background-color: #e8f5e9;
+}
+
+.filter-suggestions-list {
+  z-index: 1001;
 }
 </style>

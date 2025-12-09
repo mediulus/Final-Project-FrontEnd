@@ -193,7 +193,7 @@
         <div v-if="expandedPosting" class="detail-overlay" @click="closeDetails">
           <div class="detail-panel" @click.stop>
             <div class="detail-header">
-              <h2>{{ getExpandedPosting().city }} - Roommate Details</h2>
+              <h2>{{ getExpandedPosting().city }}</h2>
               <button @click="closeDetails" class="close-btn">×</button>
             </div>
 
@@ -312,7 +312,7 @@
         <div v-if="expandedListing" class="detail-overlay" @click="closeListing">
           <div class="detail-panel" @click.stop>
             <div class="detail-header">
-              <h2>{{ getExpandedListing().title }} - Housing Details</h2>
+              <h2>{{ getExpandedListing().title }}</h2>
               <button @click="closeListing" class="close-btn">×</button>
             </div>
 

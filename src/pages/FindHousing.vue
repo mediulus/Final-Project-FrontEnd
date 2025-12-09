@@ -37,14 +37,30 @@
           </div>
         </div>
 
-        <div class="filter-group">
+        <div class="filter-group location-filter-group">
           <label for="filterLocation">Location</label>
-          <input
-            type="text"
-            id="filterLocation"
-            v-model="filters.location"
-            placeholder="e.g., Cambridge, Kendall Square"
-          />
+          <div class="autocomplete-wrapper">
+            <input
+              type="text"
+              id="filterLocation"
+              v-model="filters.location"
+              @input="handleFilterLocationInput"
+              @focus="showFilterSuggestions = filterAutocompleteSuggestions.length > 0"
+              @blur="handleFilterLocationBlur"
+              placeholder="e.g., Cambridge"
+              autocomplete="off"
+            />
+            <ul v-if="showFilterSuggestions && filterAutocompleteSuggestions.length" class="suggestions-list filter-suggestions-list">
+              <li
+                v-for="(suggestion, index) in filterAutocompleteSuggestions"
+                :key="index"
+                @click="selectFilterSuggestion(suggestion)"
+                class="suggestion-item"
+              >
+                {{ getSuggestionText(suggestion) }}
+              </li>
+            </ul>
+          </div>
         </div>
 
         <div class="filter-actions">
@@ -197,7 +213,7 @@
     <div v-if="expandedListing" class="detail-overlay" @click="closeListing">
       <div class="detail-panel" @click.stop>
         <div class="detail-header">
-          <h2>{{ getExpandedListing().title }} - Housing Details</h2>
+          <h2>{{ getExpandedListing().title }}</h2>
           <button @click="closeListing" class="close-btn">×</button>
         </div>
 
@@ -811,10 +827,13 @@ export default {
     const editGeocodedLocation = ref(null);
     const autocompleteSuggestions = ref([]);
     const editAutocompleteSuggestions = ref([]);
+    const filterAutocompleteSuggestions = ref([]);
     const showSuggestions = ref(false);
     const showEditSuggestions = ref(false);
+    const showFilterSuggestions = ref(false);
     let sessionToken = null;
     let editSessionToken = null;
+    let filterSessionToken = null;
 
     // Computed property for filtered listings
     const filteredListings = computed(() => {
@@ -1481,6 +1500,113 @@ export default {
       setTimeout(() => {
         showEditSuggestions.value = false;
       }, 200);
+    };
+
+    /**
+     * Handle filter location input changes
+     */
+    const handleFilterLocationInput = (event) => {
+      const input = event.target.value;
+      filters.value.location = input;
+      fetchFilterLocationSuggestions(input);
+    };
+
+    /**
+     * Handle blur event for filter location autocomplete
+     */
+    const handleFilterLocationBlur = () => {
+      setTimeout(() => {
+        showFilterSuggestions.value = false;
+      }, 200);
+    };
+
+    /**
+     * Fetch autocomplete suggestions for filter location
+     */
+    const fetchFilterLocationSuggestions = async (input) => {
+      if (!input || input.length < 2) {
+        filterAutocompleteSuggestions.value = [];
+        showFilterSuggestions.value = false;
+        return;
+      }
+
+      try {
+        const isLoaded = await ensureGoogleMapsLoaded();
+        if (!isLoaded || !google.maps.places.AutocompleteSuggestion) {
+          return;
+        }
+
+        if (!filterSessionToken) {
+          filterSessionToken = new google.maps.places.AutocompleteSessionToken();
+        }
+
+        const request = {
+          input: input,
+          sessionToken: filterSessionToken,
+          locationBias: {
+            west: -71.15,
+            north: 42.40,
+            east: -71.05,
+            south: 42.35,
+          },
+        };
+
+        const { suggestions } = await google.maps.places.AutocompleteSuggestion.fetchAutocompleteSuggestions(request);
+
+        filterAutocompleteSuggestions.value = suggestions.map(s => {
+          const prediction = s.placePrediction;
+          let displayText = 'Unknown location';
+
+          try {
+            if (prediction && prediction.text) {
+              displayText = String(prediction.text);
+            }
+          } catch (e) {
+            console.log('Error extracting text:', e.message);
+          }
+
+          return {
+            displayText: displayText,
+            placePrediction: prediction,
+            rawSuggestion: s
+          };
+        });
+        showFilterSuggestions.value = suggestions && suggestions.length > 0;
+      } catch (err) {
+        console.error('Error fetching filter location suggestions:', err);
+        filterAutocompleteSuggestions.value = [];
+        showFilterSuggestions.value = false;
+      }
+    };
+
+    /**
+     * Select a filter location suggestion
+     */
+    const selectFilterSuggestion = async (suggestion) => {
+      try {
+        if (!suggestion) return;
+
+        const prediction = suggestion.placePrediction || suggestion.rawSuggestion || suggestion;
+        let place;
+
+        if (typeof prediction.toPlace === 'function') {
+          place = prediction.toPlace();
+        } else {
+          return;
+        }
+
+        await place.fetchFields({
+          fields: ['displayName', 'formattedAddress', 'location'],
+        });
+
+        const address = place.formattedAddress || place.displayName;
+        filters.value.location = address;
+        showFilterSuggestions.value = false;
+        filterAutocompleteSuggestions.value = [];
+        filterSessionToken = null;
+      } catch (err) {
+        console.error('Error selecting filter location:', err);
+      }
     };
 
     /**
@@ -2457,13 +2583,18 @@ export default {
       geocodedLocation,
       autocompleteSuggestions,
       editAutocompleteSuggestions,
+      filterAutocompleteSuggestions,
       showSuggestions,
       showEditSuggestions,
+      showFilterSuggestions,
       handleAddressInput,
       handleEditAddressInput,
+      handleFilterLocationInput,
       handleAddressBlur,
       handleEditAddressBlur,
+      handleFilterLocationBlur,
       selectSuggestion,
+      selectFilterSuggestion,
       getSuggestionText,
     };
   },
@@ -2559,6 +2690,11 @@ export default {
   gap: 0.5rem;
   flex: 1;
   min-width: 150px;
+}
+
+.location-filter-group {
+  flex: 1.5;
+  min-width: 200px;
 }
 
 .filter-group label {
@@ -3774,6 +3910,10 @@ export default {
 
 .suggestion-item:active {
   background-color: #e8f5e9;
+}
+
+.filter-suggestions-list {
+  z-index: 1001;
 }
 
 </style>

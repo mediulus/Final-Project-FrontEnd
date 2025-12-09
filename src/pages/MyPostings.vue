@@ -655,7 +655,7 @@
               id="edit-roommate-city"
               v-model="editRoommateForm.city"
               required
-              placeholder="e.g., Cambridge"
+              placeholder="e.g., San Francisco"
             />
           </div>
 
