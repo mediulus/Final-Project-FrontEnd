@@ -698,6 +698,19 @@
             />
           </div>
 
+          <div class="form-group">
+            <label for="edit-roommate-housingStatus">Housing Status *</label>
+            <select
+              id="edit-roommate-housingStatus"
+              v-model="editRoommateForm.housingStatus"
+              required
+            >
+              <option value="" disabled>Select your housing status</option>
+              <option value="Looking for housing">Looking for housing</option>
+              <option value="Found housing">Found housing</option>
+            </select>
+          </div>
+
           <div class="form-row">
             <div class="form-group">
               <label for="edit-roommate-startDate">Start Date *</label>
@@ -871,7 +884,7 @@
 </template>
 
 <script>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, nextTick } from "vue";
 import { useRouter } from "vue-router";
 import { useSessionStore } from "../stores/session.js";
 import {
@@ -928,6 +941,7 @@ export default {
       age: "",
       aboutYourself: "",
       lookingFor: "",
+      housingStatus: "",
       startDate: "",
       endDate: "",
       dailyRhythm: "",
@@ -1266,25 +1280,104 @@ export default {
       return `${year}-${month}-${day}`;
     };
 
+    // Helper function to parse old combined homeEnvironment format
+    const parseHomeEnvironment = (homeEnv, guestsVis) => {
+      // If guestsVisitors already has a value, use the new format
+      if (guestsVis && guestsVis.trim() !== "") {
+        return {
+          homeEnvironment: homeEnv ?? "",
+          guestsVisitors: guestsVis ?? "",
+        };
+      }
+
+      // If homeEnvironment matches new format values, use as-is
+      const newFormatValues = [
+        "Quiet (minimal noise, low visitors)",
+        "Moderate (some noise, occasional visitors)",
+        "Social / lively (friends over often)",
+        "Flexible / depends on schedule",
+      ];
+      if (homeEnv && newFormatValues.includes(homeEnv)) {
+        return {
+          homeEnvironment: homeEnv,
+          guestsVisitors: guestsVis ?? "",
+        };
+      }
+
+      // Parse old combined format
+      if (homeEnv) {
+        const homeEnvLower = homeEnv.toLowerCase();
+        let parsedHomeEnv = "";
+        let parsedGuestsVis = "";
+
+        // Map old combined values to new separate fields
+        if (homeEnvLower.includes("quiet home")) {
+          parsedHomeEnv = "Quiet (minimal noise, low visitors)";
+          if (homeEnvLower.includes("prefer few or no guests")) {
+            parsedGuestsVis = "Prefer few or no guests";
+          } else if (homeEnvLower.includes("occasional guests")) {
+            parsedGuestsVis = "Occasional guests okay";
+          }
+        } else if (homeEnvLower.includes("moderate activity")) {
+          parsedHomeEnv = "Moderate (some noise, occasional visitors)";
+          if (homeEnvLower.includes("occasional guests")) {
+            parsedGuestsVis = "Occasional guests okay";
+          } else if (homeEnvLower.includes("frequent guests")) {
+            parsedGuestsVis = "Comfortable with frequent guests";
+          }
+        } else if (homeEnvLower.includes("social") || homeEnvLower.includes("lively")) {
+          parsedHomeEnv = "Social / lively (friends over often)";
+          if (homeEnvLower.includes("frequent guests")) {
+            parsedGuestsVis = "Comfortable with frequent guests";
+          } else if (homeEnvLower.includes("overnight guests")) {
+            parsedGuestsVis = "Comfortable with overnight guests";
+          }
+        } else if (homeEnvLower.includes("flexible")) {
+          parsedHomeEnv = "Flexible / depends on schedule";
+          parsedGuestsVis = "Occasional guests okay"; // Default for flexible
+        }
+
+        // If we successfully parsed, return parsed values
+        if (parsedHomeEnv) {
+          return {
+            homeEnvironment: parsedHomeEnv,
+            guestsVisitors: parsedGuestsVis || "Occasional guests okay",
+          };
+        }
+      }
+
+      // Fallback: use stored values as-is
+      return {
+        homeEnvironment: homeEnv ?? "",
+        guestsVisitors: guestsVis ?? "",
+      };
+    };
+
     const editRoommatePosting = (posting) => {
       editingRoommatePostingId.value = posting._id;
       // Handle both old (description) and new (aboutYourself/lookingFor) formats
       const aboutYourself = posting.aboutYourself || (posting.description ? posting.description.split('\n\n---\n\n')[0] : "");
       const lookingFor = posting.lookingFor || (posting.description && posting.description.includes('---') ? posting.description.split('\n\n---\n\n')[1] : "");
 
+      // Use stored values directly - parseHomeEnvironment is only for display/creation, not editing
+      // Preserve exact values, trimming whitespace to ensure they match dropdown options
+      const homeEnv = posting.homeEnvironment ? String(posting.homeEnvironment).trim() : "";
+      const guestsVis = posting.guestsVisitors ? String(posting.guestsVisitors).trim() : "";
+      
       editRoommateForm.value = {
-        city: posting.city || "",
-        gender: posting.gender || "",
-        age: posting.age || "",
+        city: posting.city ?? "",
+        gender: posting.gender ?? "",
+        age: posting.age ?? "",
         aboutYourself: aboutYourself,
         lookingFor: lookingFor,
+        housingStatus: posting.housingStatus ?? "",
         startDate: formatDateForInput(posting.startDate),
         endDate: formatDateForInput(posting.endDate),
-        dailyRhythm: posting.dailyRhythm || "",
-        cleanlinessPreference: posting.cleanlinessPreference || "",
-        homeEnvironment: posting.homeEnvironment || "",
-        guestsVisitors: posting.guestsVisitors || "",
-        numberOfRoommates: posting.numberOfRoommates || "",
+        dailyRhythm: posting.dailyRhythm ? String(posting.dailyRhythm).trim() : "",
+        cleanlinessPreference: posting.cleanlinessPreference ? String(posting.cleanlinessPreference).trim() : "",
+        homeEnvironment: homeEnv,
+        guestsVisitors: guestsVis,
+        numberOfRoommates: posting.numberOfRoommates ?? "",
       };
       editRoommateError.value = "";
       showEditRoommateModal.value = true;
@@ -1300,6 +1393,7 @@ export default {
         age: "",
         aboutYourself: "",
         lookingFor: "",
+        housingStatus: "",
         startDate: "",
         endDate: "",
         dailyRhythm: "",
@@ -1438,6 +1532,14 @@ export default {
           await roommatePostingsApi.editGuestsVisitors(
             userId,
             editRoommateForm.value.guestsVisitors
+          );
+        }
+        if (
+          editRoommateForm.value.housingStatus !== posting.housingStatus
+        ) {
+          await roommatePostingsApi.editHousingStatus(
+            userId,
+            editRoommateForm.value.housingStatus
           );
         }
 

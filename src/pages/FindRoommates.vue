@@ -12,21 +12,21 @@
         <div class="filter-group age-range-group">
           <label>Age Range</label>
           <div class="age-range-inputs">
-            <input
-              type="number"
-              v-model.number="filters.minAge"
+          <input
+            type="number"
+            v-model.number="filters.minAge"
               placeholder="Min"
-              min="18"
-              max="120"
-            />
+            min="18"
+            max="120"
+          />
             <span class="age-separator">-</span>
-            <input
-              type="number"
-              v-model.number="filters.maxAge"
+          <input
+            type="number"
+            v-model.number="filters.maxAge"
               placeholder="Max"
-              min="18"
-              max="120"
-            />
+            min="18"
+            max="120"
+          />
           </div>
         </div>
 
@@ -44,8 +44,8 @@
         <div class="filter-group location-filter-group">
           <label for="filterLocation">Location</label>
           <div class="autocomplete-wrapper">
-            <input
-              type="text"
+          <input
+            type="text"
               id="filterLocation"
               v-model="filters.location"
               @input="handleFilterLocationInput"
@@ -102,12 +102,12 @@
                     {{ posting.gender }}, {{ posting.age }}
                   </span>
                   <div class="tags-row">
-                    <span v-if="posting.numberOfRoommates" class="roommate-count">
+                  <span v-if="posting.numberOfRoommates" class="roommate-count">
                       {{ posting.numberOfRoommates }} roommate{{ posting.numberOfRoommates > 1 ? 's' : '' }}
                     </span>
                     <span v-if="posting.housingStatus === 'Found housing'" class="housing-status-badge">
                       Found housing
-                    </span>
+                  </span>
                   </div>
                 </div>
               </div>
@@ -232,7 +232,7 @@
             <!-- Action Buttons -->
             <div class="detail-actions">
               <div v-if="!isPoster(getExpandedPosting())" class="action-buttons-grid">
-                <button
+              <button
                   v-if="!isSaved(getExpandedPosting()._id)"
                   @click.stop="toggleSavedItem(getExpandedPosting()._id)"
                   class="favorite-action-btn"
@@ -249,18 +249,18 @@
 
                 <button
                   v-if="!getItemTags(getExpandedPosting()._id).includes('Contacted')"
-                  @click="contactPoster(getExpandedPosting()._id)"
-                  class="contact-btn"
-                  :disabled="isContacting[getExpandedPosting()._id]"
-                >
+                @click="contactPoster(getExpandedPosting()._id)"
+                class="contact-btn"
+                :disabled="isContacting[getExpandedPosting()._id]"
+              >
                   <svg class="btn-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                   </svg>
                   <span>{{ isContacting[getExpandedPosting()._id] ? "Contacting..." : "Contact" }}</span>
-                </button>
+              </button>
 
                 <div v-if="getItemTags(getExpandedPosting()._id).includes('Contacted')" class="contacted-message">
-                  Already contacted
+                Already contacted
                 </div>
               </div>
 
@@ -278,7 +278,7 @@
     <div v-if="modalVisible" class="modal-overlay" @click="closeModal">
       <div class="modal-content" @click.stop>
         <div class="modal-header">
-          <h2>Create Roommate Posting</h2>
+        <h2>Create Roommate Posting</h2>
           <button @click="closeModal" class="close-btn">×</button>
         </div>
         <form @submit.prevent="emitCreatePosting">
@@ -394,35 +394,51 @@
           </div>
 
           <div class="form-group">
-            <label for="homeEnvironment">Home Environment & Guests *</label>
+            <label for="homeEnvironment">Home Environment *</label>
             <select
               id="homeEnvironment"
               v-model="form.homeEnvironment"
               required
             >
               <option value="" disabled>
-                Select your living style preference
+                Select your home environment preference
               </option>
-              <option value="Quiet home, prefer few or no guests">
-                Quiet home, prefer few or no guests
+              <option value="Quiet (minimal noise, low visitors)">
+                Quiet (minimal noise, low visitors)
               </option>
-              <option value="Quiet home, occasional guests welcome">
-                Quiet home, occasional guests welcome
+              <option value="Moderate (some noise, occasional visitors)">
+                Moderate (some noise, occasional visitors)
               </option>
-              <option value="Moderate activity, occasional guests welcome">
-                Moderate activity, occasional guests welcome
+              <option value="Social / lively (friends over often)">
+                Social / lively (friends over often)
               </option>
-              <option value="Moderate activity, frequent guests welcome">
-                Moderate activity, frequent guests welcome
+              <option value="Flexible / depends on schedule">
+                Flexible / depends on schedule
               </option>
-              <option value="Social/lively home, frequent guests welcome">
-                Social/lively home, frequent guests welcome
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="guestsVisitors">Guests & Visitors *</label>
+            <select
+              id="guestsVisitors"
+              v-model="form.guestsVisitors"
+              required
+            >
+              <option value="" disabled>
+                Select your guests & visitors preference
               </option>
-              <option value="Social/lively home, overnight guests welcome">
-                Social/lively home, overnight guests welcome
+              <option value="Prefer few or no guests">
+                Prefer few or no guests
               </option>
-              <option value="Flexible - depends on schedule">
-                Flexible - depends on schedule
+              <option value="Occasional guests okay">
+                Occasional guests okay
+              </option>
+              <option value="Comfortable with frequent guests">
+                Comfortable with frequent guests
+              </option>
+              <option value="Comfortable with overnight guests">
+                Comfortable with overnight guests
               </option>
             </select>
           </div>
@@ -480,7 +496,7 @@
     <div v-if="showEditModal" class="modal-overlay" @click="closeEditModal">
       <div class="modal-content" @click.stop>
         <div class="modal-header">
-          <h2>Edit Roommate Posting</h2>
+        <h2>Edit Roommate Posting</h2>
           <button @click="closeEditModal" class="close-btn">×</button>
         </div>
         <form @submit.prevent="handleEditPosting">
@@ -530,6 +546,19 @@
               max="10"
               placeholder="e.g., 2"
             />
+          </div>
+
+          <div class="form-group">
+            <label for="edit-housingStatus">Housing Status *</label>
+            <select
+              id="edit-housingStatus"
+              v-model="editForm.housingStatus"
+              required
+            >
+              <option value="" disabled>Select your housing status</option>
+              <option value="Looking for housing">Looking for housing</option>
+              <option value="Found housing">Found housing</option>
+            </select>
           </div>
 
           <div class="form-row">
@@ -700,7 +729,7 @@
 </template>
 
 <script>
-import { ref, computed, onMounted, watch } from "vue";
+import { ref, computed, onMounted, watch, nextTick } from "vue";
 import { useRoute } from "vue-router";
 import { useSessionStore } from "../stores/session.js";
 import {
@@ -725,6 +754,7 @@ export default {
       dailyRhythm: "",
       cleanlinessPreference: "",
       homeEnvironment: "",
+      guestsVisitors: "",
       numberOfRoommates: "",
     });
     const sessionStore = useSessionStore();
@@ -1402,7 +1432,81 @@ export default {
         dailyRhythm: "",
         cleanlinessPreference: "",
         homeEnvironment: "",
+        guestsVisitors: "",
         numberOfRoommates: "",
+      };
+    };
+
+    // Helper function to parse old combined homeEnvironment format
+    const parseHomeEnvironment = (homeEnv, guestsVis) => {
+      // If guestsVisitors already has a value, use the new format
+      if (guestsVis && guestsVis.trim() !== "") {
+        return {
+          homeEnvironment: homeEnv ?? "",
+          guestsVisitors: guestsVis ?? "",
+        };
+      }
+
+      // If homeEnvironment matches new format values, use as-is
+      const newFormatValues = [
+        "Quiet (minimal noise, low visitors)",
+        "Moderate (some noise, occasional visitors)",
+        "Social / lively (friends over often)",
+        "Flexible / depends on schedule",
+      ];
+      if (homeEnv && newFormatValues.includes(homeEnv)) {
+        return {
+          homeEnvironment: homeEnv,
+          guestsVisitors: guestsVis ?? "",
+        };
+      }
+
+      // Parse old combined format
+      if (homeEnv) {
+        const homeEnvLower = homeEnv.toLowerCase();
+        let parsedHomeEnv = "";
+        let parsedGuestsVis = "";
+
+        // Map old combined values to new separate fields
+        if (homeEnvLower.includes("quiet home")) {
+          parsedHomeEnv = "Quiet (minimal noise, low visitors)";
+          if (homeEnvLower.includes("prefer few or no guests")) {
+            parsedGuestsVis = "Prefer few or no guests";
+          } else if (homeEnvLower.includes("occasional guests")) {
+            parsedGuestsVis = "Occasional guests okay";
+          }
+        } else if (homeEnvLower.includes("moderate activity")) {
+          parsedHomeEnv = "Moderate (some noise, occasional visitors)";
+          if (homeEnvLower.includes("occasional guests")) {
+            parsedGuestsVis = "Occasional guests okay";
+          } else if (homeEnvLower.includes("frequent guests")) {
+            parsedGuestsVis = "Comfortable with frequent guests";
+          }
+        } else if (homeEnvLower.includes("social") || homeEnvLower.includes("lively")) {
+          parsedHomeEnv = "Social / lively (friends over often)";
+          if (homeEnvLower.includes("frequent guests")) {
+            parsedGuestsVis = "Comfortable with frequent guests";
+          } else if (homeEnvLower.includes("overnight guests")) {
+            parsedGuestsVis = "Comfortable with overnight guests";
+          }
+        } else if (homeEnvLower.includes("flexible")) {
+          parsedHomeEnv = "Flexible / depends on schedule";
+          parsedGuestsVis = "Occasional guests okay"; // Default for flexible
+        }
+
+        // If we successfully parsed, return parsed values
+        if (parsedHomeEnv) {
+          return {
+            homeEnvironment: parsedHomeEnv,
+            guestsVisitors: parsedGuestsVis || "Occasional guests okay",
+          };
+        }
+      }
+
+      // Fallback: use stored values as-is
+      return {
+        homeEnvironment: homeEnv ?? "",
+        guestsVisitors: guestsVis ?? "",
       };
     };
 
@@ -1412,19 +1516,25 @@ export default {
       const aboutMe = posting.aboutYourself || (posting.description ? posting.description.split('\n\n---\n\n')[0] : "");
       const lookingFor = posting.lookingFor || (posting.description && posting.description.includes('---') ? posting.description.split('\n\n---\n\n')[1] : "");
 
+      // Use stored values directly - parseHomeEnvironment is only for display/creation, not editing
+      // Preserve exact values, trimming whitespace to ensure they match dropdown options
+      const homeEnv = posting.homeEnvironment ? String(posting.homeEnvironment).trim() : "";
+      const guestsVis = posting.guestsVisitors ? String(posting.guestsVisitors).trim() : "";
+      
       editForm.value = {
-        city: posting.city || "",
-        gender: posting.gender || "",
-        age: posting.age || "",
+        city: posting.city ?? "",
+        gender: posting.gender ?? "",
+        age: posting.age ?? "",
         aboutMe: aboutMe,
         lookingFor: lookingFor,
+        housingStatus: posting.housingStatus ?? "",
         startDate: formatDateForInput(posting.startDate),
         endDate: formatDateForInput(posting.endDate),
-        dailyRhythm: posting.dailyRhythm || "",
-        cleanlinessPreference: posting.cleanlinessPreference || "",
-        homeEnvironment: posting.homeEnvironment || "",
-        guestsVisitors: posting.guestsVisitors || "",
-        numberOfRoommates: posting.numberOfRoommates || "",
+        dailyRhythm: posting.dailyRhythm ? String(posting.dailyRhythm).trim() : "",
+        cleanlinessPreference: posting.cleanlinessPreference ? String(posting.cleanlinessPreference).trim() : "",
+        homeEnvironment: homeEnv,
+        guestsVisitors: guestsVis,
+        numberOfRoommates: posting.numberOfRoommates ?? "",
       };
       editError.value = "";
       showEditModal.value = true;
@@ -1440,6 +1550,7 @@ export default {
         age: "",
         aboutMe: "",
         lookingFor: "",
+        housingStatus: "",
         startDate: "",
         endDate: "",
         dailyRhythm: "",
@@ -1570,6 +1681,12 @@ export default {
           await roommatePostings.editNumberOfRoommates(
             userId,
             editForm.value.numberOfRoommates
+          );
+        }
+        if (editForm.value.housingStatus !== posting.housingStatus) {
+          await roommatePostings.editHousingStatus(
+            userId,
+            editForm.value.housingStatus
           );
         }
 
@@ -1708,7 +1825,7 @@ export default {
           dailyRhythm: form.value.dailyRhythm,
           cleanlinessPreference: form.value.cleanlinessPreference,
           homeEnvironment: form.value.homeEnvironment,
-          guestsVisitors: "", // Combined with homeEnvironment in UI
+          guestsVisitors: form.value.guestsVisitors,
           numberOfRoommates: form.value.numberOfRoommates,
         };
 
