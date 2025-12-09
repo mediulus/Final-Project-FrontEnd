@@ -46,6 +46,7 @@ export default {
     let googleMarkers = [];
     let Map = null;
     let AdvancedMarkerElement = null;
+    let activeInfoWindow = null;
 
     /**
      * Fetch the Google Maps API key from the backend
@@ -192,6 +193,38 @@ export default {
     };
 
     /**
+     * Create a styled InfoWindow for a marker
+     */
+    const createInfoWindow = (title) => {
+      const infoWindow = new google.maps.InfoWindow({
+        content: `
+          <div style="
+            padding: 2px;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            color: #1e5a2e;
+            font-weight: 600;
+            font-size: 14px;
+            max-width: 250px;
+            word-wrap: break-word;
+          ">
+            ${title || 'Listing'}
+          </div>
+        `,
+        disableAutoPan: true,
+      });
+      
+      // Remove the close button by adding a listener after the InfoWindow is opened
+      google.maps.event.addListener(infoWindow, 'domready', () => {
+        const closeButton = document.querySelector('.gm-ui-hover-effect');
+        if (closeButton) {
+          closeButton.style.display = 'none';
+        }
+      });
+      
+      return infoWindow;
+    };
+
+    /**
      * Add listings as markers on the map
      */
     const addListingsAsMarkers = async (listings) => {
@@ -208,6 +241,25 @@ export default {
               position: { lat: listing.latitude, lng: listing.longitude },
               map: map,
               title: listing.title || 'Listing',
+            });
+
+            // Create info window for this marker
+            const infoWindow = createInfoWindow(listing.title);
+
+            // Add hover listeners for info window
+            marker.addListener('mouseover', () => {
+              if (activeInfoWindow) {
+                activeInfoWindow.close();
+              }
+              infoWindow.open(map, marker);
+              activeInfoWindow = infoWindow;
+            });
+
+            marker.addListener('mouseout', () => {
+              infoWindow.close();
+              if (activeInfoWindow === infoWindow) {
+                activeInfoWindow = null;
+              }
             });
 
             // Add click listener
@@ -250,6 +302,25 @@ export default {
               position: { lat: markerData.lat, lng: markerData.lng },
               map: map,
               title: markerData.title || '',
+            });
+
+            // Create info window for this marker
+            const infoWindow = createInfoWindow(markerData.title);
+
+            // Add hover listeners for info window
+            marker.addListener('mouseover', () => {
+              if (activeInfoWindow) {
+                activeInfoWindow.close();
+              }
+              infoWindow.open(map, marker);
+              activeInfoWindow = infoWindow;
+            });
+
+            marker.addListener('mouseout', () => {
+              infoWindow.close();
+              if (activeInfoWindow === infoWindow) {
+                activeInfoWindow = null;
+              }
             });
 
             // Add click listener if there's additional info
