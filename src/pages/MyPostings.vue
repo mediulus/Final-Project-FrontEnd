@@ -876,6 +876,7 @@
 
 <script>
 import { ref, onMounted } from "vue";
+import { useRouter } from "vue-router";
 import { useSessionStore } from "../stores/session.js";
 import {
   roommatePostings as roommatePostingsApi,
@@ -887,6 +888,7 @@ import { apiRequest } from "../utils/api.js";
 export default {
   name: "MyPostings",
   setup() {
+    const router = useRouter();
     const sessionStore = useSessionStore();
     const roommatePostings = ref([]);
     const housingListings = ref([]);
@@ -1860,15 +1862,13 @@ export default {
 
     // Modal opening functions
     const openHousingModal = () => {
-      // This will be used to redirect to FindHousing page or open a modal
-      // For now, we'll use the router to navigate
-      window.location.href = '/home';
+      // Navigate to housing page with query parameter to auto-open create modal
+      router.push({ path: '/home', query: { openCreate: 'true' } });
     };
 
     const openRoommateModal = () => {
-      // This will be used to redirect to FindRoommates page or open a modal
-      // For now, we'll use the router to navigate
-      window.location.href = '/find-roommates';
+      // Navigate to roommates page with query parameter to auto-open create modal
+      router.push({ path: '/find-roommates', query: { openCreate: 'true' } });
     };
 
     return {

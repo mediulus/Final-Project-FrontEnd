@@ -755,6 +755,7 @@ export default {
     GoogleMap
   },
   setup() {
+    const route = useRoute();
     const sessionStore = useSessionStore();
     const listingsData = ref([]);
     const savedItemIds = ref(new Set());
@@ -843,23 +844,23 @@ export default {
       if (appliedFilters.value.startDate && appliedFilters.value.endDate) {
         const filterStartDate = new Date(appliedFilters.value.startDate);
         const filterEndDate = new Date(appliedFilters.value.endDate);
-        
+
         // Set to midnight for consistent comparison
         filterStartDate.setHours(0, 0, 0, 0);
         filterEndDate.setHours(0, 0, 0, 0);
-        
+
         result = result.filter((listing) => {
           const listingStartDate = new Date(listing.startDate);
           const listingEndDate = new Date(listing.endDate);
-          
+
           // Set to midnight for consistent comparison
           listingStartDate.setHours(0, 0, 0, 0);
           listingEndDate.setHours(0, 0, 0, 0);
-          
+
           // Listing must start on or before the requested start date
           // AND listing must end on or after the requested end date
           const isValid = listingStartDate <= filterStartDate && listingEndDate >= filterEndDate;
-          
+
           // Debug logging
           if (listing.title) {
             console.log(`[Filter] Listing: ${listing.title}`);
@@ -869,14 +870,14 @@ export default {
             console.log(`  End check: ${listingEndDate.toISOString()} >= ${filterEndDate.toISOString()} = ${listingEndDate >= filterEndDate}`);
             console.log(`  Result: ${isValid ? 'PASS' : 'FAIL'}`);
           }
-          
+
           return isValid;
         });
       } else if (appliedFilters.value.startDate) {
         // If only start date is provided, listing must be available at that date or later
         const filterStartDate = new Date(appliedFilters.value.startDate);
         filterStartDate.setHours(0, 0, 0, 0);
-        
+
         result = result.filter((listing) => {
           const listingEndDate = new Date(listing.endDate);
           listingEndDate.setHours(0, 0, 0, 0);
@@ -887,7 +888,7 @@ export default {
         // If only end date is provided, listing must be available at that date or earlier
         const filterEndDate = new Date(appliedFilters.value.endDate);
         filterEndDate.setHours(0, 0, 0, 0);
-        
+
         result = result.filter((listing) => {
           const listingStartDate = new Date(listing.startDate);
           listingStartDate.setHours(0, 0, 0, 0);
@@ -2358,8 +2359,6 @@ export default {
       uploading.value = false;
     };
 
-    const route = useRoute();
-
     onMounted(async () => {
       console.log("[FindHousing] Component mounted");
       console.log("[FindHousing] Session store on mount:", {
@@ -2373,6 +2372,11 @@ export default {
 
       fetchListings();
       fetchSavedItems();
+
+      // Check if we should auto-open the create modal
+      if (route.query.openCreate === 'true') {
+        showCreateModal.value = true;
+      }
     });
 
     // Watch for route changes to refetch saved items when returning to this page

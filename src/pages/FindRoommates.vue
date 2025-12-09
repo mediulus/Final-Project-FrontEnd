@@ -1577,6 +1577,11 @@ export default {
 
       fetchPostings();
       fetchSavedItems();
+
+      // Check if we should auto-open the create modal
+      if (route.query.openCreate === 'true') {
+        await openModal();
+      }
     });
 
     // Watch for route changes to refetch saved items when returning to this page
