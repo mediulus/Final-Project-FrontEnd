@@ -1520,7 +1520,7 @@ export default {
       // Preserve exact values, trimming whitespace to ensure they match dropdown options
       const homeEnv = posting.homeEnvironment ? String(posting.homeEnvironment).trim() : "";
       const guestsVis = posting.guestsVisitors ? String(posting.guestsVisitors).trim() : "";
-      
+
       editForm.value = {
         city: posting.city ?? "",
         gender: posting.gender ?? "",
@@ -1771,7 +1771,7 @@ export default {
         console.log("Contacting poster for posting:", postingId);
         const result = await roommatePostings.contact(postingId);
         console.log("Contact sent successfully:", result);
-        alert("Your interest has been sent to the posting owner!");
+        alert("Your interest has been sent to the posting owner! They will email you with next steps if they choose to continue the conversation.");
 
         // Refetch saved items to update local state
         await fetchSavedItems();
