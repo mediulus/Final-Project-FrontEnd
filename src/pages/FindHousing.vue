@@ -2462,7 +2462,7 @@ export default {
         console.log("Sending interest for listing:", listingId);
         const result = await listings.sendInterest(listingId);
         console.log("Interest sent successfully:", result);
-        alert("Your interest has been sent to the listing owner!");
+        alert("Your interest has been sent to the listing owner! They will email you with next steps if they choose to continue the conversation");
 
         // Refetch saved items to update local state
         await fetchSavedItems();
