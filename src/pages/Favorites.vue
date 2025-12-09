@@ -1,8 +1,29 @@
 <template>
   <main class="homepage">
     <section class="hero">
-      <h2>Favorites</h2>
-      <p>All your tagged listings and roommates</p>
+      <h2>Interested</h2>
+      <p>All your favorites & contacted</p>
+      <div class="button-spacer"></div>
+    </section>
+
+    <!-- Tab Navigation -->
+    <section class="tabs-section">
+      <div class="tabs-container">
+        <button
+          @click="activeTab = 'housing'"
+          class="tab-btn"
+          :class="{ active: activeTab === 'housing' }"
+        >
+          Housing Listings
+        </button>
+        <button
+          @click="activeTab = 'roommates'"
+          class="tab-btn"
+          :class="{ active: activeTab === 'roommates' }"
+        >
+          Roommate Postings
+        </button>
+      </div>
     </section>
 
     <section class="listings-section">
@@ -12,74 +33,15 @@
         No favorites yet. Start exploring and save items you like!
       </div>
       <div v-else>
-        <!-- Roommate Postings -->
-        <div v-if="roommatePostings.length > 0" class="listings-container">
-          <h3 class="section-title">
-            <span class="title-with-icon">
-              <span>Roommate Postings</span>
-            </span>
-          </h3>
-          <div class="listings-grid">
-            <div
-              v-for="posting in roommatePostings"
-              :key="posting._id"
-              class="posting-card"
-              :class="{ 'expanded': expandedPosting === posting._id }"
-              @click="togglePostingDetails(posting._id)"
-            >
-              <div class="card-header">
-                <div class="card-title">
-                  <h3>{{ posting.city }}</h3>
-                  <div class="quick-info">
-                    <span class="age-gender">
-                      <svg class="info-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                        <circle cx="12" cy="7" r="4"></circle>
-                      </svg>
-                      {{ posting.gender }}, {{ posting.age }}
-                    </span>
-                    <span v-if="posting.numberOfRoommates" class="roommate-count">
-                      Looking for {{ posting.numberOfRoommates }} roommate{{ posting.numberOfRoommates > 1 ? 's' : '' }}
-                    </span>
-                  </div>
-                </div>
-
-                <div class="card-actions" @click.stop>
-                  <button
-                    @click="removeFavorite(posting._id)"
-                    class="favorite-btn is-saved"
-                    title="Remove from favorites"
-                  >
-                    <span>♥</span>
-                  </button>
-                  <div v-if="isPoster(posting)" class="owner-badge">
-                    Your Posting
-                  </div>
-                </div>
-              </div>
-
-              <div class="card-preview">
-                <p class="description-preview">{{ truncateText(posting.description, 100) }}</p>
-                <div class="tags" v-if="getItemTags(posting._id).length > 0">
-                  <span v-for="tag in getItemTags(posting._id)" :key="tag" class="tag" :class="{ 'tag-contacted': tag === 'Contacted' }">{{ tag }}</span>
-                </div>
-                <div class="expand-hint">
-                  <span>Click for details</span>
-                  <span class="expand-icon">+</span>
-                </div>
-              </div>
-            </div>
+        <!-- Housing Tab Content -->
+        <div v-show="activeTab === 'housing'" class="tab-content">
+          <div v-if="housingListings.length === 0" class="no-listings">
+            No housing favorites yet. Start exploring housing listings!
           </div>
-        </div>
 
-        <!-- Housing Listings -->
-        <div v-if="housingListings.length > 0" class="section listings-container">
-          <h3 class="section-title">
-            <span class="title-with-icon">
-              <span>Housing Listings</span>
-            </span>
-          </h3>
-          <div class="listings-grid">
+          <!-- Housing -->
+          <div v-if="housingListings.length > 0" class="section listings-container">
+            <div class="listings-grid">
             <div
               v-for="listing in housingListings"
               :key="listing._id"
@@ -89,7 +51,7 @@
             >
               <div class="card-header">
                 <div class="card-title">
-                  <h3>{{ listing.title }}</h3>
+                <h3>{{ listing.title }}</h3>
                   <div class="quick-info">
                     <span class="address-preview">
                       <svg class="info-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -99,38 +61,26 @@
                       {{ listing.address }}
                     </span>
                     <span class="price-preview">
-                      <svg class="info-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <svg class="info-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgb(22, 53, 27)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <line x1="12" y1="1" x2="12" y2="23"></line>
                         <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
                       </svg>
-                      ${{ listing.price }}/month
+                      {{ listing.price }}/month
                     </span>
                   </div>
                 </div>
 
                 <div class="card-actions" @click.stop>
-                  <button
-                    @click="removeFavorite(listing._id)"
+                <button
+                  @click="removeFavorite(listing._id)"
                     class="favorite-btn is-saved"
-                    title="Remove from favorites"
-                  >
-                    <span>♥</span>
-                  </button>
+                  title="Remove from favorites"
+                >
+                  <span class="heart-icon">❤</span>
+                </button>
                   <div v-if="isOwner(listing)" class="owner-badge">
                     Your Listing
                   </div>
-                </div>
-              </div>
-
-              <!-- Photo Preview Section -->
-              <div v-if="listing.photos && listing.photos.length > 0" class="photo-preview-section">
-                <img
-                  :src="getPhotoUrl(listing.photos[0])"
-                  :alt="listing.title"
-                  class="card-photo-preview"
-                />
-                <div v-if="listing.photos.length > 1" class="photo-count">
-                  +{{ listing.photos.length - 1 }} more
                 </div>
               </div>
 
@@ -147,12 +97,100 @@
                   </span>
                   <span class="type-preview">{{ listing.type === "sublet" ? "Sublet" : "Renting" }}</span>
                 </div>
-                <div class="tags" v-if="getItemTags(listing._id).length > 0">
-                  <span v-for="tag in getItemTags(listing._id)" :key="tag" class="tag" :class="{ 'tag-contacted': tag === 'Contacted' }">{{ tag }}</span>
+
+                <!-- Photo Preview -->
+                <div v-if="listing.photos && listing.photos.length > 0" class="card-photos">
+                  <div
+                    v-for="(photo, index) in listing.photos.slice(0, 2)"
+                    :key="index"
+                    class="card-photo-item"
+                  >
+                    <img
+                      :src="getPhotoUrl(photo)"
+                      :alt="listing.title + ' photo ' + (index + 1)"
+                      class="card-photo-main"
+                    />
+                  </div>
+                  <div v-if="listing.photos.length > 2" class="photo-count-badge">
+                    +{{ listing.photos.length - 2 }} more
+                  </div>
+                </div>
+
+                <p class="description-preview" v-if="listing.description && listing.description.trim()">
+                  {{ truncateText(listing.description, 100) }}
+                </p>
+                <div class="tags" v-if="getItemTags(listing._id).filter(tag => tag !== 'Favorite').length > 0">
+                  <span v-for="tag in getItemTags(listing._id).filter(tag => tag !== 'Favorite')" :key="tag" class="tag" :class="{ 'tag-contacted': tag === 'Contacted' }">{{ tag }}</span>
                 </div>
                 <div class="expand-hint">
                   <span>Click for details</span>
-                  <span class="expand-icon">+</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        </div>
+
+        <!-- Roommate Tab Content -->
+        <div v-show="activeTab === 'roommates'" class="tab-content">
+          <div v-if="roommatePostings.length === 0" class="no-listings">
+            No roommate favorites yet. Start exploring roommate postings!
+          </div>
+
+          <!-- Roommate Postings -->
+          <div v-if="roommatePostings.length > 0" class="listings-container">
+            <div class="listings-grid">
+              <div
+                v-for="posting in roommatePostings"
+                :key="posting._id"
+                class="posting-card"
+                :class="{ 'expanded': expandedPosting === posting._id }"
+                @click="togglePostingDetails(posting._id)"
+              >
+                <div class="card-header">
+                  <div class="card-title">
+                  <h3>{{ posting.city }}</h3>
+                    <div class="quick-info">
+                      <span class="age-gender">
+                        <svg class="info-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                          <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                        {{ posting.gender }}, {{ posting.age }}
+                      </span>
+                      <div class="tags-row">
+                        <span v-if="posting.numberOfRoommates" class="roommate-count">
+                          {{ posting.numberOfRoommates }} roommate{{ posting.numberOfRoommates > 1 ? 's' : '' }}
+                        </span>
+                        <span v-if="posting.housingStatus === 'Found housing'" class="housing-status-badge">
+                          Found housing
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="card-actions" @click.stop>
+                  <button
+                    @click="removeFavorite(posting._id)"
+                      class="favorite-btn is-saved"
+                    title="Remove from favorites"
+                  >
+                    <span class="heart-icon">❤</span>
+                  </button>
+                    <div v-if="isPoster(posting)" class="owner-badge">
+                      Your Posting
+                    </div>
+                  </div>
+                </div>
+
+                <div class="card-preview">
+                  <p class="description-preview">{{ truncateText(posting.aboutYourself || posting.description || "", 100) }}</p>
+                  <div class="tags" v-if="getItemTags(posting._id).filter(tag => tag !== 'Favorite').length > 0">
+                    <span v-for="tag in getItemTags(posting._id).filter(tag => tag !== 'Favorite')" :key="tag" class="tag" :class="{ 'tag-contacted': tag === 'Contacted' }">{{ tag }}</span>
+                  </div>
+                  <div class="expand-hint">
+                    <span>Click for details</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -163,7 +201,7 @@
         <div v-if="expandedPosting" class="detail-overlay" @click="closeDetails">
           <div class="detail-panel" @click.stop>
             <div class="detail-header">
-              <h2>{{ getExpandedPosting().city }} - Roommate Details</h2>
+              <h2>{{ getExpandedPosting().city }}</h2>
               <button @click="closeDetails" class="close-btn">×</button>
             </div>
 
@@ -223,36 +261,61 @@
                 </table>
               </div>
 
-              <!-- Description -->
-              <div class="info-section">
+              <!-- Description (old format) -->
+              <div class="info-section" v-if="getExpandedPosting().description && !getExpandedPosting().aboutYourself && !getExpandedPosting().lookingFor">
                 <h3>About</h3>
                 <div class="description-full">
                   {{ getExpandedPosting().description }}
                 </div>
               </div>
 
+              <!-- About Yourself (new format) -->
+              <div class="info-section" v-if="getExpandedPosting().aboutYourself">
+                <h3>About This Person</h3>
+                <div class="description-full">
+                  {{ getExpandedPosting().aboutYourself }}
+                </div>
+              </div>
+
+              <!-- Looking For (new format) -->
+              <div class="info-section" v-if="getExpandedPosting().lookingFor">
+                <h3>What They're Looking For</h3>
+                <div class="description-full">
+                  {{ getExpandedPosting().lookingFor }}
+                </div>
+              </div>
+
               <!-- Tags -->
-              <div class="info-section" v-if="getItemTags(getExpandedPosting()._id).length > 0">
+              <div class="info-section" v-if="getItemTags(getExpandedPosting()._id).filter(tag => tag !== 'Favorite').length > 0">
                 <h3>Status</h3>
                 <div class="tags">
-                  <span v-for="tag in getItemTags(getExpandedPosting()._id)" :key="tag" class="tag" :class="{ 'tag-contacted': tag === 'Contacted' }">{{ tag }}</span>
+                  <span v-for="tag in getItemTags(getExpandedPosting()._id).filter(tag => tag !== 'Favorite')" :key="tag" class="tag" :class="{ 'tag-contacted': tag === 'Contacted' }">{{ tag }}</span>
                 </div>
               </div>
             </div>
 
             <!-- Action Buttons -->
             <div class="detail-actions">
-              <button
-                v-if="!isPoster(getExpandedPosting()) && !getItemTags(getExpandedPosting()._id).includes('Contacted')"
-                @click="contactPoster(getExpandedPosting()._id)"
-                class="contact-btn"
-                :disabled="isContacting[getExpandedPosting()._id]"
-              >
-                {{ isContacting[getExpandedPosting()._id] ? "Sending..." : "Contact Me" }}
-              </button>
+              <div v-if="!isPoster(getExpandedPosting())" class="action-buttons-grid">
+                <div class="favorited-message">
+                  Already favorited
+                </div>
 
-              <div v-if="!isPoster(getExpandedPosting()) && getItemTags(getExpandedPosting()._id).includes('Contacted')" class="contacted-message">
-                Already contacted
+                <button
+                  v-if="!getItemTags(getExpandedPosting()._id).includes('Contacted')"
+                  @click="contactPoster(getExpandedPosting()._id)"
+                  class="contact-btn"
+                  :disabled="isContacting[getExpandedPosting()._id]"
+                >
+                  <svg class="btn-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                  </svg>
+                  <span>{{ isContacting[getExpandedPosting()._id] ? "Contacting..." : "Contact" }}</span>
+                </button>
+
+                <div v-if="getItemTags(getExpandedPosting()._id).includes('Contacted')" class="contacted-message">
+                  Already contacted
+                </div>
               </div>
 
               <div v-if="isPoster(getExpandedPosting())" class="owner-message">
@@ -266,7 +329,7 @@
         <div v-if="expandedListing" class="detail-overlay" @click="closeListing">
           <div class="detail-panel" @click.stop>
             <div class="detail-header">
-              <h2>{{ getExpandedListing().title }} - Housing Details</h2>
+              <h2>{{ getExpandedListing().title }}</h2>
               <button @click="closeListing" class="close-btn">×</button>
             </div>
 
@@ -334,34 +397,43 @@
                   <tbody>
                     <tr v-for="amenity in getExpandedListing().amenities" :key="amenity._id">
                       <td>{{ amenity.title }}</td>
-                      <td>{{ amenity.distance && amenity.distance > 0 ? `${amenity.distance} miles away` : 'On-site' }}</td>
+                      <td>{{ amenity.distance && amenity.distance > 0 ? `${amenity.distance} miles` : 'On-site' }}</td>
                     </tr>
                   </tbody>
                 </table>
               </div>
 
               <!-- Tags -->
-              <div class="info-section" v-if="getItemTags(getExpandedListing()._id).length > 0">
+              <div class="info-section" v-if="getItemTags(getExpandedListing()._id).filter(tag => tag !== 'Favorite').length > 0">
                 <h3>Status</h3>
                 <div class="tags">
-                  <span v-for="tag in getItemTags(getExpandedListing()._id)" :key="tag" class="tag" :class="{ 'tag-contacted': tag === 'Contacted' }">{{ tag }}</span>
+                  <span v-for="tag in getItemTags(getExpandedListing()._id).filter(tag => tag !== 'Favorite')" :key="tag" class="tag" :class="{ 'tag-contacted': tag === 'Contacted' }">{{ tag }}</span>
                 </div>
               </div>
             </div>
 
             <!-- Action Buttons -->
             <div class="detail-actions">
-              <button
-                v-if="!isOwner(getExpandedListing()) && !getItemTags(getExpandedListing()._id).includes('Contacted')"
-                @click="sendInterest(getExpandedListing()._id)"
-                class="contact-btn"
-                :disabled="isSendingInterest[getExpandedListing()._id]"
-              >
-                {{ isSendingInterest[getExpandedListing()._id] ? "Sending..." : "Send Interest" }}
-              </button>
+              <div v-if="!isOwner(getExpandedListing())" class="action-buttons-grid">
+                <div class="favorited-message">
+                  Already favorited
+                </div>
 
-              <div v-if="!isOwner(getExpandedListing()) && getItemTags(getExpandedListing()._id).includes('Contacted')" class="contacted-message">
-                Already contacted
+                <button
+                  v-if="!getItemTags(getExpandedListing()._id).includes('Contacted')"
+                  @click="sendInterest(getExpandedListing()._id)"
+                  class="contact-btn"
+                  :disabled="isSendingInterest[getExpandedListing()._id]"
+                >
+                  <svg class="btn-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                  </svg>
+                  <span>{{ isSendingInterest[getExpandedListing()._id] ? "Contacting..." : "Contact" }}</span>
+                </button>
+
+                <div v-if="getItemTags(getExpandedListing()._id).includes('Contacted')" class="contacted-message">
+                  Already contacted
+                </div>
               </div>
 
               <div v-if="isOwner(getExpandedListing())" class="owner-message">
@@ -391,6 +463,7 @@ export default {
   name: "Favorites",
   setup() {
     const sessionStore = useSessionStore();
+    const activeTab = ref('housing');
     const savedItems_data = ref([]);
     const savedItemsMap = ref(new Map()); // Map of itemId -> {tags: []}
     const allRoommatePostings = ref([]);
@@ -410,13 +483,19 @@ export default {
 
     const roommatePostings = computed(() => {
       // Filter saved items that are roommate postings (have 'city' field)
-      return savedItems_data.value.filter((item) => item.city !== undefined);
+      // Exclude posts that the user owns
+      const userId = sessionStore.user?.id || sessionStore.user?.user;
+      return savedItems_data.value
+        .filter((item) => item.city !== undefined && item.poster !== userId)
+        .sort((a, b) => b._id.localeCompare(a._id)); // Sort by most recent first
     });
 
     const housingListings = computed(() => {
       // Filter saved items that are housing listings (have 'title' and 'address' fields)
+      // Exclude listings that the user owns
+      const userId = sessionStore.user?.id || sessionStore.user?.user;
       return savedItems_data.value.filter(
-        (item) => item.title !== undefined && item.address !== undefined
+        (item) => item.title !== undefined && item.address !== undefined && item.lister !== userId
       );
     });
 
@@ -725,7 +804,7 @@ export default {
 
     const sendInterest = async (listingId) => {
       if (!sessionStore.user || !sessionStore.user.id) {
-        alert("Please log in to send interest");
+        alert("Please log in to contact");
         return;
       }
 
@@ -743,7 +822,7 @@ export default {
         await fetchSavedItems();
       } catch (err) {
         console.error("Error sending interest:", err);
-        alert("Failed to send interest: " + (err.message || "Unknown error"));
+        alert("Failed to contact: " + (err.message || "Unknown error"));
       } finally {
         // Clear loading state for this specific listing
         isSendingInterest.value[listingId] = false;
@@ -774,6 +853,7 @@ export default {
     });
 
     return {
+      activeTab,
       savedItems,
       roommatePostings,
       housingListings,
@@ -811,10 +891,14 @@ export default {
 }
 
 .hero {
-  background: rgb(47, 71, 62);
+  background-color: rgb(47, 71, 62);
+  background-image: url('../assets/scene.png');
+  background-size: cover;
+  background-position: center bottom;
   color: white;
   padding: 2rem 2rem;
   text-align: center;
+  position: relative;
 }
 
 .hero h2 {
@@ -826,6 +910,11 @@ export default {
 .hero p {
   font-size: 1.1rem;
   color: rgba(255, 255, 255, 0.9);
+}
+
+.button-spacer {
+  height: 3.25rem;
+  margin-bottom: 0;
 }
 
 .listings-section {
@@ -914,12 +1003,25 @@ export default {
 .favorite-btn {
   background: none;
   border: none;
-  font-size: 1.5rem;
+  font-size: 2.2rem;
   cursor: pointer;
   padding: 0.25rem;
   transition: transform 0.2s;
   line-height: 1;
-  color: #dc3545;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.favorite-btn .heart-icon {
+  color: #e74c3c;
+  -webkit-text-stroke: 1.5px #e74c3c;
+  -webkit-text-fill-color: #e74c3c;
+  transition: all 0.2s;
+  font-size: 2.2rem;
+  font-weight: 300;
+  letter-spacing: -0.1em;
+  transform: scaleX(0.85);
 }
 
 .favorite-btn:hover {
@@ -998,6 +1100,7 @@ export default {
   cursor: not-allowed;
 }
 
+.favorited-message,
 .contacted-message {
   padding: 0.75rem 1.5rem;
   background: #f5f5f5;
@@ -1005,6 +1108,9 @@ export default {
   border-radius: 8px;
   text-align: center;
   font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .owner-message {
@@ -1083,7 +1189,13 @@ export default {
   flex-shrink: 0;
 }
 
-.roommate-count {
+.tags-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.roommate-count, .housing-status-badge {
   font-size: 0.85rem;
   color: #1e5a2e;
   font-weight: 600;
@@ -1212,7 +1324,7 @@ export default {
   align-items: center;
   padding: 1.5rem 2rem;
   border-bottom: 2px solid #f8f9fa;
-  background: linear-gradient(135deg, #1e5a2e, #2d7a3d);
+  background: rgb(47, 71, 62);
   color: white;
   border-radius: 16px 16px 0 0;
 }
@@ -1305,7 +1417,91 @@ export default {
   border-radius: 0 0 16px 16px;
 }
 
+.action-buttons-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.favorite-action-btn,
+.contact-btn {
+  padding: 0.875rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  background: rgb(22, 53, 27);
+  color: white;
+}
+
+.favorite-action-btn:hover,
+.contact-btn:hover {
+  background: rgb(15, 38, 19);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(22, 53, 27, 0.3);
+}
+
+.favorite-action-btn:active,
+.contact-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(22, 53, 27, 0.2);
+}
+
+.favorite-action-btn.favorited {
+  background: rgb(22, 53, 27);
+}
+
+.btn-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+}
+
 /* Photo Display Styles */
+.card-photos {
+  position: relative;
+  margin: 1rem 0;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #f8f9fa;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.5rem;
+  padding: 0.5rem;
+}
+
+.card-photo-item {
+  border-radius: 6px;
+  overflow: hidden;
+  background: white;
+}
+
+.card-photo-main {
+  width: 100%;
+  height: 140px;
+  object-fit: cover;
+  display: block;
+}
+
+.photo-count-badge {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
 .photo-preview-section {
   position: relative;
   margin: 0 1.25rem 1rem;
@@ -1366,6 +1562,60 @@ export default {
   border-radius: 12px;
   font-size: 0.75rem;
   font-weight: 600;
+}
+
+/* Tab Navigation Styles */
+.tabs-section {
+  background: transparent;
+  border-bottom: none;
+}
+
+.tabs-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  gap: 0.5rem;
+  padding: 0 2rem;
+}
+
+.tab-btn {
+  padding: 1rem 2rem;
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #6c757d;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  flex: 0 0 auto;
+  width: auto;
+}
+
+.tab-btn:hover {
+  background: rgba(30, 90, 46, 0.05);
+  color: rgb(30, 90, 46);
+}
+
+.tab-btn.active {
+  color: rgb(30, 90, 46);
+  border-bottom-color: rgb(30, 90, 46);
+  background: white;
+}
+
+.tab-content {
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 @media (max-width: 768px) {

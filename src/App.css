@@ -121,6 +121,9 @@ h1, h2, h3, h4, h5, h6 {
 .sidebar-header {
   padding: 2rem 1.5rem;
   border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  gap: 1rem;
 }
 
 .logo {
@@ -147,6 +150,31 @@ h1, h2, h3, h4, h5, h6 {
 
 .nav-menu li {
   margin: 0;
+}
+
+.nav-menu li.nav-section-header {
+  padding: 1.5rem 1.5rem 0.75rem 1.5rem;
+  margin-top: 1rem;
+}
+
+.nav-menu li.nav-section-header:first-child {
+  margin-top: 0;
+}
+
+.nav-menu li.nav-section-header .section-header-text {
+  color: #749374;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.nav-menu li.nav-section-header .section-header-line {
+  height: 1px;
+  background: linear-gradient(to right, #749374, rgba(144, 238, 144, 0.2));
+  border-radius: 1px;
 }
 
 .nav-menu li a {
@@ -187,6 +215,19 @@ h1, h2, h3, h4, h5, h6 {
 
 .nav-text {
   font-size: 1rem;
+}
+
+/* Sidebar Profile Wrapper */
+.sidebar-profile-wrapper {
+  position: relative;
+}
+
+/* Beaver Image */
+.beaver-image {
+  width: 50px;
+  height: auto;
+  filter: drop-shadow(0 2px 8px rgba(0, 0, 0, 0.3));
+  flex-shrink: 0;
 }
 
 /* Sidebar Profile Section */
@@ -765,6 +806,7 @@ h1, h2, h3, h4, h5, h6 {
   margin: 0 auto;
   padding: 4rem 2rem;
   text-align: center;
+  position: relative;
 }
 
 .hero h2 {

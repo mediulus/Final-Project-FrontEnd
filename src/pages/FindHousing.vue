@@ -1,46 +1,66 @@
 <template>
   <main class="homepage">
     <section class="hero">
-      <h2>Find Summer Housing</h2>
-      <p>Browse available listings or create your own</p>
-      <button @click="showCreateModal = true" class="create-btn">
-        + Create New Listing
-      </button>
+      <h2>Housing</h2>
+      <p>Browse housing listings</p>
+      <div class="button-spacer"></div>
     </section>
 
     <!-- Filter Bar -->
     <section class="filter-bar">
       <div class="filter-container">
-        <div class="filter-group">
-          <label for="minPrice">Min Price ($)</label>
-          <input
-            type="number"
-            id="minPrice"
-            v-model.number="filters.minPrice"
-            placeholder="0"
-            min="0"
-          />
+        <div class="filter-group price-range-group">
+          <label>Price Range ($)</label>
+          <div class="price-range-inputs">
+            <input
+              type="number"
+              v-model.number="filters.minPrice"
+              placeholder="Min"
+              min="0"
+            />
+            <span class="price-separator">-</span>
+            <input
+              type="number"
+              v-model.number="filters.maxPrice"
+              placeholder="Max"
+              min="0"
+            />
+          </div>
         </div>
 
-        <div class="filter-group">
-          <label for="maxPrice">Max Price ($)</label>
-          <input
-            type="number"
-            id="maxPrice"
-            v-model.number="filters.maxPrice"
-            placeholder="Any"
-            min="0"
-          />
+        <div class="filter-group date-range-group">
+          <label>Date Range</label>
+          <div class="date-range-inputs">
+            <input type="date" v-model="filters.startDate" />
+            <span class="date-separator">-</span>
+            <input type="date" v-model="filters.endDate" />
+          </div>
         </div>
 
-        <div class="filter-group">
-          <label for="filterStartDate">Available From</label>
-          <input type="date" id="filterStartDate" v-model="filters.startDate" />
-        </div>
-
-        <div class="filter-group">
-          <label for="filterEndDate">Available Until</label>
-          <input type="date" id="filterEndDate" v-model="filters.endDate" />
+        <div class="filter-group location-filter-group">
+          <label for="filterLocation">Location</label>
+          <div class="autocomplete-wrapper">
+            <input
+              type="text"
+              id="filterLocation"
+              v-model="filters.location"
+              @input="handleFilterLocationInput"
+              @focus="showFilterSuggestions = filterAutocompleteSuggestions.length > 0"
+              @blur="handleFilterLocationBlur"
+              placeholder="e.g., Cambridge"
+              autocomplete="off"
+            />
+            <ul v-if="showFilterSuggestions && filterAutocompleteSuggestions.length" class="suggestions-list filter-suggestions-list">
+              <li
+                v-for="(suggestion, index) in filterAutocompleteSuggestions"
+                :key="index"
+                @click="selectFilterSuggestion(suggestion)"
+                class="suggestion-item"
+              >
+                {{ getSuggestionText(suggestion) }}
+              </li>
+            </ul>
+          </div>
         </div>
 
         <div class="filter-actions">
@@ -53,8 +73,8 @@
     <section class="listings-section">
       <!-- Map View Toggle -->
       <div class="view-toggle">
-        <button 
-          @click="showMapView = !showMapView" 
+        <button
+          @click="showMapView = !showMapView"
           class="toggle-btn"
           :class="{ active: showMapView }"
         >
@@ -83,7 +103,7 @@
 
       <!-- Map View -->
       <div v-if="showMapView && !loading" class="map-view-container">
-        <GoogleMap 
+        <GoogleMap
           :center="{ lat: 42.3601, lng: -71.0942 }"
           :zoom="13"
           :markers="mapMarkers"
@@ -106,7 +126,7 @@
         >
           <div class="card-header">
             <div class="card-title">
-              <h3>{{ listing.title }}</h3>
+            <h3>{{ listing.title }}</h3>
               <div class="quick-info">
                 <span class="address-preview">
                   <svg class="info-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -116,17 +136,18 @@
                   {{ listing.address }}
                 </span>
                 <span class="price-preview">
-                  <svg class="info-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <svg class="info-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgb(22, 53, 27)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <line x1="12" y1="1" x2="12" y2="23"></line>
                     <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
                   </svg>
-                  ${{ listing.price }}/month
+                  {{ listing.price }}/month
                 </span>
               </div>
             </div>
 
             <div class="card-actions" @click.stop>
               <button
+                v-if="!isOwner(listing)"
                 @click="toggleSavedItem(listing._id)"
                 class="favorite-btn"
                 :class="{ 'is-saved': isSaved(listing._id) }"
@@ -136,8 +157,7 @@
                     : 'Add to favorites'
                 "
               >
-                <span v-if="isSaved(listing._id)">♥</span>
-                <span v-else>♡</span>
+                <span class="heart-icon">❤</span>
               </button>
               <div v-if="isOwner(listing)" class="owner-badge">
                 Your Listing
@@ -182,7 +202,6 @@
             </p>
             <div class="expand-hint">
               <span>Click for details</span>
-              <span class="expand-icon">+</span>
             </div>
           </div>
         </div>
@@ -193,7 +212,7 @@
     <div v-if="expandedListing" class="detail-overlay" @click="closeListing">
       <div class="detail-panel" @click.stop>
         <div class="detail-header">
-          <h2>{{ getExpandedListing().title }} - Housing Details</h2>
+          <h2>{{ getExpandedListing().title }}</h2>
           <button @click="closeListing" class="close-btn">×</button>
         </div>
 
@@ -214,7 +233,7 @@
                 />
               </div>
             </div>
-          </div>
+            </div>
 
           <!-- Property Information -->
           <div class="info-section">
@@ -265,7 +284,7 @@
               <tbody>
                 <tr v-for="amenity in getExpandedListing().amenities" :key="amenity._id">
                   <td>{{ amenity.title }}</td>
-                  <td>{{ amenity.distance && amenity.distance > 0 ? `${amenity.distance} miles away` : 'On-site' }}</td>
+                  <td>{{ amenity.distance && amenity.distance > 0 ? `${amenity.distance} miles` : 'On-site' }}</td>
                 </tr>
               </tbody>
             </table>
@@ -274,17 +293,37 @@
 
         <!-- Action Buttons -->
         <div class="detail-actions">
-          <button
-            v-if="!isOwner(getExpandedListing()) && !getItemTags(getExpandedListing()._id).includes('Contacted')"
-            @click="sendInterest(getExpandedListing()._id)"
-            class="contact-btn"
-            :disabled="isSendingInterest[getExpandedListing()._id]"
-          >
-            {{ isSendingInterest[getExpandedListing()._id] ? "Sending..." : "Send Interest" }}
-          </button>
+          <div v-if="!isOwner(getExpandedListing())" class="action-buttons-grid">
+            <button
+              v-if="!isSaved(getExpandedListing()._id)"
+              @click.stop="toggleSavedItem(getExpandedListing()._id)"
+              class="favorite-action-btn"
+            >
+              <svg class="btn-icon" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+              </svg>
+              <span>Favorite</span>
+            </button>
 
-          <div v-if="!isOwner(getExpandedListing()) && getItemTags(getExpandedListing()._id).includes('Contacted')" class="contacted-message">
-            Already contacted
+            <div v-if="isSaved(getExpandedListing()._id)" class="favorited-message">
+              Already favorited
+            </div>
+
+            <button
+              v-if="!getItemTags(getExpandedListing()._id).includes('Contacted')"
+              @click="sendInterest(getExpandedListing()._id)"
+              class="contact-btn"
+              :disabled="isSendingInterest[getExpandedListing()._id]"
+            >
+              <svg class="btn-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+              </svg>
+              <span>{{ isSendingInterest[getExpandedListing()._id] ? "Contacting..." : "Contact" }}</span>
+            </button>
+
+            <div v-if="getItemTags(getExpandedListing()._id).includes('Contacted')" class="contacted-message">
+              Already contacted
+            </div>
           </div>
 
           <div v-if="isOwner(getExpandedListing())" class="owner-actions">
@@ -293,12 +332,15 @@
           </div>
         </div>
       </div>
-    </div>
+      </div>
 
     <!-- Create Listing Modal -->
     <div v-if="showCreateModal" class="modal-overlay" @click="closeCreateModal">
       <div class="modal-content" @click.stop>
+        <div class="modal-header">
         <h2>Create New Listing</h2>
+          <button @click="closeCreateModal" class="close-btn">×</button>
+        </div>
         <form @submit.prevent="handleCreateListing">
           <div class="form-group">
             <label for="title">Title *</label>
@@ -314,15 +356,15 @@
           <div class="form-group">
             <label for="address">Address *</label>
             <div class="autocomplete-wrapper">
-              <input
-                type="text"
-                id="address"
-                v-model="newListing.address"
+            <input
+              type="text"
+              id="address"
+              v-model="newListing.address"
                 @input="handleAddressInput"
                 @focus="showSuggestions = autocompleteSuggestions.length > 0"
                 @blur="handleAddressBlur"
-                required
-                placeholder="e.g., 123 Main St, Cambridge, MA"
+              required
+              placeholder="e.g., 123 Main St, Cambridge, MA"
                 autocomplete="off"
               />
               <ul v-if="showSuggestions && autocompleteSuggestions.length" class="suggestions-list">
@@ -393,6 +435,11 @@
 
           <div class="form-group">
             <label>Amenities</label>
+            <p class="amenities-description">
+              Add any perks about the house, such as in-house laundry or kitchen features,
+              or convenient nearby locations like grocery stores. For locations, specify
+              the distance in miles from home.
+            </p>
             <div class="amenities-list">
               <div
                 v-for="(amenity, index) in newListing.amenities"
@@ -410,7 +457,7 @@
                   v-model.number="amenity.distance"
                   placeholder="Miles (optional)"
                   min="0"
-                  step="0.1"
+                  step="0.01"
                   class="amenity-distance"
                 />
                 <button
@@ -477,9 +524,6 @@
 
               <div class="photo-upload-info">
                 <p>• Max 5 photos • Each photo max 10MB • JPG, PNG, GIF supported</p>
-                <button type="button" @click="testImageServiceWrapper" class="test-connection-btn" style="margin-top: 8px; font-size: 12px; padding: 4px 8px; background: #e3f2fd; color: #1976d2; border: 1px solid #1976d2;">
-                  🔧 Test Photo Upload
-                </button>
               </div>
             </div>
           </div>
@@ -501,7 +545,10 @@
     <!-- Edit Listing Modal -->
     <div v-if="showEditModal" class="modal-overlay" @click="closeEditModal">
       <div class="modal-content" @click.stop>
-        <h2>Edit Listing</h2>
+        <div class="modal-header">
+          <h2>Edit Listing</h2>
+          <button @click="closeEditModal" class="close-btn">×</button>
+        </div>
         <form @submit.prevent="handleEditListing">
           <div class="form-group">
             <label for="edit-title">Title *</label>
@@ -517,15 +564,15 @@
           <div class="form-group">
             <label for="edit-address">Address *</label>
             <div class="autocomplete-wrapper">
-              <input
-                type="text"
-                id="edit-address"
-                v-model="editForm.address"
+            <input
+              type="text"
+              id="edit-address"
+              v-model="editForm.address"
                 @input="handleEditAddressInput"
                 @focus="showEditSuggestions = editAutocompleteSuggestions.length > 0"
                 @blur="handleEditAddressBlur"
-                required
-                placeholder="e.g., 123 Main St, Cambridge, MA"
+              required
+              placeholder="e.g., 123 Main St, Cambridge, MA"
                 autocomplete="off"
               />
               <ul v-if="showEditSuggestions && editAutocompleteSuggestions.length" class="suggestions-list">
@@ -595,6 +642,11 @@
 
           <div class="form-group">
             <label>Amenities</label>
+            <p class="amenities-description">
+              Add any perks about the house, such as in-house laundry or kitchen features,
+              or convenient nearby locations like grocery stores. For locations, specify
+              the distance in miles from home.
+            </p>
             <div class="amenities-list">
               <div
                 v-for="(amenity, index) in editForm.amenities"
@@ -612,7 +664,7 @@
                   v-model.number="amenity.distance"
                   placeholder="Miles (optional)"
                   min="0"
-                  step="0.1"
+                  step="0.01"
                   class="amenity-distance"
                 />
                 <button
@@ -700,6 +752,11 @@
         </form>
       </div>
     </div>
+
+    <!-- Floating Create Button -->
+    <button @click="showCreateModal = true" class="floating-create-btn" title="Create New Listing">
+      +
+    </button>
   </main>
 </template>
 
@@ -714,7 +771,7 @@ import {
 } from "../utils/api.js";
 import { apiRequest } from "../utils/api.js";
 import { useSessionStore } from "../stores/session.js";
-import { uploadMultipleImages, testImageService } from "../services/imageService.js";
+import { uploadMultipleImages } from "../services/imageService.js";
 import GoogleMap from "../components/GoogleMap.vue";
 
 export default {
@@ -723,6 +780,7 @@ export default {
     GoogleMap
   },
   setup() {
+    const route = useRoute();
     const sessionStore = useSessionStore();
     const listingsData = ref([]);
     const savedItemIds = ref(new Set());
@@ -755,6 +813,7 @@ export default {
       maxPrice: null,
       startDate: "",
       endDate: "",
+      location: "",
     });
 
     const appliedFilters = ref({
@@ -762,6 +821,7 @@ export default {
       maxPrice: null,
       startDate: "",
       endDate: "",
+      location: "",
     });
 
     // Expanded view state
@@ -776,10 +836,13 @@ export default {
     const editGeocodedLocation = ref(null);
     const autocompleteSuggestions = ref([]);
     const editAutocompleteSuggestions = ref([]);
+    const filterAutocompleteSuggestions = ref([]);
     const showSuggestions = ref(false);
     const showEditSuggestions = ref(false);
+    const showFilterSuggestions = ref(false);
     let sessionToken = null;
     let editSessionToken = null;
+    let filterSessionToken = null;
 
     // Computed property for filtered listings
     const filteredListings = computed(() => {
@@ -805,22 +868,71 @@ export default {
       }
 
       // Apply date filters
-      if (appliedFilters.value.startDate) {
+      // For a listing to match, it must be available for the ENTIRE requested date range
+      if (appliedFilters.value.startDate && appliedFilters.value.endDate) {
         const filterStartDate = new Date(appliedFilters.value.startDate);
+        const filterEndDate = new Date(appliedFilters.value.endDate);
+
+        // Set to midnight for consistent comparison
+        filterStartDate.setHours(0, 0, 0, 0);
+        filterEndDate.setHours(0, 0, 0, 0);
+
+        result = result.filter((listing) => {
+          const listingStartDate = new Date(listing.startDate);
+          const listingEndDate = new Date(listing.endDate);
+
+          // Set to midnight for consistent comparison
+          listingStartDate.setHours(0, 0, 0, 0);
+          listingEndDate.setHours(0, 0, 0, 0);
+
+          // Listing must start on or before the requested start date
+          // AND listing must end on or after the requested end date
+          const isValid = listingStartDate <= filterStartDate && listingEndDate >= filterEndDate;
+
+          // Debug logging
+          if (listing.title) {
+            console.log(`[Filter] Listing: ${listing.title}`);
+            console.log(`  Listing dates: ${listingStartDate.toLocaleDateString()} to ${listingEndDate.toLocaleDateString()}`);
+            console.log(`  Filter dates: ${filterStartDate.toLocaleDateString()} to ${filterEndDate.toLocaleDateString()}`);
+            console.log(`  Start check: ${listingStartDate.toISOString()} <= ${filterStartDate.toISOString()} = ${listingStartDate <= filterStartDate}`);
+            console.log(`  End check: ${listingEndDate.toISOString()} >= ${filterEndDate.toISOString()} = ${listingEndDate >= filterEndDate}`);
+            console.log(`  Result: ${isValid ? 'PASS' : 'FAIL'}`);
+          }
+
+          return isValid;
+        });
+      } else if (appliedFilters.value.startDate) {
+        // If only start date is provided, listing must be available at that date or later
+        const filterStartDate = new Date(appliedFilters.value.startDate);
+        filterStartDate.setHours(0, 0, 0, 0);
+
         result = result.filter((listing) => {
           const listingEndDate = new Date(listing.endDate);
-          // Listing should be available at or after the filter start date
+          listingEndDate.setHours(0, 0, 0, 0);
+          // Listing must end on or after the requested start date
           return listingEndDate >= filterStartDate;
+        });
+      } else if (appliedFilters.value.endDate) {
+        // If only end date is provided, listing must be available at that date or earlier
+        const filterEndDate = new Date(appliedFilters.value.endDate);
+        filterEndDate.setHours(0, 0, 0, 0);
+
+        result = result.filter((listing) => {
+          const listingStartDate = new Date(listing.startDate);
+          listingStartDate.setHours(0, 0, 0, 0);
+          // Listing must start on or before the requested end date
+          return listingStartDate <= filterEndDate;
         });
       }
 
-      if (appliedFilters.value.endDate) {
-        const filterEndDate = new Date(appliedFilters.value.endDate);
-        result = result.filter((listing) => {
-          const listingStartDate = new Date(listing.startDate);
-          // Listing should be available at or before the filter end date
-          return listingStartDate <= filterEndDate;
-        });
+      // Apply location filter (case-insensitive partial match) - searches address, city, and location fields
+      if (appliedFilters.value.location) {
+        const locationFilter = appliedFilters.value.location.toLowerCase();
+        result = result.filter((listing) =>
+          (listing.address || "").toLowerCase().includes(locationFilter) ||
+          (listing.city || "").toLowerCase().includes(locationFilter) ||
+          (listing.location || "").toLowerCase().includes(locationFilter)
+        );
       }
 
       return result;
@@ -836,13 +948,13 @@ export default {
           title: listing.title,
           listing: listing
         }));
-      
+
       console.log('[FindHousing] mapMarkers computed:', {
         totalListings: filteredListings.value.length,
         listingsWithCoords: markers.length,
         markers: markers
       });
-      
+
       return markers;
     });
 
@@ -853,6 +965,7 @@ export default {
         maxPrice: filters.value.maxPrice,
         startDate: filters.value.startDate,
         endDate: filters.value.endDate,
+        location: filters.value.location,
       };
       console.log('[FindHousing] Applied filters:', appliedFilters.value);
       console.log('[FindHousing] Filtered listings count:', filteredListings.value.length);
@@ -864,12 +977,14 @@ export default {
         maxPrice: null,
         startDate: "",
         endDate: "",
+        location: "",
       };
       appliedFilters.value = {
         minPrice: null,
         maxPrice: null,
         startDate: "",
         endDate: "",
+        location: "",
       };
     };
 
@@ -1061,18 +1176,6 @@ export default {
       }
     };
 
-    // Test image hosting connection
-    const testImageServiceWrapper = async () => {
-      try {
-        console.log('Testing image hosting services...');
-        const result = await testImageService();
-        alert(`✅ Photo upload is working!\n\nService: ${result.service}\nCloud Name: ${result.cloudName}\n\nYou can now upload photos successfully.`);
-      } catch (error) {
-        console.error('Image hosting test failed:', error);
-        alert(`❌ Photo upload test failed: ${error.message}\n\nPlease try again later or check your internet connection.`);
-      }
-    };
-
     // Edit photo handling functions
     const triggerEditPhotoSelect = () => {
       if (editPhotoInput.value) {
@@ -1180,7 +1283,7 @@ export default {
       try {
         const response = await apiRequest('/config/mapsKey', {});
         const apiKey = response.apiKey || import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
-        
+
         if (!apiKey) {
           console.error('Google Maps API key not available for autocomplete');
           return false;
@@ -1188,7 +1291,7 @@ export default {
 
         // Check if script tag already exists
         const existingScript = document.querySelector('script[src*="maps.googleapis.com"]');
-        
+
         if (!existingScript) {
           console.log('Loading Google Maps API...');
           await new Promise((resolve, reject) => {
@@ -1218,7 +1321,7 @@ export default {
           await new Promise(resolve => setTimeout(resolve, 100));
           retries++;
         }
-        
+
         console.error('Google Maps API failed to initialize after waiting');
         return false;
       } catch (error) {
@@ -1232,7 +1335,7 @@ export default {
      */
     const fetchAutocompleteSuggestions = async (input, isEditMode = false) => {
       console.log('fetchAutocompleteSuggestions called with input:', input, 'isEditMode:', isEditMode);
-      
+
       if (!input || input.length < 2) {
         console.log('Input too short, clearing suggestions');
         if (isEditMode) {
@@ -1252,7 +1355,7 @@ export default {
           console.error('Failed to load Google Maps API');
           return;
         }
-        
+
         console.log('Google Maps loaded, checking API availability...');
         if (!google.maps.places.AutocompleteSuggestion) {
           console.error('AutocompleteSuggestion not available');
@@ -1288,25 +1391,25 @@ export default {
         const { suggestions } = await google.maps.places.AutocompleteSuggestion.fetchAutocompleteSuggestions(request);
 
         console.log('Autocomplete API response:', { suggestions, count: suggestions?.length });
-        
+
         if (suggestions && suggestions.length > 0) {
           const first = suggestions[0];
           console.log('First suggestion structure:', first);
-          
+
           // Check if it has a placePrediction property
           if (first.placePrediction) {
             console.log('Has placePrediction property');
             const pred = first.placePrediction;
-            
+
             // Try to log text via toString or valueOf
             console.log('placePrediction.text:', pred.text);
             console.log('placePrediction.text type:', typeof pred.text);
-            
+
             if (pred.text && typeof pred.text === 'object') {
               console.log('text.toString():', pred.text.toString());
               console.log('text keys:', Object.keys(pred.text));
             }
-            
+
             console.log('placePrediction.structuredFormat:', pred.structuredFormat);
             if (pred.structuredFormat?.mainText) {
               console.log('mainText:', pred.structuredFormat.mainText);
@@ -1323,7 +1426,7 @@ export default {
           editAutocompleteSuggestions.value = suggestions.map(s => {
             const prediction = s.placePrediction;
             let displayText = 'Unknown location';
-            
+
             try {
               if (prediction && prediction.text) {
                 displayText = String(prediction.text);
@@ -1331,7 +1434,7 @@ export default {
             } catch (e) {
               console.log('Error extracting text:', e.message);
             }
-            
+
             return {
               displayText: displayText,
               placePrediction: prediction,
@@ -1345,7 +1448,7 @@ export default {
           autocompleteSuggestions.value = suggestions.map(s => {
             const prediction = s.placePrediction;
             let displayText = 'Unknown location';
-            
+
             try {
               if (prediction && prediction.text) {
                 displayText = String(prediction.text);
@@ -1353,7 +1456,7 @@ export default {
             } catch (e) {
               console.log('Error extracting text:', e.message);
             }
-            
+
             return {
               displayText: displayText,
               placePrediction: prediction,
@@ -1409,18 +1512,125 @@ export default {
     };
 
     /**
+     * Handle filter location input changes
+     */
+    const handleFilterLocationInput = (event) => {
+      const input = event.target.value;
+      filters.value.location = input;
+      fetchFilterLocationSuggestions(input);
+    };
+
+    /**
+     * Handle blur event for filter location autocomplete
+     */
+    const handleFilterLocationBlur = () => {
+      setTimeout(() => {
+        showFilterSuggestions.value = false;
+      }, 200);
+    };
+
+    /**
+     * Fetch autocomplete suggestions for filter location
+     */
+    const fetchFilterLocationSuggestions = async (input) => {
+      if (!input || input.length < 2) {
+        filterAutocompleteSuggestions.value = [];
+        showFilterSuggestions.value = false;
+        return;
+      }
+
+      try {
+        const isLoaded = await ensureGoogleMapsLoaded();
+        if (!isLoaded || !google.maps.places.AutocompleteSuggestion) {
+          return;
+        }
+
+        if (!filterSessionToken) {
+          filterSessionToken = new google.maps.places.AutocompleteSessionToken();
+        }
+
+        const request = {
+          input: input,
+          sessionToken: filterSessionToken,
+          locationBias: {
+            west: -71.15,
+            north: 42.40,
+            east: -71.05,
+            south: 42.35,
+          },
+        };
+
+        const { suggestions } = await google.maps.places.AutocompleteSuggestion.fetchAutocompleteSuggestions(request);
+
+        filterAutocompleteSuggestions.value = suggestions.map(s => {
+          const prediction = s.placePrediction;
+          let displayText = 'Unknown location';
+
+          try {
+            if (prediction && prediction.text) {
+              displayText = String(prediction.text);
+            }
+          } catch (e) {
+            console.log('Error extracting text:', e.message);
+          }
+
+          return {
+            displayText: displayText,
+            placePrediction: prediction,
+            rawSuggestion: s
+          };
+        });
+        showFilterSuggestions.value = suggestions && suggestions.length > 0;
+      } catch (err) {
+        console.error('Error fetching filter location suggestions:', err);
+        filterAutocompleteSuggestions.value = [];
+        showFilterSuggestions.value = false;
+      }
+    };
+
+    /**
+     * Select a filter location suggestion
+     */
+    const selectFilterSuggestion = async (suggestion) => {
+      try {
+        if (!suggestion) return;
+
+        const prediction = suggestion.placePrediction || suggestion.rawSuggestion || suggestion;
+        let place;
+
+        if (typeof prediction.toPlace === 'function') {
+          place = prediction.toPlace();
+        } else {
+          return;
+        }
+
+        await place.fetchFields({
+          fields: ['displayName', 'formattedAddress', 'location'],
+        });
+
+        const address = place.formattedAddress || place.displayName;
+        filters.value.location = address;
+        showFilterSuggestions.value = false;
+        filterAutocompleteSuggestions.value = [];
+        filterSessionToken = null;
+      } catch (err) {
+        console.error('Error selecting filter location:', err);
+      }
+    };
+
+    /**
      * Get suggestion display text safely
      */
     const getSuggestionText = (suggestion) => {
       if (!suggestion) {
         return '';
       }
-      
+
       // We now cache displayText directly in the suggestion object
       if (suggestion.displayText) {
         return suggestion.displayText;
       }
-      
+
       return 'Unknown location';
     };
 
@@ -1435,11 +1645,11 @@ export default {
         }
 
         console.log('Selecting suggestion:', suggestion);
-        
+
         // Get the actual prediction from our wrapper
         const prediction = suggestion.placePrediction || suggestion.rawSuggestion || suggestion;
         console.log('Using prediction for toPlace:', prediction);
-        
+
         // The prediction should have a toPlace() method
         let place;
         if (typeof prediction.toPlace === 'function') {
@@ -1449,9 +1659,9 @@ export default {
           console.error('Available methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(prediction)));
           return;
         }
-        
+
         console.log('Place object created:', place);
-        
+
         await place.fetchFields({
           fields: ['displayName', 'formattedAddress', 'location'],
         });
@@ -1512,7 +1722,7 @@ export default {
         if (!window.google || !window.google.maps) {
           const response = await apiRequest('/config/mapsKey', {});
           const apiKey = response.apiKey || import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
-          
+
           if (!apiKey) {
             console.warn('Cannot geocode: API key not available');
             return null;
@@ -1574,7 +1784,7 @@ export default {
         if (result && Array.isArray(result)) {
           const listingsWithCoords = result.filter(l => l.latitude && l.longitude);
           console.log(`[FindHousing] Listings with coordinates: ${listingsWithCoords.length}/${result.length}`);
-          
+
           result.forEach((listing, index) => {
             console.log(`[FindHousing] Listing ${index}:`, {
               _id: listing._id,
@@ -1585,6 +1795,17 @@ export default {
               lat: listing.latitude,
               lng: listing.longitude,
             });
+          });
+        }
+
+        // Sort listings by _id in descending order (newest first)
+        // MongoDB ObjectIds contain timestamps, so newer listings have higher _id values
+        if (result && Array.isArray(result)) {
+          result.sort((a, b) => {
+            // Compare _id strings in descending order (newest first)
+            if (a._id > b._id) return -1;
+            if (a._id < b._id) return 1;
+            return 0;
           });
         }
 
@@ -1635,12 +1856,12 @@ export default {
           const tagsMap = new Map();
 
           items.forEach((saved) => {
-            console.log(
-              "Processing saved item:",
-              JSON.stringify(saved, null, 2)
-            );
-            // API returns: {user: "...", savedItem: {item: "id", tags: [...]}}
-            if (saved.savedItem && saved.savedItem.item) {
+              console.log(
+                "Processing saved item:",
+                JSON.stringify(saved, null, 2)
+              );
+              // API returns: {user: "...", savedItem: {item: "id", tags: [...]}}
+              if (saved.savedItem && saved.savedItem.item) {
               const itemId = saved.savedItem.item;
               const tags = saved.savedItem.tags || [];
               console.log(`Found itemId: ${itemId}, tags:`, tags);
@@ -1657,7 +1878,7 @@ export default {
               } else {
                 tagsMap.set(itemId, { tags: tags });
               }
-            } else if (saved._id) {
+              } else if (saved._id) {
               const itemId = saved._id;
               console.log("Using saved._id:", itemId);
               if (!ids.includes(itemId)) {
@@ -1666,7 +1887,7 @@ export default {
               if (!tagsMap.has(itemId)) {
                 tagsMap.set(itemId, { tags: [] });
               }
-            } else if (saved.item && saved.item.item) {
+              } else if (saved.item && saved.item.item) {
               const itemId = saved.item.item;
               console.log("Using saved.item.item:", itemId);
               if (!ids.includes(itemId)) {
@@ -1915,7 +2136,7 @@ export default {
         // Geocode address if not already geocoded
         let latitude = null;
         let longitude = null;
-        
+
         if (geocodedLocation.value) {
           latitude = geocodedLocation.value.latitude;
           longitude = geocodedLocation.value.longitude;
@@ -1980,6 +2201,9 @@ export default {
 
       try {
         await listings.delete(listingId);
+        // Close the detail modal
+        expandedListing.value = null;
+        // Refresh the listings
         await fetchListings();
       } catch (err) {
         alert("Failed to delete listing: " + (err.message || "Unknown error"));
@@ -2076,7 +2300,7 @@ export default {
         if (editForm.value.address !== listing.address) {
           let latitude = null;
           let longitude = null;
-          
+
           if (editGeocodedLocation.value) {
             latitude = editGeocodedLocation.value.latitude;
             longitude = editGeocodedLocation.value.longitude;
@@ -2087,7 +2311,7 @@ export default {
               longitude = geocoded.longitude;
             }
           }
-          
+
           await listings.editAddress(listingId, editForm.value.address, latitude, longitude);
         }
         if (
@@ -2227,7 +2451,7 @@ export default {
 
     const sendInterest = async (listingId) => {
       if (!sessionStore.user || !sessionStore.user.id) {
-        alert("Please log in to send interest");
+        alert("Please log in to contact");
         return;
       }
 
@@ -2238,13 +2462,13 @@ export default {
         console.log("Sending interest for listing:", listingId);
         const result = await listings.sendInterest(listingId);
         console.log("Interest sent successfully:", result);
-        alert("Your interest has been sent to the listing owner!");
+        alert("Your interest has been sent to the listing owner! They will email you with next steps if they choose to continue the conversation");
 
         // Refetch saved items to update local state
         await fetchSavedItems();
       } catch (err) {
         console.error("Error sending interest:", err);
-        alert("Failed to send interest: " + (err.message || "Unknown error"));
+        alert("Failed to contact: " + (err.message || "Unknown error"));
       } finally {
         // Clear loading state for this specific listing
         isSendingInterest.value[listingId] = false;
@@ -2270,8 +2494,6 @@ export default {
       uploading.value = false;
     };
 
-    const route = useRoute();
-
     onMounted(async () => {
       console.log("[FindHousing] Component mounted");
       console.log("[FindHousing] Session store on mount:", {
@@ -2285,6 +2507,11 @@ export default {
 
       fetchListings();
       fetchSavedItems();
+
+      // Check if we should auto-open the create modal
+      if (route.query.openCreate === 'true') {
+        showCreateModal.value = true;
+      }
     });
 
     // Watch for route changes to refetch saved items when returning to this page
@@ -2349,7 +2576,6 @@ export default {
       removeSelectedPhoto,
       removeUploadedPhoto,
       uploadSelectedPhotos,
-      testImageServiceWrapper,
       // Edit photo handling
       editSelectedPhotos,
       editUploading,
@@ -2366,13 +2592,18 @@ export default {
       geocodedLocation,
       autocompleteSuggestions,
       editAutocompleteSuggestions,
+      filterAutocompleteSuggestions,
       showSuggestions,
       showEditSuggestions,
+      showFilterSuggestions,
       handleAddressInput,
       handleEditAddressInput,
+      handleFilterLocationInput,
       handleAddressBlur,
       handleEditAddressBlur,
+      handleFilterLocationBlur,
       selectSuggestion,
+      selectFilterSuggestion,
       getSuggestionText,
     };
   },
@@ -2387,10 +2618,14 @@ export default {
 }
 
 .hero {
-  background: rgb(47, 71, 62);
+  background-color: rgb(47, 71, 62);
+  background-image: url('../assets/scene.png');
+  background-size: cover;
+  background-position: center bottom;
   color: white;
   padding: 2rem 2rem;
   text-align: center;
+  position: relative;
 }
 
 .hero h2 {
@@ -2405,21 +2640,41 @@ export default {
   color: rgba(255, 255, 255, 0.9);
 }
 
-.create-btn {
-  background: white;
-  color: #123619;
-  border: none;
-  padding: 0.875rem 2rem;
-  font-size: 1.1rem;
-  font-weight: 600;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
+.button-spacer {
+  height: 3.25rem;
+  margin-bottom: 0;
 }
 
-.create-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+.floating-create-btn {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  width: 60px;
+  height: 60px;
+  background: rgb(30, 90, 46);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  font-size: 2rem;
+  font-weight: 300;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transition: transform 0.2s, box-shadow 0.3s, background 0.2s;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.floating-create-btn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+  background: rgb(22, 70, 36);
+}
+
+.floating-create-btn:active {
+  transform: scale(1.05);
 }
 
 /* Filter Bar Styles */
@@ -2446,6 +2701,11 @@ export default {
   min-width: 150px;
 }
 
+.location-filter-group {
+  flex: 1.5;
+  min-width: 200px;
+}
+
 .filter-group label {
   font-weight: 600;
   color: rgba(255, 255, 255, 0.9);
@@ -2466,6 +2726,46 @@ export default {
   outline: none;
   border-color: rgba(255, 255, 255, 0.5);
   background: white;
+}
+
+.price-range-inputs,
+.date-range-inputs {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  padding: 0.25rem 0.5rem;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.price-range-inputs:focus-within,
+.date-range-inputs:focus-within {
+  border-color: rgba(255, 255, 255, 0.5);
+  background: white;
+}
+
+.price-range-inputs input,
+.date-range-inputs input {
+  border: none;
+  padding: 0.375rem;
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+}
+
+.price-range-inputs input:focus,
+.date-range-inputs input:focus {
+  border: none;
+  background: transparent;
+}
+
+.price-separator,
+.date-separator {
+  color: #666;
+  font-weight: 500;
+  user-select: none;
 }
 
 .filter-actions {
@@ -2513,11 +2813,10 @@ export default {
 
 .view-toggle {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-start;
   align-items: center;
+  gap: 1rem;
   margin-bottom: 1.5rem;
-  padding-bottom: 1rem;
-  border-bottom: 2px solid #e9ecef;
 }
 
 .toggle-btn {
@@ -2531,9 +2830,10 @@ export default {
   font-family: Helvetica, Arial, sans-serif;
   cursor: pointer;
   transition: all 0.3s ease;
-  display: flex;
+  display: inline-flex;
   align-items: center;
   gap: 0.5rem;
+  width: auto;
 }
 
 .toggle-btn:hover {
@@ -2843,21 +3143,67 @@ export default {
 
 .modal-content {
   background: white;
-  padding: 2rem;
+  padding: 2rem 2.5rem;
   border-radius: 12px;
   width: 90%;
-  max-width: 600px;
+  max-width: 750px;
   max-height: 90vh;
   overflow-y: auto;
+  margin: 0 auto;
 }
 
-.modal-content h2 {
-  color: rgb(47, 71, 62);
+.modal-content form {
+  width: 100%;
+  max-width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #f0f0f0;
+  width: 100%;
+}
+
+.modal-header h2 {
+  color: rgb(47, 71, 62);
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.modal-header .close-btn {
+  background: none;
+  border: none;
+  font-size: 2rem;
+  cursor: pointer;
+  color: #666;
+  padding: 0.25rem;
+  border-radius: 50%;
+  width: 2.5rem;
+  height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease, color 0.2s ease;
+  line-height: 1;
+}
+
+.modal-header .close-btn:hover {
+  background: #f0f0f0;
+  color: #333;
 }
 
 .form-group {
   margin-bottom: 1.25rem;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .form-row {
@@ -2873,10 +3219,22 @@ export default {
   margin-bottom: 0.5rem;
 }
 
+.amenities-description {
+  font-size: 0.9rem;
+  color: #666;
+  line-height: 1.5;
+  margin: 0 0 1rem 0;
+  padding: 0.75rem;
+  background: #f8f9fa;
+  border-radius: 6px;
+  border-left: 3px solid rgb(47, 71, 62);
+}
+
 .form-group input,
 .form-group select,
 .form-group textarea {
-  width: 100%;
+  width: 85%;
+  max-width: 500px;
   padding: 0.75rem;
   border: 2px solid #e0e0e0;
   border-radius: 6px;
@@ -3001,6 +3359,8 @@ export default {
   display: flex;
   gap: 1rem;
   margin-top: 2rem;
+  justify-content: center;
+  width: 100%;
 }
 
 .cancel-btn,
@@ -3079,7 +3439,7 @@ export default {
   align-items: center;
   padding: 1.5rem 2rem;
   border-bottom: 2px solid #f8f9fa;
-  background: linear-gradient(135deg, #1e5a2e, #2d7a3d);
+  background: rgb(47, 71, 62);
   color: white;
   border-radius: 16px 16px 0 0;
 }
@@ -3093,7 +3453,7 @@ export default {
 .close-btn {
   background: none;
   border: none;
-  font-size: 2rem;
+    font-size: 2rem;
   cursor: pointer;
   color: white;
   padding: 0.25rem;
@@ -3172,22 +3532,51 @@ export default {
   border-radius: 0 0 16px 16px;
 }
 
-.contact-btn {
+.action-buttons-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
   width: 100%;
+}
+
+.favorite-action-btn,
+.contact-btn {
   background: rgb(22, 53, 27);
   color: white;
   border: none;
-  padding: 0.625rem 1rem;
+  padding: 0.75rem 1rem;
   font-size: 0.95rem;
   font-weight: 600;
   border-radius: 6px;
   cursor: pointer;
-  margin-top: 0.75rem;
-  transition: background 0.2s, opacity 0.2s;
+  transition: background 0.2s, opacity 0.2s, transform 0.1s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
 }
 
+.favorite-action-btn:hover,
 .contact-btn:hover:not(:disabled) {
   background: rgb(15, 38, 19);
+  transform: translateY(-2px);
+}
+
+.favorite-action-btn:active,
+.contact-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.favorite-action-btn.is-saved {
+  background: rgb(30, 90, 46);
+}
+
+.favorite-action-btn.is-saved:hover {
+  background: rgb(22, 53, 27);
+}
+
+.btn-icon {
+  flex-shrink: 0;
 }
 
 .contact-btn:disabled {
@@ -3195,6 +3584,7 @@ export default {
   cursor: not-allowed;
 }
 
+.favorited-message,
 .contacted-message {
   padding: 0.75rem 1.5rem;
   background: #f5f5f5;
@@ -3202,6 +3592,9 @@ export default {
   border-radius: 8px;
   text-align: center;
   font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .owner-actions {
@@ -3239,7 +3632,7 @@ export default {
 .favorite-btn {
   background: none;
   border: none;
-  font-size: 1.5rem;
+  font-size: 2.2rem;
   cursor: pointer;
   padding: 0.25rem;
   transition: transform 0.2s ease;
@@ -3249,12 +3642,25 @@ export default {
   justify-content: center;
 }
 
-.favorite-btn:hover {
-  transform: scale(1.1);
+.favorite-btn .heart-icon {
+  color: #ccc;
+  -webkit-text-stroke: 1.5px #999;
+  -webkit-text-fill-color: transparent;
+  transition: all 0.2s;
+  font-size: 2.2rem;
+  font-weight: 300;
+  letter-spacing: -0.1em;
+  transform: scaleX(0.85);
 }
 
-.favorite-btn.is-saved {
+.favorite-btn.is-saved .heart-icon {
   color: #e74c3c;
+  -webkit-text-stroke: 1px #e74c3c;
+  -webkit-text-fill-color: #e74c3c;
+}
+
+.favorite-btn:hover {
+  transform: scale(1.1);
 }
 
 /* Photo Upload Styles */
@@ -3505,6 +3911,10 @@ export default {
 
 .suggestion-item:active {
   background-color: #e8f5e9;
+}
+
+.filter-suggestions-list {
+  z-index: 1001;
 }
 
 </style>

@@ -2,82 +2,48 @@
   <main class="homepage">
     <section class="hero">
       <h2>My Postings</h2>
-      <p>All your housing listings and roommate postings</p>
+      <p>Create and manage your housing and roommate postings</p>
+      <div class="button-spacer"></div>
+    </section>
+
+    <!-- Tab Navigation -->
+    <section class="tabs-section">
+      <div class="tabs-container">
+        <button
+          @click="activeTab = 'housing'"
+          class="tab-btn"
+          :class="{ active: activeTab === 'housing' }"
+        >
+          Housing Listings
+        </button>
+        <button
+          @click="activeTab = 'roommates'"
+          class="tab-btn"
+          :class="{ active: activeTab === 'roommates' }"
+        >
+          Roommate Postings
+        </button>
+      </div>
     </section>
 
     <section class="listings-section">
       <div v-if="isLoading" class="loading">Loading your postings...</div>
       <div v-else-if="error" class="error-message">{{ error }}</div>
-      <div
-        v-else-if="
-          roommatePostings.length === 0 && housingListings.length === 0
-        "
-        class="no-listings"
-      >
-        No postings yet. Start creating listings or roommate postings!
-      </div>
-      <div v-else>
-        <!-- Roommate Postings -->
-        <div v-if="roommatePostings.length > 0" class="listings-container">
-          <h3 class="section-title">My Roommate Postings</h3>
-          <div class="listings-grid">
-            <div
-              v-for="posting in roommatePostings"
-              :key="posting?._id || posting"
-              class="posting-card"
-              :class="{ 'expanded': expandedPosting === posting._id }"
-              @click="togglePostingDetails(posting._id)"
-            >
-              <div class="card-header">
-                <div class="card-title">
-                  <h3>{{ posting.city }}</h3>
-                  <div class="quick-info">
-                    <span class="age-gender">
-                      <svg class="info-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                        <circle cx="12" cy="7" r="4"></circle>
-                      </svg>
-                      {{ posting.gender }}, {{ posting.age }}
-                    </span>
-                    <span v-if="posting.numberOfRoommates" class="roommate-count">
-                      Looking for {{ posting.numberOfRoommates }} roommate{{ posting.numberOfRoommates > 1 ? 's' : '' }}
-                    </span>
-                  </div>
-                </div>
 
-                <div class="card-actions" @click.stop>
-                  <div class="owner-badge">Your Posting</div>
-                  <button @click="editRoommatePosting(posting)" class="icon-btn edit-icon-btn" title="Edit">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                    </svg>
-                  </button>
-                  <button @click="deleteRoommatePosting(posting._id)" class="icon-btn delete-icon-btn" title="Delete">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <polyline points="3 6 5 6 21 6"></polyline>
-                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                      <line x1="10" y1="11" x2="10" y2="17"></line>
-                      <line x1="14" y1="11" x2="14" y2="17"></line>
-                    </svg>
-                  </button>
-                </div>
-              </div>
+      <!-- Housing Tab Content -->
+      <div v-show="activeTab === 'housing'" class="tab-content">
+        <div class="create-header">
+          <button @click="openHousingModal" class="create-new-btn">
+            + Create New Housing Listing
+          </button>
+        </div>
 
-              <div class="card-preview">
-                <p class="description-preview">{{ truncateText(posting.description, 100) }}</p>
-                <div class="expand-hint">
-                  <span>Click for details</span>
-                  <span class="expand-icon">+</span>
-                </div>
-              </div>
-            </div>
-          </div>
+        <div v-if="housingListings.length === 0" class="no-listings">
+          No housing listings yet. Click the button above to create your first listing!
         </div>
 
         <!-- Housing Listings -->
         <div v-if="housingListings.length > 0" class="section listings-container">
-          <h3 class="section-title">My Housing Listings</h3>
           <div class="listings-grid">
             <div
               v-for="listing in housingListings"
@@ -98,17 +64,16 @@
                       {{ listing.address }}
                     </span>
                     <span class="price-preview">
-                      <svg class="info-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <svg class="info-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgb(22, 53, 27)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <line x1="12" y1="1" x2="12" y2="23"></line>
                         <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
                       </svg>
-                      ${{ listing.price }}/month
+                      {{ listing.price }}/month
                     </span>
                   </div>
                 </div>
 
                 <div class="card-actions" @click.stop>
-                  <div class="owner-badge">Your Listing</div>
                   <button @click="editListing(listing)" class="icon-btn edit-icon-btn" title="Edit">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                       <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
@@ -159,7 +124,77 @@
                 </div>
                 <div class="expand-hint">
                   <span>Click for details</span>
-                  <span class="expand-icon">+</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Roommate Tab Content -->
+      <div v-show="activeTab === 'roommates'" class="tab-content">
+        <div class="create-header">
+          <button @click="openRoommateModal" class="create-new-btn">
+            + Create New Roommate Posting
+          </button>
+        </div>
+
+        <div v-if="roommatePostings.length === 0" class="no-listings">
+          No roommate postings yet. Click the button above to create your first posting!
+        </div>
+        <div v-else class="listings-container">
+          <div class="listings-grid">
+            <div
+              v-for="posting in roommatePostings"
+              :key="posting?._id || posting"
+              class="posting-card"
+              :class="{ 'expanded': expandedPosting === posting._id }"
+              @click="togglePostingDetails(posting._id)"
+            >
+              <div class="card-header">
+                <div class="card-title">
+                  <h3>{{ posting.city }}</h3>
+                  <div class="quick-info">
+                    <span class="age-gender">
+                      <svg class="info-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                      </svg>
+                      {{ posting.gender }}, {{ posting.age }}
+                    </span>
+                    <div class="tags-row">
+                      <span v-if="posting.numberOfRoommates" class="roommate-count">
+                        {{ posting.numberOfRoommates }} roommate{{ posting.numberOfRoommates > 1 ? 's' : '' }}
+                      </span>
+                      <span v-if="posting.housingStatus === 'Found housing'" class="housing-status-badge">
+                        Found housing
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="card-actions" @click.stop>
+                  <button @click="editRoommatePosting(posting)" class="icon-btn edit-icon-btn" title="Edit">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                      <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                    </svg>
+                  </button>
+                  <button @click="deleteRoommatePosting(posting._id)" class="icon-btn delete-icon-btn" title="Delete">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <polyline points="3 6 5 6 21 6"></polyline>
+                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                      <line x1="10" y1="11" x2="10" y2="17"></line>
+                      <line x1="14" y1="11" x2="14" y2="17"></line>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+
+              <div class="card-preview">
+                <p class="description-preview">{{ truncateText(posting.aboutYourself || posting.description || "", 100) }}</p>
+                <div class="expand-hint">
+                  <span>Click for details</span>
                 </div>
               </div>
             </div>
@@ -172,7 +207,7 @@
     <div v-if="expandedPosting" class="detail-overlay" @click="closeDetails">
       <div class="detail-panel" @click.stop>
         <div class="detail-header">
-          <h2>{{ getExpandedPosting().city }} - My Roommate Posting</h2>
+          <h2>{{ getExpandedPosting().city }}</h2>
           <button @click="closeDetails" class="close-btn">×</button>
         </div>
 
@@ -221,22 +256,38 @@
                   <td>{{ getExpandedPosting().cleanlinessPreference }}</td>
                 </tr>
                 <tr v-if="getExpandedPosting().homeEnvironment">
-                  <td>Home Environment</td>
+                  <td>Home Environment & Guests</td>
                   <td>{{ getExpandedPosting().homeEnvironment }}</td>
                 </tr>
-                <tr v-if="getExpandedPosting().guestsVisitors">
-                  <td>Guests & Visitors</td>
-                  <td>{{ getExpandedPosting().guestsVisitors }}</td>
+                <tr v-if="getExpandedPosting().housingStatus">
+                  <td>Housing Status</td>
+                  <td>{{ getExpandedPosting().housingStatus }}</td>
                 </tr>
               </tbody>
             </table>
           </div>
 
-          <!-- Description -->
-          <div class="info-section">
+          <!-- Description (old format) -->
+          <div class="info-section" v-if="getExpandedPosting().description && !getExpandedPosting().aboutYourself && !getExpandedPosting().lookingFor">
             <h3>About</h3>
             <div class="description-full">
               {{ getExpandedPosting().description }}
+            </div>
+          </div>
+
+          <!-- About Yourself (new format) -->
+          <div class="info-section" v-if="getExpandedPosting().aboutYourself">
+            <h3>About This Person</h3>
+            <div class="description-full">
+              {{ getExpandedPosting().aboutYourself }}
+            </div>
+          </div>
+
+          <!-- Looking For (new format) -->
+          <div class="info-section" v-if="getExpandedPosting().lookingFor">
+            <h3>What They're Looking For</h3>
+            <div class="description-full">
+              {{ getExpandedPosting().lookingFor }}
             </div>
           </div>
         </div>
@@ -257,7 +308,7 @@
     <div v-if="expandedListing" class="detail-overlay" @click="closeListing">
       <div class="detail-panel" @click.stop>
         <div class="detail-header">
-          <h2>{{ getExpandedListing().title }} - My Housing Listing</h2>
+          <h2>{{ getExpandedListing().title }}</h2>
           <button @click="closeListing" class="close-btn">×</button>
         </div>
 
@@ -351,7 +402,10 @@
     <!-- Edit Listing Modal -->
     <div v-if="showEditModal" class="modal-overlay" @click="closeEditModal">
       <div class="modal-content" @click.stop>
-        <h2>Edit Listing</h2>
+        <div class="modal-header">
+          <h2>Edit Listing</h2>
+          <button @click="closeEditModal" class="close-btn">×</button>
+        </div>
         <form @submit.prevent="handleEditListing">
           <div class="form-group">
             <label for="edit-title">Title *</label>
@@ -445,6 +499,11 @@
 
           <div class="form-group">
             <label>Amenities</label>
+            <p class="amenities-description">
+              Add any perks about the house, such as in-house laundry or kitchen features,
+              or convenient nearby locations like grocery stores. For locations, specify
+              the distance in miles from home.
+            </p>
             <div class="amenities-list">
               <div
                 v-for="(amenity, index) in editForm.amenities"
@@ -454,15 +513,15 @@
                 <input
                   type="text"
                   v-model="amenity.title"
-                  placeholder="e.g., T Stop"
+                  placeholder="e.g., Laundry or T Stop"
                   class="amenity-title"
                 />
                 <input
                   type="number"
                   v-model.number="amenity.distance"
-                  placeholder="Miles"
+                  placeholder="Miles (optional)"
                   min="0"
-                  step="0.1"
+                  step="0.01"
                   class="amenity-distance"
                 />
                 <button
@@ -580,7 +639,10 @@
       @click="closeEditRoommateModal"
     >
       <div class="modal-content" @click.stop>
-        <h2>Edit Roommate Posting</h2>
+        <div class="modal-header">
+          <h2>Edit Roommate Posting</h2>
+          <button @click="closeEditRoommateModal" class="close-btn">×</button>
+        </div>
         <form @submit.prevent="handleEditRoommatePosting">
           <div class="form-group">
             <label for="edit-roommate-city">City *</label>
@@ -589,7 +651,7 @@
               id="edit-roommate-city"
               v-model="editRoommateForm.city"
               required
-              placeholder="e.g., Cambridge"
+              placeholder="e.g., San Francisco"
             />
           </div>
 
@@ -623,7 +685,7 @@
 
           <div class="form-group">
             <label for="edit-roommate-numberOfRoommates"
-              >Number of Roommates *</label
+              >Number of Roommates Looking For *</label
             >
             <input
               type="number"
@@ -711,9 +773,7 @@
           </div>
 
           <div class="form-group">
-            <label for="edit-roommate-homeEnvironment"
-              >Home Environment *</label
-            >
+            <label for="edit-roommate-homeEnvironment">Home Environment *</label>
             <select
               id="edit-roommate-homeEnvironment"
               v-model="editRoommateForm.homeEnvironment"
@@ -738,9 +798,7 @@
           </div>
 
           <div class="form-group">
-            <label for="edit-roommate-guestsVisitors"
-              >Guests & Visitors *</label
-            >
+            <label for="edit-roommate-guestsVisitors">Guests & Visitors *</label>
             <select
               id="edit-roommate-guestsVisitors"
               v-model="editRoommateForm.guestsVisitors"
@@ -765,13 +823,37 @@
           </div>
 
           <div class="form-group">
-            <label for="edit-roommate-description">Description *</label>
+            <label for="edit-roommate-housingStatus">Housing Status *</label>
+            <select
+              id="edit-roommate-housingStatus"
+              v-model="editRoommateForm.housingStatus"
+              required
+            >
+              <option value="" disabled>Select your housing status</option>
+              <option value="Looking for housing">Looking for housing</option>
+              <option value="Found housing">Found housing</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="edit-roommate-about-yourself">Tell More About Yourself *</label>
             <textarea
-              id="edit-roommate-description"
-              v-model="editRoommateForm.description"
+              id="edit-roommate-about-yourself"
+              v-model="editRoommateForm.aboutYourself"
               required
               rows="4"
-              placeholder="Tell us more about yourself and what you are looking for in a roommate"
+              placeholder="Tell us about yourself, your interests, lifestyle, etc."
+            ></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="edit-roommate-looking-for">What You Are Looking For in a Roommate *</label>
+            <textarea
+              id="edit-roommate-looking-for"
+              v-model="editRoommateForm.lookingFor"
+              required
+              rows="4"
+              placeholder="Describe what you're looking for in a roommate"
             ></textarea>
           </div>
 
@@ -802,7 +884,8 @@
 </template>
 
 <script>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, nextTick } from "vue";
+import { useRouter } from "vue-router";
 import { useSessionStore } from "../stores/session.js";
 import {
   roommatePostings as roommatePostingsApi,
@@ -814,11 +897,16 @@ import { apiRequest } from "../utils/api.js";
 export default {
   name: "MyPostings",
   setup() {
+    const router = useRouter();
     const sessionStore = useSessionStore();
     const roommatePostings = ref([]);
     const housingListings = ref([]);
     const isLoading = ref(false);
     const error = ref("");
+
+    // Tab state
+    const activeTab = ref('housing');
+
     const showEditModal = ref(false);
     const isEditing = ref(false);
     const editError = ref("");
@@ -851,7 +939,9 @@ export default {
       city: "",
       gender: "",
       age: "",
-      description: "",
+      aboutYourself: "",
+      lookingFor: "",
+      housingStatus: "",
       startDate: "",
       endDate: "",
       dailyRhythm: "",
@@ -874,14 +964,14 @@ export default {
       try {
         const response = await apiRequest('/config/mapsKey', {});
         const apiKey = response.apiKey || import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
-        
+
         if (!apiKey) {
           console.error('Google Maps API key not available');
           return false;
         }
 
         const existingScript = document.querySelector('script[src*="maps.googleapis.com"]');
-        
+
         if (!existingScript) {
           await new Promise((resolve, reject) => {
             const script = document.createElement('script');
@@ -902,7 +992,7 @@ export default {
           await new Promise(resolve => setTimeout(resolve, 100));
           retries++;
         }
-        
+
         return false;
       } catch (error) {
         console.error('Error loading Google Maps API:', error);
@@ -946,7 +1036,7 @@ export default {
         editAutocompleteSuggestions.value = suggestions.map(s => {
           const prediction = s.placePrediction;
           let displayText = 'Unknown location';
-          
+
           try {
             if (prediction && prediction.text) {
               displayText = String(prediction.text);
@@ -954,7 +1044,7 @@ export default {
           } catch (e) {
             console.log('Error extracting text:', e.message);
           }
-          
+
           return {
             displayText: displayText,
             placePrediction: prediction,
@@ -1007,7 +1097,7 @@ export default {
         if (!suggestion) return;
 
         const prediction = suggestion.placePrediction || suggestion.rawSuggestion || suggestion;
-        
+
         let place;
         if (typeof prediction.toPlace === 'function') {
           place = prediction.toPlace();
@@ -1015,7 +1105,7 @@ export default {
           console.error('Prediction does not have toPlace method');
           return;
         }
-        
+
         await place.fetchFields({
           fields: ['displayName', 'formattedAddress', 'location'],
         });
@@ -1051,7 +1141,7 @@ export default {
         if (!window.google || !window.google.maps) {
           const response = await apiRequest('/config/mapsKey', {});
           const apiKey = response.apiKey || import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
-          
+
           if (!apiKey) {
             console.warn('Cannot geocode: API key not available');
             return null;
@@ -1134,9 +1224,11 @@ export default {
           ? allRoommatePostings
           : [];
         // Filter by poster ID and ensure valid items
-        roommatePostings.value = allRoommateArray.filter(
-          (posting) => posting && posting._id && posting.poster === userId
-        );
+        roommatePostings.value = allRoommateArray
+          .filter(
+            (posting) => posting && posting._id && posting.poster === userId
+          )
+          .sort((a, b) => b._id.localeCompare(a._id)); // Sort by most recent first
         console.log(
           "[MyPostings] Filtered roommate postings:",
           roommatePostings.value
@@ -1188,20 +1280,104 @@ export default {
       return `${year}-${month}-${day}`;
     };
 
+    // Helper function to parse old combined homeEnvironment format
+    const parseHomeEnvironment = (homeEnv, guestsVis) => {
+      // If guestsVisitors already has a value, use the new format
+      if (guestsVis && guestsVis.trim() !== "") {
+        return {
+          homeEnvironment: homeEnv ?? "",
+          guestsVisitors: guestsVis ?? "",
+        };
+      }
+
+      // If homeEnvironment matches new format values, use as-is
+      const newFormatValues = [
+        "Quiet (minimal noise, low visitors)",
+        "Moderate (some noise, occasional visitors)",
+        "Social / lively (friends over often)",
+        "Flexible / depends on schedule",
+      ];
+      if (homeEnv && newFormatValues.includes(homeEnv)) {
+        return {
+          homeEnvironment: homeEnv,
+          guestsVisitors: guestsVis ?? "",
+        };
+      }
+
+      // Parse old combined format
+      if (homeEnv) {
+        const homeEnvLower = homeEnv.toLowerCase();
+        let parsedHomeEnv = "";
+        let parsedGuestsVis = "";
+
+        // Map old combined values to new separate fields
+        if (homeEnvLower.includes("quiet home")) {
+          parsedHomeEnv = "Quiet (minimal noise, low visitors)";
+          if (homeEnvLower.includes("prefer few or no guests")) {
+            parsedGuestsVis = "Prefer few or no guests";
+          } else if (homeEnvLower.includes("occasional guests")) {
+            parsedGuestsVis = "Occasional guests okay";
+          }
+        } else if (homeEnvLower.includes("moderate activity")) {
+          parsedHomeEnv = "Moderate (some noise, occasional visitors)";
+          if (homeEnvLower.includes("occasional guests")) {
+            parsedGuestsVis = "Occasional guests okay";
+          } else if (homeEnvLower.includes("frequent guests")) {
+            parsedGuestsVis = "Comfortable with frequent guests";
+          }
+        } else if (homeEnvLower.includes("social") || homeEnvLower.includes("lively")) {
+          parsedHomeEnv = "Social / lively (friends over often)";
+          if (homeEnvLower.includes("frequent guests")) {
+            parsedGuestsVis = "Comfortable with frequent guests";
+          } else if (homeEnvLower.includes("overnight guests")) {
+            parsedGuestsVis = "Comfortable with overnight guests";
+          }
+        } else if (homeEnvLower.includes("flexible")) {
+          parsedHomeEnv = "Flexible / depends on schedule";
+          parsedGuestsVis = "Occasional guests okay"; // Default for flexible
+        }
+
+        // If we successfully parsed, return parsed values
+        if (parsedHomeEnv) {
+          return {
+            homeEnvironment: parsedHomeEnv,
+            guestsVisitors: parsedGuestsVis || "Occasional guests okay",
+          };
+        }
+      }
+
+      // Fallback: use stored values as-is
+      return {
+        homeEnvironment: homeEnv ?? "",
+        guestsVisitors: guestsVis ?? "",
+      };
+    };
+
     const editRoommatePosting = (posting) => {
       editingRoommatePostingId.value = posting._id;
+      // Handle both old (description) and new (aboutYourself/lookingFor) formats
+      const aboutYourself = posting.aboutYourself || (posting.description ? posting.description.split('\n\n---\n\n')[0] : "");
+      const lookingFor = posting.lookingFor || (posting.description && posting.description.includes('---') ? posting.description.split('\n\n---\n\n')[1] : "");
+
+      // Use stored values directly - parseHomeEnvironment is only for display/creation, not editing
+      // Preserve exact values, trimming whitespace to ensure they match dropdown options
+      const homeEnv = posting.homeEnvironment ? String(posting.homeEnvironment).trim() : "";
+      const guestsVis = posting.guestsVisitors ? String(posting.guestsVisitors).trim() : "";
+      
       editRoommateForm.value = {
-        city: posting.city || "",
-        gender: posting.gender || "",
-        age: posting.age || "",
-        description: posting.description || "",
+        city: posting.city ?? "",
+        gender: posting.gender ?? "",
+        age: posting.age ?? "",
+        aboutYourself: aboutYourself,
+        lookingFor: lookingFor,
+        housingStatus: posting.housingStatus ?? "",
         startDate: formatDateForInput(posting.startDate),
         endDate: formatDateForInput(posting.endDate),
-        dailyRhythm: posting.dailyRhythm || "",
-        cleanlinessPreference: posting.cleanlinessPreference || "",
-        homeEnvironment: posting.homeEnvironment || "",
-        guestsVisitors: posting.guestsVisitors || "",
-        numberOfRoommates: posting.numberOfRoommates || "",
+        dailyRhythm: posting.dailyRhythm ? String(posting.dailyRhythm).trim() : "",
+        cleanlinessPreference: posting.cleanlinessPreference ? String(posting.cleanlinessPreference).trim() : "",
+        homeEnvironment: homeEnv,
+        guestsVisitors: guestsVis,
+        numberOfRoommates: posting.numberOfRoommates ?? "",
       };
       editRoommateError.value = "";
       showEditRoommateModal.value = true;
@@ -1215,7 +1391,9 @@ export default {
         city: "",
         gender: "",
         age: "",
-        description: "",
+        aboutYourself: "",
+        lookingFor: "",
+        housingStatus: "",
         startDate: "",
         endDate: "",
         dailyRhythm: "",
@@ -1265,10 +1443,29 @@ export default {
         if (editRoommateForm.value.age !== posting.age) {
           await roommatePostingsApi.editAge(userId, editRoommateForm.value.age);
         }
-        if (editRoommateForm.value.description !== posting.description) {
-          await roommatePostingsApi.editDescription(
+        // Edit aboutYourself if changed (only if posting has new format)
+        if (posting.aboutYourself !== undefined && editRoommateForm.value.aboutYourself !== posting.aboutYourself) {
+          await roommatePostingsApi.editAboutYourself(
             userId,
-            editRoommateForm.value.description
+            editRoommateForm.value.aboutYourself
+          );
+        }
+        // Edit lookingFor if changed (only if posting has new format)
+        if (posting.lookingFor !== undefined && editRoommateForm.value.lookingFor !== posting.lookingFor) {
+          await roommatePostingsApi.editLookingFor(
+            userId,
+            editRoommateForm.value.lookingFor
+          );
+        }
+        // If old format (description), update both fields to migrate to new format
+        if (posting.description && !posting.aboutYourself && !posting.lookingFor) {
+          await roommatePostingsApi.editAboutYourself(
+            userId,
+            editRoommateForm.value.aboutYourself
+          );
+          await roommatePostingsApi.editLookingFor(
+            userId,
+            editRoommateForm.value.lookingFor
           );
         }
 
@@ -1329,10 +1526,20 @@ export default {
             editRoommateForm.value.homeEnvironment
           );
         }
-        if (editRoommateForm.value.guestsVisitors !== posting.guestsVisitors) {
+        if (
+          editRoommateForm.value.guestsVisitors !== posting.guestsVisitors
+        ) {
           await roommatePostingsApi.editGuestsVisitors(
             userId,
             editRoommateForm.value.guestsVisitors
+          );
+        }
+        if (
+          editRoommateForm.value.housingStatus !== posting.housingStatus
+        ) {
+          await roommatePostingsApi.editHousingStatus(
+            userId,
+            editRoommateForm.value.housingStatus
           );
         }
 
@@ -1429,7 +1636,7 @@ export default {
         if (editForm.value.address !== listing.address) {
           let latitude = null;
           let longitude = null;
-          
+
           if (editGeocodedLocation.value) {
             latitude = editGeocodedLocation.value.latitude;
             longitude = editGeocodedLocation.value.longitude;
@@ -1440,7 +1647,7 @@ export default {
               longitude = geocoded.longitude;
             }
           }
-          
+
           await listingsApi.editAddress(listingId, editForm.value.address, latitude, longitude);
         }
 
@@ -1751,7 +1958,21 @@ export default {
       }
     };
 
+    // Modal opening functions
+    const openHousingModal = () => {
+      // Navigate to housing page with query parameter to auto-open create modal
+      router.push({ path: '/home', query: { openCreate: 'true' } });
+    };
+
+    const openRoommateModal = () => {
+      // Navigate to roommates page with query parameter to auto-open create modal
+      router.push({ path: '/find-roommates', query: { openCreate: 'true' } });
+    };
+
     return {
+      activeTab,
+      openHousingModal,
+      openRoommateModal,
       roommatePostings,
       housingListings,
       isLoading,
@@ -1814,12 +2035,15 @@ export default {
 }
 
 .hero {
-  background: rgb(47, 71, 62);
+  background-color: rgb(47, 71, 62);
+  background-image: url('../assets/scene.png');
+  background-size: cover;
+  background-position: center bottom;
   color: white;
   padding: 2rem 2rem;
   text-align: center;
+  position: relative;
 }
-
 .hero h2 {
   font-size: 2rem;
   margin-bottom: 0.5rem;
@@ -1828,7 +2052,106 @@ export default {
 
 .hero p {
   font-size: 1.1rem;
+  margin-bottom: 1.5rem;
   color: rgba(255, 255, 255, 0.9);
+}
+
+.button-spacer {
+  height: 3.25rem;
+  margin-bottom: 0;
+}
+
+/* Tabs Section */
+.tabs-section {
+  background: transparent;
+  border-bottom: none;
+}
+
+.tabs-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  gap: 0.5rem;
+  padding: 0 2rem;
+}
+
+.tab-btn {
+  padding: 1rem 2rem;
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #6c757d;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  flex: 0 0 auto;
+  width: auto;
+}
+
+.tab-btn:hover {
+  background: rgba(30, 90, 46, 0.05);
+  color: rgb(30, 90, 46);
+}
+
+.tab-btn.active {
+  color: rgb(30, 90, 46);
+  border-bottom-color: rgb(30, 90, 46);
+  background: white;
+}
+
+.tab-content {
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Create Header */
+
+.create-header {
+  margin-bottom: 2rem;
+  display: flex;
+  justify-content: flex-start;
+  border-bottom: none;
+}
+
+.create-new-btn {
+  padding: 0.75rem 1.5rem;
+  background: rgb(47, 71, 62);
+  color: white;
+  border: 2px solid rgb(47, 71, 62);
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  font-family: Helvetica, Arial, sans-serif;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: auto;
+}
+
+.create-new-btn:hover {
+  background: rgb(37, 62, 53);
+  border-color: rgb(37, 62, 53);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(47, 71, 62, 0.3);
+}
+
+.create-new-btn:active {
+  background: rgb(22, 53, 27);
+  border-color: rgb(22, 53, 27);
+  color: white;
 }
 
 .listings-section {
@@ -1925,7 +2248,22 @@ export default {
   gap: 0.35rem;
 }
 
+.tags-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
 .roommate-count {
+  font-size: 0.85rem;
+  color: #1e5a2e;
+  font-weight: 600;
+  padding: 0.15rem 0.5rem;
+  background: #e8f5e9;
+  border-radius: 4px;
+}
+
+.housing-status-badge {
   font-size: 0.85rem;
   color: #1e5a2e;
   font-weight: 600;
@@ -2149,7 +2487,7 @@ export default {
   align-items: center;
   padding: 1.5rem 2rem;
   border-bottom: 2px solid #f8f9fa;
-  background: linear-gradient(135deg, #1e5a2e, #2d7a3d);
+  background: rgb(47, 71, 62);
   color: white;
   border-radius: 16px 16px 0 0;
 }
@@ -2601,59 +2939,135 @@ export default {
 
 .modal-content {
   background: white;
-  border-radius: 12px;
-  padding: 2rem;
+  border-radius: 16px;
+  padding: 2.5rem;
   width: 90%;
   max-width: 600px;
-  max-height: 80vh;
+  max-height: 90vh;
   overflow-y: auto;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  animation: slideUp 0.3s ease;
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
-.modal-content h2 {
-  margin-top: 0;
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #f0f0f0;
+  width: 100%;
+}
+
+.modal-header h2 {
+  color: rgb(47, 71, 62);
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.modal-header .close-btn {
+  background: none;
+  border: none;
+  font-size: 2rem;
+  cursor: pointer;
+  color: #666;
+  padding: 0.25rem;
+  border-radius: 50%;
+  width: 2.5rem;
+  height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease, color 0.2s ease;
+  line-height: 1;
+}
+
+.modal-header .close-btn:hover {
+  background: #f0f0f0;
   color: #333;
 }
 
 .form-group {
-  margin-bottom: 1.5rem;
+  margin-bottom: 1.75rem;
 }
 
 .form-group label {
   display: block;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.625rem;
+  color: rgb(47, 71, 62);
   font-weight: 600;
-  color: #333;
+  font-size: 0.95rem;
+  letter-spacing: 0.3px;
 }
 
 .form-group input,
 .form-group select,
 .form-group textarea {
-  width: 100%;
-  padding: 0.75rem;
-  border: 1px solid #ddd;
-  border-radius: 6px;
-  font-size: 16px;
-  box-sizing: border-box;
+  width: 85%;
+  max-width: 500px;
+  padding: 0.875rem 1rem;
+  border: 2px solid #e0e0e0;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  background: #fafafa;
+}
+
+.form-group input:hover,
+.form-group select:hover,
+.form-group textarea:hover {
+  border-color: #c0c0c0;
+  background: white;
 }
 
 .form-group input:focus,
 .form-group select:focus,
 .form-group textarea:focus {
   outline: none;
-  border-color: #007bff;
-  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+  border-color: rgb(47, 71, 62);
+  background: white;
+  box-shadow: 0 0 0 3px rgba(47, 71, 62, 0.1);
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 120px;
+  line-height: 1.6;
 }
 
 .form-row {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 1rem;
+  gap: 1.25rem;
 }
 
 .amenities-list {
   margin-bottom: 1rem;
+}
+
+.amenities-description {
+  font-size: 0.9rem;
+  color: #666;
+  line-height: 1.5;
+  margin: 0 0 1rem 0;
+  padding: 0.75rem;
+  background: #f8f9fa;
+  border-radius: 6px;
+  border-left: 3px solid rgb(47, 71, 62);
 }
 
 .amenity-item {
@@ -2706,44 +3120,50 @@ export default {
 
 .modal-actions {
   display: flex;
-  justify-content: flex-end;
   gap: 1rem;
-  margin-top: 2rem;
-  padding-top: 1rem;
-  border-top: 1px solid #eee;
+  margin-top: 2.5rem;
+  padding-top: 1.5rem;
+  border-top: 2px solid #f0f0f0;
+}
+
+.cancel-btn,
+.submit-btn {
+  flex: 1;
+  padding: 0.875rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 1.05rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .cancel-btn {
   background: #6c757d;
   color: white;
-  border: none;
-  border-radius: 6px;
-  padding: 0.75rem 1.5rem;
-  cursor: pointer;
-  font-size: 16px;
 }
 
 .cancel-btn:hover {
   background: #5a6268;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
 }
 
 .submit-btn {
-  background: #007bff;
+  background: rgb(22, 53, 27);
   color: white;
-  border: none;
-  border-radius: 6px;
-  padding: 0.75rem 1.5rem;
-  cursor: pointer;
-  font-size: 16px;
 }
 
 .submit-btn:hover:not(:disabled) {
-  background: #0056b3;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(22, 53, 27, 0.3);
 }
 
 .submit-btn:disabled {
-  background: #ccc;
+  opacity: 0.6;
   cursor: not-allowed;
+  transform: none;
 }
 
 /* Autocomplete Styles */

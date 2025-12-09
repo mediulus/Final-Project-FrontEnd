@@ -38,6 +38,9 @@
         <div v-if="errorMessage" class="error-message">
           {{ errorMessage }}
         </div>
+        <div v-if="successMessage" class="success-message">
+          {{ successMessage }}
+        </div>
 
         <button type="submit" class="submit-btn" :disabled="isLoading">
           {{ isLoading ? "Logging in..." : "Login" }}
@@ -70,6 +73,7 @@ export default {
     const router = useRouter();
     const isLoading = ref(false);
     const errorMessage = ref("");
+    const successMessage = ref("");
     const sessionStore = useSessionStore();
 
     const formData = ref({
@@ -80,6 +84,7 @@ export default {
     const handleLogin = async () => {
       isLoading.value = true;
       errorMessage.value = "";
+      successMessage.value = "";
 
       try {
         // Authenticate user
@@ -89,6 +94,12 @@ export default {
           formData.value.password
         );
         console.log("Auth result:", authResult);
+        
+        // Check if login result contains an error
+        if (authResult && authResult.error) {
+          console.error("Login failed with error:", authResult.error);
+          throw new Error(authResult.error);
+        }
         console.log("Auth result type:", typeof authResult);
         console.log(
           "Auth result keys:",
@@ -170,21 +181,52 @@ export default {
           user: sessionStore.user,
         });
 
-        // Redirect to home page (Find Housing)
-        router.push("/home");
+        // Set success message
+        successMessage.value = "Login successful! Redirecting...";
+        setTimeout(() => {
+          // Redirect to home page (Find Housing)
+          router.push("/home");
+        }, 1000);
       } catch (error) {
         console.error("Login error:", error);
-        errorMessage.value =
-          error.message || "Login failed. Please check your credentials.";
+        errorMessage.value = parseLoginError(error);
       } finally {
         isLoading.value = false;
       }
+    };
+
+    const parseLoginError = (error) => {
+      const message = error.message || 'Unknown error';
+      
+      // Parse common backend error messages for login
+      if (message.toLowerCase().includes('invalid') && (message.toLowerCase().includes('username') || message.toLowerCase().includes('password'))) {
+        return 'Incorrect username or password. Please try again.';
+      }
+      if (message.toLowerCase().includes('user not found') || message.toLowerCase().includes('username') && message.toLowerCase().includes('not')) {
+        return 'Username not found. Please check your username or create an account.';
+      }
+      if (message.toLowerCase().includes('password') && (message.toLowerCase().includes('incorrect') || message.toLowerCase().includes('wrong'))) {
+        return 'Incorrect password. Please try again.';
+      }
+      if (message.toLowerCase().includes('account') && message.toLowerCase().includes('locked')) {
+        return 'Your account has been locked. Please contact support.';
+      }
+      if (message.toLowerCase().includes('authentication') && message.toLowerCase().includes('failed')) {
+        return 'Login failed. Please check your username and password.';
+      }
+      if (message.toLowerCase().includes('timeout') || message.toLowerCase().includes('network')) {
+        return 'Connection timeout. Please check your internet connection and try again.';
+      }
+      
+      // Generic fallback
+      return 'Login failed. Please check your username and password and try again.';
     };
 
     return {
       formData,
       isLoading,
       errorMessage,
+      successMessage,
       handleLogin,
     };
   },
@@ -311,6 +353,16 @@ h2 {
   border-radius: 6px;
   font-size: 0.9rem;
   border: 1px solid #fcc;
+}
+
+.success-message {
+  background-color: #efe;
+  color: #363;
+  padding: 0.75rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  border: 1px solid #cfc;
+  margin-bottom: 1rem;
 }
 
 .submit-btn {

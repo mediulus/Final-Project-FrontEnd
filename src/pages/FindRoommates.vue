@@ -1,38 +1,33 @@
 <template>
   <main class="homepage">
     <section class="hero">
-      <h2>Find a Roommate</h2>
-      <p>Browse roommate postings or create your own</p>
-      <button @click="openModal" class="create-btn">
-        + Create New Posting
-      </button>
+      <h2>Roommates</h2>
+      <p>Browse roommate postings</p>
+      <div class="button-spacer"></div>
     </section>
 
     <!-- Filter Bar -->
     <section class="filter-bar">
       <div class="filter-container">
-        <div class="filter-group">
-          <label for="minAge">Min Age</label>
+        <div class="filter-group age-range-group">
+          <label>Age Range</label>
+          <div class="age-range-inputs">
           <input
             type="number"
-            id="minAge"
             v-model.number="filters.minAge"
-            placeholder="18"
+              placeholder="Min"
             min="18"
             max="120"
           />
-        </div>
-
-        <div class="filter-group">
-          <label for="maxAge">Max Age</label>
+            <span class="age-separator">-</span>
           <input
             type="number"
-            id="maxAge"
             v-model.number="filters.maxAge"
-            placeholder="Any"
+              placeholder="Max"
             min="18"
             max="120"
           />
+          </div>
         </div>
 
         <div class="filter-group">
@@ -46,14 +41,30 @@
           </select>
         </div>
 
-        <div class="filter-group">
-          <label for="filterCity">City</label>
+        <div class="filter-group location-filter-group">
+          <label for="filterLocation">Location</label>
+          <div class="autocomplete-wrapper">
           <input
             type="text"
-            id="filterCity"
-            v-model="filters.city"
-            placeholder="e.g., Cambridge"
-          />
+              id="filterLocation"
+              v-model="filters.location"
+              @input="handleFilterLocationInput"
+              @focus="showFilterSuggestions = filterAutocompleteSuggestions.length > 0"
+              @blur="handleFilterLocationBlur"
+              placeholder="e.g., San Francisco"
+              autocomplete="off"
+            />
+            <ul v-if="showFilterSuggestions && filterAutocompleteSuggestions.length" class="suggestions-list filter-suggestions-list">
+              <li
+                v-for="(suggestion, index) in filterAutocompleteSuggestions"
+                :key="index"
+                @click="selectFilterSuggestion(suggestion)"
+                class="suggestion-item"
+              >
+                {{ getSuggestionText(suggestion) }}
+              </li>
+            </ul>
+          </div>
         </div>
 
         <div class="filter-actions">
@@ -90,20 +101,25 @@
                     </svg>
                     {{ posting.gender }}, {{ posting.age }}
                   </span>
+                  <div class="tags-row">
                   <span v-if="posting.numberOfRoommates" class="roommate-count">
-                    Looking for {{ posting.numberOfRoommates }} roommate{{ posting.numberOfRoommates > 1 ? 's' : '' }}
+                      {{ posting.numberOfRoommates }} roommate{{ posting.numberOfRoommates > 1 ? 's' : '' }}
+                    </span>
+                    <span v-if="posting.housingStatus === 'Found housing'" class="housing-status-badge">
+                      Found housing
                   </span>
+                  </div>
                 </div>
               </div>
 
               <div class="card-actions" @click.stop>
                 <button
+                  v-if="!isPoster(posting)"
                   @click="toggleSavedItem(posting._id)"
                   class="favorite-btn"
                   :class="{ 'is-saved': isSaved(posting._id) }"
                 >
-                  <span v-if="isSaved(posting._id)">♥</span>
-                  <span v-else>♡</span>
+                  <span class="heart-icon">❤</span>
                 </button>
                 <div v-if="isPoster(posting)" class="owner-badge">
                   Your Posting
@@ -112,10 +128,9 @@
             </div>
 
             <div class="card-preview">
-              <p class="description-preview">{{ truncateText(posting.description, 100) }}</p>
+              <p class="description-preview">{{ truncateText(posting.aboutYourself || posting.description || "", 100) }}</p>
               <div class="expand-hint">
                 <span>Click for details</span>
-                <span class="expand-icon">+</span>
               </div>
             </div>
           </div>
@@ -125,7 +140,7 @@
         <div v-if="expandedPosting" class="detail-overlay" @click="closeDetails">
           <div class="detail-panel" @click.stop>
             <div class="detail-header">
-              <h2>{{ getExpandedPosting().city }} - Roommate Details</h2>
+              <h2>{{ getExpandedPosting().city }}</h2>
               <button @click="closeDetails" class="close-btn">×</button>
             </div>
 
@@ -135,9 +150,13 @@
                 <h3>Personal Information</h3>
                 <table class="info-table">
                   <tbody>
-                    <tr>
-                      <td>Profile</td>
-                      <td>{{ getExpandedPosting().gender }}, {{ getExpandedPosting().age }} years old</td>
+                    <tr v-if="getExpandedPosting().gender || getExpandedPosting().age">
+                      <td>Gender & Age</td>
+                      <td>
+                        <span v-if="getExpandedPosting().gender">{{ getExpandedPosting().gender }}</span>
+                        <span v-if="getExpandedPosting().gender && getExpandedPosting().age">, </span>
+                        <span v-if="getExpandedPosting().age">{{ getExpandedPosting().age }} years old</span>
+                      </td>
                     </tr>
                     <tr v-if="getExpandedPosting().numberOfRoommates">
                       <td>Looking for</td>
@@ -174,39 +193,75 @@
                       <td>{{ getExpandedPosting().cleanlinessPreference }}</td>
                     </tr>
                     <tr v-if="getExpandedPosting().homeEnvironment">
-                      <td>Home Environment</td>
+                      <td>Home Environment & Guests</td>
                       <td>{{ getExpandedPosting().homeEnvironment }}</td>
                     </tr>
-                    <tr v-if="getExpandedPosting().guestsVisitors">
-                      <td>Guests & Visitors</td>
-                      <td>{{ getExpandedPosting().guestsVisitors }}</td>
+                    <tr v-if="getExpandedPosting().housingStatus">
+                      <td>Housing Status</td>
+                      <td>{{ getExpandedPosting().housingStatus }}</td>
                     </tr>
                   </tbody>
                 </table>
               </div>
 
-              <!-- Description -->
-              <div class="info-section">
+              <!-- Description (old format) -->
+              <div class="info-section" v-if="getExpandedPosting().description && !getExpandedPosting().aboutYourself && !getExpandedPosting().lookingFor">
                 <h3>About</h3>
                 <div class="description-full">
                   {{ getExpandedPosting().description }}
+                </div>
+              </div>
+
+              <!-- About Me (new format) -->
+              <div class="info-section" v-if="getExpandedPosting().aboutYourself">
+                <h3>About This Person</h3>
+                <div class="description-full">
+                  {{ getExpandedPosting().aboutYourself }}
+                </div>
+              </div>
+
+              <!-- Looking For (new format) -->
+              <div class="info-section" v-if="getExpandedPosting().lookingFor">
+                <h3>What They're Looking For</h3>
+                <div class="description-full">
+                  {{ getExpandedPosting().lookingFor }}
                 </div>
               </div>
             </div>
 
             <!-- Action Buttons -->
             <div class="detail-actions">
+              <div v-if="!isPoster(getExpandedPosting())" class="action-buttons-grid">
               <button
-                v-if="!isPoster(getExpandedPosting()) && !getItemTags(getExpandedPosting()._id).includes('Contacted')"
+                  v-if="!isSaved(getExpandedPosting()._id)"
+                  @click.stop="toggleSavedItem(getExpandedPosting()._id)"
+                  class="favorite-action-btn"
+                >
+                  <svg class="btn-icon" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+                  </svg>
+                  <span>Favorite</span>
+                </button>
+
+                <div v-if="isSaved(getExpandedPosting()._id)" class="favorited-message">
+                  Already favorited
+                </div>
+
+                <button
+                  v-if="!getItemTags(getExpandedPosting()._id).includes('Contacted')"
                 @click="contactPoster(getExpandedPosting()._id)"
                 class="contact-btn"
                 :disabled="isContacting[getExpandedPosting()._id]"
               >
-                {{ isContacting[getExpandedPosting()._id] ? "Sending..." : "Contact Me" }}
+                  <svg class="btn-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                  </svg>
+                  <span>{{ isContacting[getExpandedPosting()._id] ? "Contacting..." : "Contact" }}</span>
               </button>
 
-              <div v-if="!isPoster(getExpandedPosting()) && getItemTags(getExpandedPosting()._id).includes('Contacted')" class="contacted-message">
+                <div v-if="getItemTags(getExpandedPosting()._id).includes('Contacted')" class="contacted-message">
                 Already contacted
+                </div>
               </div>
 
               <div v-if="isPoster(getExpandedPosting())" class="owner-actions">
@@ -222,7 +277,10 @@
     <!-- Create Posting Modal -->
     <div v-if="modalVisible" class="modal-overlay" @click="closeModal">
       <div class="modal-content" @click.stop>
+        <div class="modal-header">
         <h2>Create Roommate Posting</h2>
+          <button @click="closeModal" class="close-btn">×</button>
+        </div>
         <form @submit.prevent="emitCreatePosting">
           <div class="form-group">
             <label for="city">City *</label>
@@ -231,7 +289,7 @@
               id="city"
               v-model="form.city"
               required
-              placeholder="e.g., Cambridge"
+              placeholder="e.g., San Francisco"
             />
           </div>
 
@@ -260,7 +318,7 @@
           </div>
 
           <div class="form-group">
-            <label for="numberOfRoommates">Number of Roommates *</label>
+            <label for="numberOfRoommates">Number of Roommates Looking For *</label>
             <input
               type="number"
               id="numberOfRoommates"
@@ -362,7 +420,11 @@
 
           <div class="form-group">
             <label for="guestsVisitors">Guests & Visitors *</label>
-            <select id="guestsVisitors" v-model="form.guestsVisitors" required>
+            <select
+              id="guestsVisitors"
+              v-model="form.guestsVisitors"
+              required
+            >
               <option value="" disabled>
                 Select your guests & visitors preference
               </option>
@@ -382,13 +444,37 @@
           </div>
 
           <div class="form-group">
-            <label for="description">Description *</label>
+            <label for="housingStatus">Housing Status *</label>
+            <select
+              id="housingStatus"
+              v-model="form.housingStatus"
+              required
+            >
+              <option value="" disabled>Select your housing status</option>
+              <option value="Looking for housing">Looking for housing</option>
+              <option value="Found housing">Found housing</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="aboutMe">Tell More About Yourself *</label>
             <textarea
-              id="description"
-              v-model="form.description"
+              id="aboutMe"
+              v-model="form.aboutMe"
               required
               rows="4"
-              placeholder="Tell us more about yourself and what you are looking for in a roommate"
+              placeholder="Tell us about yourself, your interests, lifestyle, etc."
+            ></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="lookingFor">What You Are Looking For in a Roommate *</label>
+            <textarea
+              id="lookingFor"
+              v-model="form.lookingFor"
+              required
+              rows="4"
+              placeholder="Describe what you're looking for in a roommate"
             ></textarea>
           </div>
 
@@ -409,7 +495,10 @@
     <!-- Edit Posting Modal -->
     <div v-if="showEditModal" class="modal-overlay" @click="closeEditModal">
       <div class="modal-content" @click.stop>
+        <div class="modal-header">
         <h2>Edit Roommate Posting</h2>
+          <button @click="closeEditModal" class="close-btn">×</button>
+        </div>
         <form @submit.prevent="handleEditPosting">
           <div class="form-group">
             <label for="edit-city">City *</label>
@@ -418,7 +507,7 @@
               id="edit-city"
               v-model="editForm.city"
               required
-              placeholder="e.g., Cambridge"
+              placeholder="e.g., San Francisco"
             />
           </div>
 
@@ -447,7 +536,7 @@
           </div>
 
           <div class="form-group">
-            <label for="edit-numberOfRoommates">Number of Roommates *</label>
+            <label for="edit-numberOfRoommates">Number of Roommates Looking For *</label>
             <input
               type="number"
               id="edit-numberOfRoommates"
@@ -584,13 +673,37 @@
           </div>
 
           <div class="form-group">
-            <label for="edit-description">Description *</label>
+            <label for="edit-housingStatus">Housing Status *</label>
+            <select
+              id="edit-housingStatus"
+              v-model="editForm.housingStatus"
+              required
+            >
+              <option value="" disabled>Select your housing status</option>
+              <option value="Looking for housing">Looking for housing</option>
+              <option value="Found housing">Found housing</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="edit-aboutMe">Tell More About Yourself *</label>
             <textarea
-              id="edit-description"
-              v-model="editForm.description"
+              id="edit-aboutMe"
+              v-model="editForm.aboutMe"
               required
               rows="4"
-              placeholder="Tell us more about yourself and what you are looking for in a roommate"
+              placeholder="Tell us about yourself, your interests, lifestyle, etc."
+            ></textarea>
+          </div>
+
+          <div class="form-group">
+            <label for="edit-lookingFor">What You Are Looking For in a Roommate *</label>
+            <textarea
+              id="edit-lookingFor"
+              v-model="editForm.lookingFor"
+              required
+              rows="4"
+              placeholder="Describe what you're looking for in a roommate"
             ></textarea>
           </div>
 
@@ -607,17 +720,23 @@
         </form>
       </div>
     </div>
+
+    <!-- Floating Create Button -->
+    <button @click="openModal" class="floating-create-btn" title="Create New Posting">
+      +
+    </button>
   </main>
 </template>
 
 <script>
-import { ref, computed, onMounted, watch } from "vue";
+import { ref, computed, onMounted, watch, nextTick } from "vue";
 import { useRoute } from "vue-router";
 import { useSessionStore } from "../stores/session.js";
 import {
   roommatePostings,
   savedItems,
   userInfo as userInfoApi,
+  apiRequest,
 } from "../utils/api.js";
 
 export default {
@@ -627,7 +746,9 @@ export default {
       city: "",
       gender: "",
       age: "",
-      description: "",
+      aboutMe: "",
+      lookingFor: "",
+      housingStatus: "",
       startDate: "",
       endDate: "",
       dailyRhythm: "",
@@ -654,7 +775,8 @@ export default {
       city: "",
       gender: "",
       age: "",
-      description: "",
+      aboutMe: "",
+      lookingFor: "",
       startDate: "",
       endDate: "",
       dailyRhythm: "",
@@ -672,15 +794,20 @@ export default {
       minAge: null,
       maxAge: null,
       gender: "",
-      city: "",
+      location: "",
     });
 
     const appliedFilters = ref({
       minAge: null,
       maxAge: null,
       gender: "",
-      city: "",
+      location: "",
     });
+
+    // Filter location autocomplete state
+    const filterAutocompleteSuggestions = ref([]);
+    const showFilterSuggestions = ref(false);
+    let filterSessionToken = null;
 
     // Helper function to check if a string looks like a UUID (not a username)
     const isUUID = (str) => {
@@ -784,19 +911,18 @@ export default {
         );
       }
 
-      // Apply city filter (case-insensitive partial match)
-      if (appliedFilters.value.city) {
-        const cityFilter = appliedFilters.value.city.toLowerCase();
+      // Apply location filter (case-insensitive partial match) - searches both city and location fields
+      if (appliedFilters.value.location) {
+        const locationFilter = appliedFilters.value.location.toLowerCase();
         result = result.filter((posting) =>
-          (posting.city || "").toLowerCase().includes(cityFilter)
+          (posting.city || "").toLowerCase().includes(locationFilter) ||
+          (posting.location || "").toLowerCase().includes(locationFilter)
         );
       }
 
-      // Sort by city
+      // Sort by most recent first (by _id descending, as MongoDB ObjectIds contain timestamp)
       return result.sort((a, b) => {
-        const cityA = (a.city || "").toLowerCase();
-        const cityB = (b.city || "").toLowerCase();
-        return cityA.localeCompare(cityB);
+        return b._id.localeCompare(a._id);
       });
     });
 
@@ -805,7 +931,7 @@ export default {
         minAge: filters.value.minAge,
         maxAge: filters.value.maxAge,
         gender: filters.value.gender,
-        city: filters.value.city,
+        location: filters.value.location,
       };
     };
 
@@ -814,14 +940,183 @@ export default {
         minAge: null,
         maxAge: null,
         gender: "",
-        city: "",
+        location: "",
       };
       appliedFilters.value = {
         minAge: null,
         maxAge: null,
         gender: "",
-        city: "",
+        location: "",
       };
+    };
+
+    /**
+     * Load Google Maps API if not already loaded
+     */
+    const ensureGoogleMapsLoaded = async () => {
+      if (window.google?.maps?.places?.AutocompleteSuggestion) {
+        return true;
+      }
+
+      try {
+        const response = await apiRequest('/config/mapsKey', {});
+        const apiKey = response.apiKey || import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+
+        if (!apiKey) {
+          console.error('Google Maps API key not available for autocomplete');
+          return false;
+        }
+
+        const existingScript = document.querySelector('script[src*="maps.googleapis.com"]');
+
+        if (!existingScript) {
+          await new Promise((resolve, reject) => {
+            const script = document.createElement('script');
+            script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&loading=async&callback=Function.prototype`;
+            script.async = true;
+            script.defer = true;
+            script.onload = () => resolve();
+            script.onerror = (error) => reject(error);
+            document.head.appendChild(script);
+          });
+        }
+
+        let retries = 0;
+        while (retries < 50) {
+          if (window.google?.maps?.places?.AutocompleteSuggestion) {
+            return true;
+          }
+          await new Promise(resolve => setTimeout(resolve, 100));
+          retries++;
+        }
+
+        return false;
+      } catch (error) {
+        console.error('Error loading Google Maps API:', error);
+        return false;
+      }
+    };
+
+    /**
+     * Handle filter location input changes
+     */
+    const handleFilterLocationInput = (event) => {
+      const input = event.target.value;
+      filters.value.location = input;
+      fetchFilterLocationSuggestions(input);
+    };
+
+    /**
+     * Handle blur event for filter location autocomplete
+     */
+    const handleFilterLocationBlur = () => {
+      setTimeout(() => {
+        showFilterSuggestions.value = false;
+      }, 200);
+    };
+
+    /**
+     * Fetch autocomplete suggestions for filter location
+     */
+    const fetchFilterLocationSuggestions = async (input) => {
+      if (!input || input.length < 2) {
+        filterAutocompleteSuggestions.value = [];
+        showFilterSuggestions.value = false;
+        return;
+      }
+
+      try {
+        const isLoaded = await ensureGoogleMapsLoaded();
+        if (!isLoaded || !google.maps.places.AutocompleteSuggestion) {
+          return;
+        }
+
+        if (!filterSessionToken) {
+          filterSessionToken = new google.maps.places.AutocompleteSessionToken();
+        }
+
+        const request = {
+          input: input,
+          sessionToken: filterSessionToken,
+          locationBias: {
+            west: -71.15,
+            north: 42.40,
+            east: -71.05,
+            south: 42.35,
+          },
+        };
+
+        const { suggestions } = await google.maps.places.AutocompleteSuggestion.fetchAutocompleteSuggestions(request);
+
+        filterAutocompleteSuggestions.value = suggestions.map(s => {
+          const prediction = s.placePrediction;
+          let displayText = 'Unknown location';
+
+          try {
+            if (prediction && prediction.text) {
+              displayText = String(prediction.text);
+            }
+          } catch (e) {
+            console.log('Error extracting text:', e.message);
+          }
+
+          return {
+            displayText: displayText,
+            placePrediction: prediction,
+            rawSuggestion: s
+          };
+        });
+        showFilterSuggestions.value = suggestions && suggestions.length > 0;
+      } catch (err) {
+        console.error('Error fetching filter location suggestions:', err);
+        filterAutocompleteSuggestions.value = [];
+        showFilterSuggestions.value = false;
+      }
+    };
+
+    /**
+     * Select a filter location suggestion
+     */
+    const selectFilterSuggestion = async (suggestion) => {
+      try {
+        if (!suggestion) return;
+
+        const prediction = suggestion.placePrediction || suggestion.rawSuggestion || suggestion;
+        let place;
+
+        if (typeof prediction.toPlace === 'function') {
+          place = prediction.toPlace();
+        } else {
+          return;
+        }
+
+        await place.fetchFields({
+          fields: ['displayName', 'formattedAddress', 'location'],
+        });
+
+        const address = place.formattedAddress || place.displayName;
+        filters.value.location = address;
+        showFilterSuggestions.value = false;
+        filterAutocompleteSuggestions.value = [];
+        filterSessionToken = null;
+      } catch (err) {
+        console.error('Error selecting filter location:', err);
+      }
+    };
+
+    /**
+     * Get suggestion display text safely
+     */
+    const getSuggestionText = (suggestion) => {
+      if (!suggestion) {
+        return '';
+      }
+
+      if (suggestion.displayText) {
+        return suggestion.displayText;
+      }
+
+      return 'Unknown location';
     };
 
     const sortedPostings = computed(() => {
@@ -1034,7 +1329,37 @@ export default {
       }
     };
 
-    const openModal = () => {
+    // Convert gender number to string for form
+    // Form uses: "Male", "Female", "Non-binary", "Prefer not to say"
+    // Profile uses: 0=Male, 1=Female, 2=Non-binary, 3=Other
+    const getGenderString = (genderNum) => {
+      const genderMap = {
+        0: "Male",
+        1: "Female",
+        2: "Non-binary",
+        3: "Prefer not to say" // Map "Other" (3) to "Prefer not to say" for form
+      };
+      return genderMap[genderNum] || "";
+    };
+
+
+    const openModal = async () => {
+      // Ensure we have user info before opening modal
+      await ensureValidUserId();
+
+      // Auto-populate age and gender from user profile
+      if (sessionStore.user) {
+        // Set age if available
+        if (sessionStore.user.age !== undefined && sessionStore.user.age !== null) {
+          form.value.age = sessionStore.user.age;
+        }
+
+        // Set gender if available (convert from number to string)
+        if (sessionStore.user.gender !== undefined && sessionStore.user.gender !== null) {
+          form.value.gender = getGenderString(sessionStore.user.gender);
+        }
+      }
+
       localModal.value = true;
     };
 
@@ -1074,6 +1399,17 @@ export default {
       return postings.value.find(p => p._id === expandedPosting.value) || {};
     };
 
+    // Helper functions to extract aboutMe and lookingFor for display
+    const getAboutMe = (posting) => {
+      if (!posting) return "";
+      return posting.aboutYourself || "";
+    };
+
+    const getLookingFor = (posting) => {
+      if (!posting) return "";
+      return posting.lookingFor || "";
+    };
+
     const truncateText = (text, maxLength) => {
       if (!text) return '';
       if (text.length <= maxLength) return text;
@@ -1083,21 +1419,122 @@ export default {
     const closeModal = () => {
       localModal.value = false;
       createError.value = "";
+      // Reset form but keep age and gender empty - they'll be auto-populated on next open
+      form.value = {
+        city: "",
+        gender: "",
+        age: "",
+        aboutMe: "",
+        lookingFor: "",
+        housingStatus: "",
+        startDate: "",
+        endDate: "",
+        dailyRhythm: "",
+        cleanlinessPreference: "",
+        homeEnvironment: "",
+        guestsVisitors: "",
+        numberOfRoommates: "",
+      };
+    };
+
+    // Helper function to parse old combined homeEnvironment format
+    const parseHomeEnvironment = (homeEnv, guestsVis) => {
+      // If guestsVisitors already has a value, use the new format
+      if (guestsVis && guestsVis.trim() !== "") {
+        return {
+          homeEnvironment: homeEnv ?? "",
+          guestsVisitors: guestsVis ?? "",
+        };
+      }
+
+      // If homeEnvironment matches new format values, use as-is
+      const newFormatValues = [
+        "Quiet (minimal noise, low visitors)",
+        "Moderate (some noise, occasional visitors)",
+        "Social / lively (friends over often)",
+        "Flexible / depends on schedule",
+      ];
+      if (homeEnv && newFormatValues.includes(homeEnv)) {
+        return {
+          homeEnvironment: homeEnv,
+          guestsVisitors: guestsVis ?? "",
+        };
+      }
+
+      // Parse old combined format
+      if (homeEnv) {
+        const homeEnvLower = homeEnv.toLowerCase();
+        let parsedHomeEnv = "";
+        let parsedGuestsVis = "";
+
+        // Map old combined values to new separate fields
+        if (homeEnvLower.includes("quiet home")) {
+          parsedHomeEnv = "Quiet (minimal noise, low visitors)";
+          if (homeEnvLower.includes("prefer few or no guests")) {
+            parsedGuestsVis = "Prefer few or no guests";
+          } else if (homeEnvLower.includes("occasional guests")) {
+            parsedGuestsVis = "Occasional guests okay";
+          }
+        } else if (homeEnvLower.includes("moderate activity")) {
+          parsedHomeEnv = "Moderate (some noise, occasional visitors)";
+          if (homeEnvLower.includes("occasional guests")) {
+            parsedGuestsVis = "Occasional guests okay";
+          } else if (homeEnvLower.includes("frequent guests")) {
+            parsedGuestsVis = "Comfortable with frequent guests";
+          }
+        } else if (homeEnvLower.includes("social") || homeEnvLower.includes("lively")) {
+          parsedHomeEnv = "Social / lively (friends over often)";
+          if (homeEnvLower.includes("frequent guests")) {
+            parsedGuestsVis = "Comfortable with frequent guests";
+          } else if (homeEnvLower.includes("overnight guests")) {
+            parsedGuestsVis = "Comfortable with overnight guests";
+          }
+        } else if (homeEnvLower.includes("flexible")) {
+          parsedHomeEnv = "Flexible / depends on schedule";
+          parsedGuestsVis = "Occasional guests okay"; // Default for flexible
+        }
+
+        // If we successfully parsed, return parsed values
+        if (parsedHomeEnv) {
+          return {
+            homeEnvironment: parsedHomeEnv,
+            guestsVisitors: parsedGuestsVis || "Occasional guests okay",
+          };
+        }
+      }
+
+      // Fallback: use stored values as-is
+      return {
+        homeEnvironment: homeEnv ?? "",
+        guestsVisitors: guestsVis ?? "",
+      };
     };
 
     const editPosting = (posting) => {
       editingPostingId.value = posting._id;
+      // Handle both old (description) and new (aboutYourself/lookingFor) formats
+      const aboutMe = posting.aboutYourself || (posting.description ? posting.description.split('\n\n---\n\n')[0] : "");
+      const lookingFor = posting.lookingFor || (posting.description && posting.description.includes('---') ? posting.description.split('\n\n---\n\n')[1] : "");
+
+      // Use stored values directly - parseHomeEnvironment is only for display/creation, not editing
+      // Preserve exact values, trimming whitespace to ensure they match dropdown options
+      const homeEnv = posting.homeEnvironment ? String(posting.homeEnvironment).trim() : "";
+      const guestsVis = posting.guestsVisitors ? String(posting.guestsVisitors).trim() : "";
+
       editForm.value = {
-        city: posting.city || "",
-        gender: posting.gender || "",
-        age: posting.age || "",
-        description: posting.description || "",
+        city: posting.city ?? "",
+        gender: posting.gender ?? "",
+        age: posting.age ?? "",
+        aboutMe: aboutMe,
+        lookingFor: lookingFor,
+        housingStatus: posting.housingStatus ?? "",
         startDate: formatDateForInput(posting.startDate),
         endDate: formatDateForInput(posting.endDate),
-        dailyRhythm: posting.dailyRhythm || "",
-        cleanlinessPreference: posting.cleanlinessPreference || "",
-        homeEnvironment: posting.homeEnvironment || "",
-        guestsVisitors: posting.guestsVisitors || "",
+        dailyRhythm: posting.dailyRhythm ? String(posting.dailyRhythm).trim() : "",
+        cleanlinessPreference: posting.cleanlinessPreference ? String(posting.cleanlinessPreference).trim() : "",
+        homeEnvironment: homeEnv,
+        guestsVisitors: guestsVis,
+        numberOfRoommates: posting.numberOfRoommates ?? "",
       };
       editError.value = "";
       showEditModal.value = true;
@@ -1111,7 +1548,9 @@ export default {
         city: "",
         gender: "",
         age: "",
-        description: "",
+        aboutMe: "",
+        lookingFor: "",
+        housingStatus: "",
         startDate: "",
         endDate: "",
         dailyRhythm: "",
@@ -1155,10 +1594,36 @@ export default {
         if (editForm.value.age !== posting.age) {
           await roommatePostings.editAge(userId, editForm.value.age);
         }
-        if (editForm.value.description !== posting.description) {
-          await roommatePostings.editDescription(
+        // Edit aboutYourself if changed (only if posting has new format)
+        if (posting.aboutYourself !== undefined && editForm.value.aboutMe !== posting.aboutYourself) {
+          await roommatePostings.editAboutYourself(
             userId,
-            editForm.value.description
+            editForm.value.aboutMe
+          );
+        }
+        // Edit lookingFor if changed (only if posting has new format)
+        if (posting.lookingFor !== undefined && editForm.value.lookingFor !== posting.lookingFor) {
+          await roommatePostings.editLookingFor(
+            userId,
+            editForm.value.lookingFor
+          );
+        }
+        // Edit guestsVisitors if changed
+        if (editForm.value.guestsVisitors !== posting.guestsVisitors) {
+          await roommatePostings.editGuestsVisitors(
+            userId,
+            editForm.value.guestsVisitors
+          );
+        }
+        // If old format (description), update both fields to migrate to new format
+        if (posting.description && !posting.aboutYourself && !posting.lookingFor) {
+          await roommatePostings.editAboutYourself(
+            userId,
+            editForm.value.aboutMe
+          );
+          await roommatePostings.editLookingFor(
+            userId,
+            editForm.value.lookingFor
           );
         }
 
@@ -1212,16 +1677,16 @@ export default {
             editForm.value.homeEnvironment
           );
         }
-        if (editForm.value.guestsVisitors !== posting.guestsVisitors) {
-          await roommatePostings.editGuestsVisitors(
-            userId,
-            editForm.value.guestsVisitors
-          );
-        }
         if (editForm.value.numberOfRoommates !== posting.numberOfRoommates) {
           await roommatePostings.editNumberOfRoommates(
             userId,
             editForm.value.numberOfRoommates
+          );
+        }
+        if (editForm.value.housingStatus !== posting.housingStatus) {
+          await roommatePostings.editHousingStatus(
+            userId,
+            editForm.value.housingStatus
           );
         }
 
@@ -1282,8 +1747,11 @@ export default {
 
       try {
         await roommatePostings.delete(postingId);
+        // Close the expanded view if this posting was expanded
+        if (expandedPosting.value === postingId) {
+          expandedPosting.value = null;
+        }
         await fetchPostings();
-        alert("Posting deleted successfully");
       } catch (err) {
         console.error("Error deleting posting:", err);
         alert("Failed to delete posting: " + (err.message || "Unknown error"));
@@ -1303,7 +1771,7 @@ export default {
         console.log("Contacting poster for posting:", postingId);
         const result = await roommatePostings.contact(postingId);
         console.log("Contact sent successfully:", result);
-        alert("Your interest has been sent to the posting owner!");
+        alert("Your interest has been sent to the posting owner! They will email you with next steps if they choose to continue the conversation.");
 
         // Refetch saved items to update local state
         await fetchSavedItems();
@@ -1330,13 +1798,14 @@ export default {
           !form.value.city ||
           !form.value.gender ||
           !form.value.age ||
-          !form.value.description ||
+          !form.value.aboutMe ||
+          !form.value.lookingFor ||
+          !form.value.housingStatus ||
           !form.value.startDate ||
           !form.value.endDate ||
           !form.value.dailyRhythm ||
           !form.value.cleanlinessPreference ||
           !form.value.homeEnvironment ||
-          !form.value.guestsVisitors ||
           !form.value.numberOfRoommates
         ) {
           createError.value = "Please fill in all required fields";
@@ -1348,7 +1817,9 @@ export default {
           city: form.value.city,
           gender: form.value.gender,
           age: form.value.age,
-          description: form.value.description,
+          aboutYourself: form.value.aboutMe,
+          lookingFor: form.value.lookingFor,
+          housingStatus: form.value.housingStatus,
           startDate: form.value.startDate,
           endDate: form.value.endDate,
           dailyRhythm: form.value.dailyRhythm,
@@ -1386,13 +1857,13 @@ export default {
           city: "",
           gender: "",
           age: "",
-          description: "",
+          aboutMe: "",
+          lookingFor: "",
           startDate: "",
           endDate: "",
           dailyRhythm: "",
           cleanlinessPreference: "",
           homeEnvironment: "",
-          guestsVisitors: "",
           numberOfRoommates: "",
         };
         closeModal();
@@ -1423,6 +1894,11 @@ export default {
 
       fetchPostings();
       fetchSavedItems();
+
+      // Check if we should auto-open the create modal
+      if (route.query.openCreate === 'true') {
+        await openModal();
+      }
     });
 
     // Watch for route changes to refetch saved items when returning to this page
@@ -1445,6 +1921,12 @@ export default {
       filters,
       applyFilters,
       clearFilters,
+      filterAutocompleteSuggestions,
+      showFilterSuggestions,
+      handleFilterLocationInput,
+      handleFilterLocationBlur,
+      selectFilterSuggestion,
+      getSuggestionText,
       isLoading,
       error,
       isCreating,
@@ -1474,6 +1956,8 @@ export default {
       closeDetails,
       getExpandedPosting,
       truncateText,
+      getAboutMe,
+      getLookingFor,
     };
   },
 };
@@ -1487,10 +1971,14 @@ export default {
 }
 
 .hero {
-  background: rgb(47, 71, 62);
+  background-color: rgb(47, 71, 62);
+  background-image: url('../assets/scene.png');
+  background-size: cover;
+  background-position: center bottom;
   color: white;
   padding: 2rem 2rem;
   text-align: center;
+  position: relative;
 }
 
 .hero h2 {
@@ -1505,21 +1993,41 @@ export default {
   color: rgba(255, 255, 255, 0.9);
 }
 
-.create-btn {
-  background: white;
-  color: rgb(47, 71, 62);
-  border: none;
-  padding: 0.875rem 2rem;
-  font-size: 1.1rem;
-  font-weight: 600;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
+.button-spacer {
+  height: 3.25rem;
+  margin-bottom: 0;
 }
 
-.create-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+.floating-create-btn {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  width: 60px;
+  height: 60px;
+  background: rgb(30, 90, 46);
+  color: white;
+  border: none;
+  border-radius: 50%;
+  font-size: 2rem;
+  font-weight: 300;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  transition: transform 0.2s, box-shadow 0.3s, background 0.2s;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.floating-create-btn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+  background: rgb(22, 70, 36);
+}
+
+.floating-create-btn:active {
+  transform: scale(1.05);
 }
 
 /* Filter Bar Styles */
@@ -1546,6 +2054,11 @@ export default {
   min-width: 150px;
 }
 
+.location-filter-group {
+  flex: 1.5;
+  min-width: 200px;
+}
+
 .filter-group label {
   font-weight: 600;
   color: rgba(255, 255, 255, 0.9);
@@ -1568,6 +2081,41 @@ export default {
   outline: none;
   border-color: rgba(255, 255, 255, 0.5);
   background: white;
+}
+
+.age-range-inputs {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  padding: 0.25rem 0.5rem;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.age-range-inputs:focus-within {
+  border-color: rgba(255, 255, 255, 0.5);
+  background: white;
+}
+
+.age-range-inputs input {
+  border: none;
+  padding: 0.375rem;
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+}
+
+.age-range-inputs input:focus {
+  border: none;
+  background: transparent;
+}
+
+.age-separator {
+  color: #666;
+  font-weight: 500;
+  user-select: none;
 }
 
 .filter-actions {
@@ -1685,7 +2233,13 @@ export default {
   flex-shrink: 0;
 }
 
-.roommate-count {
+.tags-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.roommate-count, .housing-status-badge {
   font-size: 0.85rem;
   color: #1e5a2e;
   font-weight: 600;
@@ -1776,7 +2330,7 @@ export default {
   align-items: center;
   padding: 1.5rem 2rem;
   border-bottom: 2px solid #f8f9fa;
-  background: linear-gradient(135deg, #1e5a2e, #2d7a3d);
+  background: rgb(47, 71, 62);
   color: white;
   border-radius: 16px 16px 0 0;
 }
@@ -1917,7 +2471,7 @@ export default {
 .favorite-btn {
   background: none;
   border: none;
-  font-size: 1.5rem;
+  font-size: 2.2rem;
   cursor: pointer;
   padding: 0.25rem;
   transition: transform 0.2s;
@@ -1927,6 +2481,23 @@ export default {
   justify-content: center;
 }
 
+.favorite-btn .heart-icon {
+  color: #ccc;
+  -webkit-text-stroke: 1.5px #999;
+  -webkit-text-fill-color: transparent;
+  transition: all 0.2s;
+  font-size: 2.2rem;
+  font-weight: 300;
+  letter-spacing: -0.1em;
+  transform: scaleX(0.85);
+}
+
+.favorite-btn.is-saved .heart-icon {
+  color: #e74c3c;
+  -webkit-text-stroke: 1px #e74c3c;
+  -webkit-text-fill-color: #e74c3c;
+}
+
 .owner-badge {
   background: rgb(47, 71, 62);
   color: white;
@@ -1934,10 +2505,6 @@ export default {
   border-radius: 20px;
   font-size: 0.8rem;
   font-weight: 600;
-}
-
-.favorite-btn.is-saved {
-  color: #e74c3c;
 }
 
 .favorite-btn:hover {
@@ -1967,22 +2534,61 @@ export default {
   border-radius: 6px;
 }
 
-.contact-btn {
+.action-buttons-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
   width: 100%;
+}
+
+.favorite-action-btn {
   background: rgb(22, 53, 27);
   color: white;
   border: none;
-  padding: 0.625rem 1rem;
+  padding: 0.75rem 1rem;
   font-size: 0.95rem;
   font-weight: 600;
   border-radius: 6px;
   cursor: pointer;
-  margin-top: 0.75rem;
-  transition: background 0.2s, opacity 0.2s;
+  transition: background 0.2s, opacity 0.2s, transform 0.1s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.favorite-action-btn:hover {
+  background: rgb(15, 38, 19);
+  transform: translateY(-2px);
+}
+
+.favorite-action-btn:active {
+  transform: translateY(0);
+}
+
+.contact-btn {
+  background: rgb(22, 53, 27);
+  color: white;
+  border: none;
+  padding: 0.75rem 1rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s, opacity 0.2s, transform 0.1s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
 }
 
 .contact-btn:hover:not(:disabled) {
   background: rgb(15, 38, 19);
+  transform: translateY(-2px);
+}
+
+.contact-btn:active:not(:disabled) {
+  transform: translateY(0);
 }
 
 .contact-btn:disabled {
@@ -1990,6 +2596,11 @@ export default {
   cursor: not-allowed;
 }
 
+.btn-icon {
+  flex-shrink: 0;
+}
+
+.favorited-message,
 .contacted-message {
   padding: 0.75rem 1.5rem;
   background: #f5f5f5;
@@ -1997,6 +2608,9 @@ export default {
   border-radius: 8px;
   text-align: center;
   font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .listing-actions {
@@ -2082,13 +2696,43 @@ export default {
   }
 }
 
-.modal-content h2 {
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #f0f0f0;
+  width: 100%;
+}
+
+.modal-header h2 {
   color: rgb(47, 71, 62);
-  margin-bottom: 2rem;
-  font-size: 1.875rem;
+  margin: 0;
+  font-size: 1.5rem;
   font-weight: 700;
-  border-bottom: 3px solid rgb(47, 71, 62);
-  padding-bottom: 0.75rem;
+}
+
+.modal-header .close-btn {
+  background: none;
+  border: none;
+  font-size: 2rem;
+  cursor: pointer;
+  color: #666;
+  padding: 0.25rem;
+  border-radius: 50%;
+  width: 2.5rem;
+  height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease, color 0.2s ease;
+  line-height: 1;
+}
+
+.modal-header .close-btn:hover {
+  background: #f0f0f0;
+  color: #333;
 }
 
 .form-group {
@@ -2113,7 +2757,8 @@ export default {
 .form-group input,
 .form-group select,
 .form-group textarea {
-  width: 100%;
+  width: 85%;
+  max-width: 500px;
   padding: 0.875rem 1rem;
   border: 2px solid #e0e0e0;
   border-radius: 8px;
@@ -2379,5 +3024,53 @@ export default {
   border-radius: 50%;
   top: 8px;
   left: 6px;
+}
+
+/* Autocomplete Suggestions Styles */
+.autocomplete-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.suggestions-list {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 2px solid #e0e0e0;
+  border-top: none;
+  border-radius: 0 0 6px 6px;
+  max-height: 250px;
+  overflow-y: auto;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  z-index: 1000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.suggestion-item {
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.suggestion-item:last-child {
+  border-bottom: none;
+}
+
+.suggestion-item:hover {
+  background-color: #f8f9fa;
+  color: #1e5a2e;
+}
+
+.suggestion-item:active {
+  background-color: #e8f5e9;
+}
+
+.filter-suggestions-list {
+  z-index: 1001;
 }
 </style>
