@@ -31,9 +31,9 @@
         <div class="filter-group date-range-group">
           <label>Date Range</label>
           <div class="date-range-inputs">
-            <input type="date" v-model="filters.startDate" />
+            <input type="date" v-model="filters.startDate" @keydown.prevent />
             <span class="date-separator">-</span>
-            <input type="date" v-model="filters.endDate" />
+            <input type="date" v-model="filters.endDate" @keydown.prevent />
           </div>
         </div>
 
@@ -1123,6 +1123,59 @@ export default {
     let editSessionToken = null;
     let filterSessionToken = null;
 
+    // State and country mappings for location filtering
+    const stateMap = {
+      'al': 'alabama', 'ak': 'alaska', 'az': 'arizona', 'ar': 'arkansas', 'ca': 'california',
+      'co': 'colorado', 'ct': 'connecticut', 'de': 'delaware', 'fl': 'florida', 'ga': 'georgia',
+      'hi': 'hawaii', 'id': 'idaho', 'il': 'illinois', 'in': 'indiana', 'ia': 'iowa',
+      'ks': 'kansas', 'ky': 'kentucky', 'la': 'louisiana', 'me': 'maine', 'md': 'maryland',
+      'ma': 'massachusetts', 'mi': 'michigan', 'mn': 'minnesota', 'ms': 'mississippi', 'mo': 'missouri',
+      'mt': 'montana', 'ne': 'nebraska', 'nv': 'nevada', 'nh': 'new hampshire', 'nj': 'new jersey',
+      'nm': 'new mexico', 'ny': 'new york', 'nc': 'north carolina', 'nd': 'north dakota', 'oh': 'ohio',
+      'ok': 'oklahoma', 'or': 'oregon', 'pa': 'pennsylvania', 'ri': 'rhode island', 'sc': 'south carolina',
+      'sd': 'south dakota', 'tn': 'tennessee', 'tx': 'texas', 'ut': 'utah', 'vt': 'vermont',
+      'va': 'virginia', 'wa': 'washington', 'wv': 'west virginia', 'wi': 'wisconsin', 'wy': 'wyoming'
+    };
+
+    const countryMap = {
+      'usa': 'united states',
+      'us': 'united states',
+      'uk': 'united kingdom',
+      'uae': 'united arab emirates'
+    };
+
+    // Helper function to check if a filter part matches a location string (with state/country variations)
+    const locationPartMatches = (filterPart, locationString) => {
+      const normalizedFilter = filterPart.toLowerCase().trim();
+      const normalizedLocation = locationString.toLowerCase();
+
+      // Direct substring match
+      if (normalizedLocation.includes(normalizedFilter)) {
+        return true;
+      }
+
+      // Check if filter is a state abbreviation
+      const stateFullName = stateMap[normalizedFilter];
+      if (stateFullName && normalizedLocation.includes(stateFullName)) {
+        return true;
+      }
+
+      // Check if filter is a country abbreviation
+      const countryFullName = countryMap[normalizedFilter];
+      if (countryFullName && normalizedLocation.includes(countryFullName)) {
+        return true;
+      }
+
+      // Check if location contains a state abbreviation that matches filter
+      for (const [abbr, fullName] of Object.entries(stateMap)) {
+        if (normalizedFilter === fullName && normalizedLocation.includes(abbr)) {
+          return true;
+        }
+      }
+
+      return false;
+    };
+
     // Computed property for filtered listings
     const filteredListings = computed(() => {
       let result = [...listingsData.value];
@@ -1156,44 +1209,49 @@ export default {
         filterStartDate.setHours(0, 0, 0, 0);
         filterEndDate.setHours(0, 0, 0, 0);
 
-        result = result.filter((listing) => {
-          const listingStartDate = new Date(listing.startDate);
-          const listingEndDate = new Date(listing.endDate);
+        // If start date is after end date, return no results
+        if (filterStartDate > filterEndDate) {
+          result = [];
+        } else {
+          result = result.filter((listing) => {
+            const listingStartDate = new Date(listing.startDate);
+            const listingEndDate = new Date(listing.endDate);
 
-          // Set to midnight for consistent comparison
-          listingStartDate.setHours(0, 0, 0, 0);
-          listingEndDate.setHours(0, 0, 0, 0);
+            // Set to midnight for consistent comparison
+            listingStartDate.setHours(0, 0, 0, 0);
+            listingEndDate.setHours(0, 0, 0, 0);
 
-          // Listing must start on or before the requested start date
-          // AND listing must end on or after the requested end date
-          const isValid =
-            listingStartDate <= filterStartDate &&
-            listingEndDate >= filterEndDate;
+            // Listing must start on or before the requested start date
+            // AND listing must end on or after the requested end date
+            const isValid =
+              listingStartDate <= filterStartDate &&
+              listingEndDate >= filterEndDate;
 
-          // Debug logging
-          if (listing.title) {
-            console.log(`[Filter] Listing: ${listing.title}`);
-            console.log(
-              `  Listing dates: ${listingStartDate.toLocaleDateString()} to ${listingEndDate.toLocaleDateString()}`
-            );
-            console.log(
-              `  Filter dates: ${filterStartDate.toLocaleDateString()} to ${filterEndDate.toLocaleDateString()}`
-            );
-            console.log(
-              `  Start check: ${listingStartDate.toISOString()} <= ${filterStartDate.toISOString()} = ${
-                listingStartDate <= filterStartDate
-              }`
-            );
-            console.log(
-              `  End check: ${listingEndDate.toISOString()} >= ${filterEndDate.toISOString()} = ${
-                listingEndDate >= filterEndDate
-              }`
-            );
-            console.log(`  Result: ${isValid ? "PASS" : "FAIL"}`);
-          }
+            // Debug logging
+            if (listing.title) {
+              console.log(`[Filter] Listing: ${listing.title}`);
+              console.log(
+                `  Listing dates: ${listingStartDate.toLocaleDateString()} to ${listingEndDate.toLocaleDateString()}`
+              );
+              console.log(
+                `  Filter dates: ${filterStartDate.toLocaleDateString()} to ${filterEndDate.toLocaleDateString()}`
+              );
+              console.log(
+                `  Start check: ${listingStartDate.toISOString()} <= ${filterStartDate.toISOString()} = ${
+                  listingStartDate <= filterStartDate
+                }`
+              );
+              console.log(
+                `  End check: ${listingEndDate.toISOString()} >= ${filterEndDate.toISOString()} = ${
+                  listingEndDate >= filterEndDate
+                }`
+              );
+              console.log(`  Result: ${isValid ? "PASS" : "FAIL"}`);
+            }
 
-          return isValid;
-        });
+            return isValid;
+          });
+        }
       } else if (appliedFilters.value.startDate) {
         // If only start date is provided, listing must be available at that date or later
         const filterStartDate = new Date(appliedFilters.value.startDate);
@@ -1218,15 +1276,17 @@ export default {
         });
       }
 
-      // Apply location filter (case-insensitive partial match) - searches address, city, and location fields
+      // Apply location filter with hierarchical matching (supports state/country variations)
       if (appliedFilters.value.location) {
-        const locationFilter = appliedFilters.value.location.toLowerCase();
-        result = result.filter(
-          (listing) =>
-            (listing.address || "").toLowerCase().includes(locationFilter) ||
-            (listing.city || "").toLowerCase().includes(locationFilter) ||
-            (listing.location || "").toLowerCase().includes(locationFilter)
-        );
+        const locationFilter = appliedFilters.value.location.toLowerCase().trim();
+        const filterParts = locationFilter.split(',').map(part => part.trim());
+
+        result = result.filter((listing) => {
+          const locationString = `${listing.address || ''}, ${listing.city || ''}, ${listing.location || ''}`.toLowerCase();
+
+          // All filter parts must match somewhere in the location string
+          return filterParts.every(filterPart => locationPartMatches(filterPart, locationString));
+        });
       }
 
       return result;
@@ -3129,6 +3189,11 @@ export default {
   min-width: 150px;
 }
 
+.date-range-group {
+  flex: 1.5;
+  min-width: 300px;
+}
+
 .location-filter-group {
   flex: 1.5;
   min-width: 200px;
@@ -3181,6 +3246,10 @@ export default {
   flex: 1;
   min-width: 0;
   background: transparent;
+}
+
+.date-range-inputs input {
+  min-width: 10px;
 }
 
 .price-range-inputs input:focus,
