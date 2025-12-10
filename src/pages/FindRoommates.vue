@@ -725,6 +725,22 @@
     <button @click="openModal" class="floating-create-btn" title="Create New Posting">
       +
     </button>
+
+    <!-- Contact Success Message Modal -->
+    <div v-if="showContactMessage" class="modal-overlay" @click="closeContactMessage">
+      <div class="modal-content message-modal" @click.stop>
+        <div class="message-header">
+          <h2>Message Sent!</h2>
+          <button @click="closeContactMessage" class="close-btn">×</button>
+        </div>
+        <div class="message-body">
+          <p>We emailed the poster of this post about your interest and contact information. They will be in contact soon.</p>
+        </div>
+        <div class="message-actions">
+          <button @click="closeContactMessage" class="submit-btn">OK</button>
+        </div>
+      </div>
+    </div>
   </main>
 </template>
 
@@ -767,6 +783,7 @@ export default {
     const isCreating = ref(false);
     const createError = ref("");
     const isContacting = ref({}); // Track loading state per posting ID
+    const showContactMessage = ref(false);
     const showEditModal = ref(false);
     const isEditing = ref(false);
     const editError = ref("");
@@ -1771,7 +1788,9 @@ export default {
         console.log("Contacting poster for posting:", postingId);
         const result = await roommatePostings.contact(postingId);
         console.log("Contact sent successfully:", result);
-        alert("Your interest has been sent to the posting owner! They will email you with next steps if they choose to continue the conversation.");
+        
+        // Show success message popup
+        showContactMessage.value = true;
 
         // Refetch saved items to update local state
         await fetchSavedItems();
@@ -1784,6 +1803,10 @@ export default {
         // Clear loading state for this specific posting
         isContacting.value[postingId] = false;
       }
+    };
+
+    const closeContactMessage = () => {
+      showContactMessage.value = false;
     };
 
     const emitCreatePosting = async () => {
@@ -1940,6 +1963,8 @@ export default {
       toggleSavedItem,
       contactPoster,
       isContacting,
+      showContactMessage,
+      closeContactMessage,
       isPoster,
       deletePosting,
       formatDate,
@@ -2670,6 +2695,72 @@ export default {
   to {
     opacity: 1;
   }
+}
+
+/* Message Modal Styles */
+.message-modal {
+  max-width: 500px;
+  padding: 0;
+}
+
+.message-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem 2rem;
+  border-bottom: 1px solid #e0e0e0;
+  background: rgb(47, 71, 62);
+  color: white;
+  border-radius: 12px 12px 0 0;
+}
+
+.message-header h2 {
+  margin: 0;
+  font-size: 1.5rem;
+  color: white;
+}
+
+.message-header .close-btn {
+  background: transparent;
+  border: none;
+  color: white;
+  font-size: 2rem;
+  cursor: pointer;
+  padding: 0;
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.message-header .close-btn:hover {
+  opacity: 0.8;
+}
+
+.message-body {
+  padding: 2rem;
+  text-align: center;
+}
+
+.message-body p {
+  margin: 0;
+  font-size: 1.1rem;
+  line-height: 1.6;
+  color: #333;
+}
+
+.message-actions {
+  padding: 1.5rem 2rem;
+  border-top: 1px solid #e0e0e0;
+  display: flex;
+  justify-content: center;
+  border-radius: 0 0 12px 12px;
+}
+
+.message-actions .submit-btn {
+  min-width: 120px;
 }
 
 .modal-content {
