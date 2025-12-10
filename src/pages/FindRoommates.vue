@@ -30,15 +30,32 @@
           </div>
         </div>
 
-        <div class="filter-group">
-          <label for="filterGender">Gender</label>
-          <select id="filterGender" v-model="filters.gender">
-            <option value="">Any</option>
-            <option value="Male">Male</option>
-            <option value="Female">Female</option>
-            <option value="Non-binary">Non-binary</option>
-            <option value="Other">Other</option>
-          </select>
+        <div class="filter-group gender-filter-group">
+          <label>Gender</label>
+          <div class="custom-dropdown" ref="genderDropdown">
+            <div class="dropdown-trigger" @click="toggleGenderDropdown">
+              <span v-if="filters.gender.length === 0">Any</span>
+              <span v-else style="color: #333;">{{ filters.gender.join(', ') }}</span>
+            </div>
+            <div v-if="showGenderDropdown" class="dropdown-menu">
+              <div class="dropdown-option" @click="toggleGender('Male')">
+                <span style="color: #333;">Male</span>
+                <input type="checkbox" :checked="filters.gender.includes('Male')" readonly @click.stop />
+              </div>
+              <div class="dropdown-option" @click="toggleGender('Female')">
+                <span style="color: #333;">Female</span>
+                <input type="checkbox" :checked="filters.gender.includes('Female')" readonly @click.stop />
+              </div>
+              <div class="dropdown-option" @click="toggleGender('Non-binary')">
+                <span style="color: #333;">Non-binary</span>
+                <input type="checkbox" :checked="filters.gender.includes('Non-binary')" readonly @click.stop />
+              </div>
+              <div class="dropdown-option" @click="toggleGender('Other')">
+                <span style="color: #333;">Other</span>
+                <input type="checkbox" :checked="filters.gender.includes('Other')" readonly @click.stop />
+              </div>
+            </div>
+          </div>
         </div>
 
         <div class="filter-group location-filter-group">
@@ -745,7 +762,7 @@
 </template>
 
 <script>
-import { ref, computed, onMounted, watch, nextTick } from "vue";
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from "vue";
 import { useRoute } from "vue-router";
 import { useSessionStore } from "../stores/session.js";
 import {
@@ -810,14 +827,14 @@ export default {
     const filters = ref({
       minAge: null,
       maxAge: null,
-      gender: "",
+      gender: [],
       location: "",
     });
 
     const appliedFilters = ref({
       minAge: null,
       maxAge: null,
-      gender: "",
+      gender: [],
       location: "",
     });
 
@@ -825,6 +842,63 @@ export default {
     const filterAutocompleteSuggestions = ref([]);
     const showFilterSuggestions = ref(false);
     let filterSessionToken = null;
+
+    // Gender dropdown state
+    const showGenderDropdown = ref(false);
+    const genderDropdown = ref(null);
+
+    // State and country mappings for location filtering
+    const stateMap = {
+      'al': 'alabama', 'ak': 'alaska', 'az': 'arizona', 'ar': 'arkansas', 'ca': 'california',
+      'co': 'colorado', 'ct': 'connecticut', 'de': 'delaware', 'fl': 'florida', 'ga': 'georgia',
+      'hi': 'hawaii', 'id': 'idaho', 'il': 'illinois', 'in': 'indiana', 'ia': 'iowa',
+      'ks': 'kansas', 'ky': 'kentucky', 'la': 'louisiana', 'me': 'maine', 'md': 'maryland',
+      'ma': 'massachusetts', 'mi': 'michigan', 'mn': 'minnesota', 'ms': 'mississippi', 'mo': 'missouri',
+      'mt': 'montana', 'ne': 'nebraska', 'nv': 'nevada', 'nh': 'new hampshire', 'nj': 'new jersey',
+      'nm': 'new mexico', 'ny': 'new york', 'nc': 'north carolina', 'nd': 'north dakota', 'oh': 'ohio',
+      'ok': 'oklahoma', 'or': 'oregon', 'pa': 'pennsylvania', 'ri': 'rhode island', 'sc': 'south carolina',
+      'sd': 'south dakota', 'tn': 'tennessee', 'tx': 'texas', 'ut': 'utah', 'vt': 'vermont',
+      'va': 'virginia', 'wa': 'washington', 'wv': 'west virginia', 'wi': 'wisconsin', 'wy': 'wyoming'
+    };
+
+    const countryMap = {
+      'usa': 'united states',
+      'us': 'united states',
+      'uk': 'united kingdom',
+      'uae': 'united arab emirates'
+    };
+
+    // Helper function to check if a filter part matches a location string (with state/country variations)
+    const locationPartMatches = (filterPart, locationString) => {
+      const normalizedFilter = filterPart.toLowerCase().trim();
+      const normalizedLocation = locationString.toLowerCase();
+
+      // Direct substring match
+      if (normalizedLocation.includes(normalizedFilter)) {
+        return true;
+      }
+
+      // Check if filter is a state abbreviation
+      const stateFullName = stateMap[normalizedFilter];
+      if (stateFullName && normalizedLocation.includes(stateFullName)) {
+        return true;
+      }
+
+      // Check if filter is a country abbreviation
+      const countryFullName = countryMap[normalizedFilter];
+      if (countryFullName && normalizedLocation.includes(countryFullName)) {
+        return true;
+      }
+
+      // Check if location contains a state abbreviation that matches filter
+      for (const [abbr, fullName] of Object.entries(stateMap)) {
+        if (normalizedFilter === fullName && normalizedLocation.includes(abbr)) {
+          return true;
+        }
+      }
+
+      return false;
+    };
 
     // Helper function to check if a string looks like a UUID (not a username)
     const isUUID = (str) => {
@@ -922,19 +996,24 @@ export default {
       }
 
       // Apply gender filter
-      if (appliedFilters.value.gender) {
+      if (appliedFilters.value.gender.length > 0) {
         result = result.filter(
-          (posting) => posting.gender === appliedFilters.value.gender
+          (posting) => appliedFilters.value.gender.includes(posting.gender)
         );
       }
 
-      // Apply location filter (case-insensitive partial match) - searches both city and location fields
+      // Apply location filter with hierarchical matching (supports state/country variations)
       if (appliedFilters.value.location) {
-        const locationFilter = appliedFilters.value.location.toLowerCase();
-        result = result.filter((posting) =>
-          (posting.city || "").toLowerCase().includes(locationFilter) ||
-          (posting.location || "").toLowerCase().includes(locationFilter)
-        );
+        const locationFilter = appliedFilters.value.location.toLowerCase().trim();
+        const filterParts = locationFilter.split(',').map(part => part.trim()).filter(part => part.length > 0);
+
+        result = result.filter((posting) => {
+          const locationString = `${posting.city || ''}, ${posting.location || ''}`.toLowerCase();
+
+          // At least one filter part must match somewhere in the location string
+          // This allows "cambridge, MA, USA" to match postings with just "Cambridge"
+          return filterParts.some(filterPart => locationPartMatches(filterPart, locationString));
+        });
       }
 
       // Sort by most recent first (by _id descending, as MongoDB ObjectIds contain timestamp)
@@ -956,15 +1035,35 @@ export default {
       filters.value = {
         minAge: null,
         maxAge: null,
-        gender: "",
+        gender: [],
         location: "",
       };
       appliedFilters.value = {
         minAge: null,
         maxAge: null,
-        gender: "",
+        gender: [],
         location: "",
       };
+    };
+
+    // Gender dropdown functions
+    const toggleGenderDropdown = () => {
+      showGenderDropdown.value = !showGenderDropdown.value;
+    };
+
+    const toggleGender = (gender) => {
+      const index = filters.value.gender.indexOf(gender);
+      if (index > -1) {
+        filters.value.gender.splice(index, 1);
+      } else {
+        filters.value.gender.push(gender);
+      }
+    };
+
+    const handleClickOutside = (event) => {
+      if (genderDropdown.value && !genderDropdown.value.contains(event.target)) {
+        showGenderDropdown.value = false;
+      }
     };
 
     /**
@@ -1922,6 +2021,14 @@ export default {
       if (route.query.openCreate === 'true') {
         await openModal();
       }
+
+      // Add event listener for clicking outside gender dropdown
+      document.addEventListener('click', handleClickOutside);
+    });
+
+    onUnmounted(() => {
+      // Remove event listener when component is unmounted
+      document.removeEventListener('click', handleClickOutside);
     });
 
     // Watch for route changes to refetch saved items when returning to this page
@@ -1944,6 +2051,10 @@ export default {
       filters,
       applyFilters,
       clearFilters,
+      showGenderDropdown,
+      genderDropdown,
+      toggleGenderDropdown,
+      toggleGender,
       filterAutocompleteSuggestions,
       showFilterSuggestions,
       handleFilterLocationInput,
@@ -2178,6 +2289,110 @@ export default {
 .clear-btn:hover {
   background: rgba(255, 255, 255, 0.3);
   transform: translateY(-1px);
+}
+
+/* Custom dropdown styles for gender filter */
+.custom-dropdown {
+  position: relative;
+}
+
+.dropdown-trigger {
+  padding: 0.625rem;
+  padding-right: 2rem;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.95);
+  cursor: pointer;
+  user-select: none;
+  transition: border-color 0.2s, background 0.2s;
+  line-height: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #333 !important;
+  position: relative;
+}
+
+.dropdown-trigger::after {
+  content: '';
+  position: absolute;
+  right: 0.625rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 0;
+  height: 0;
+  border-left: 5px solid transparent;
+  border-right: 5px solid transparent;
+  border-top: 6px solid #666;
+  pointer-events: none;
+}
+
+.dropdown-trigger:hover {
+  border-color: rgba(255, 255, 255, 0.5);
+  background: white;
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  background: white;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  margin-top: 4px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  overflow: hidden;
+}
+
+.dropdown-option {
+  padding: 0.625rem;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: background 0.2s;
+}
+
+.dropdown-option:hover {
+  background: #f5f5f5;
+}
+
+.dropdown-option span {
+  color: #333 !important;
+}
+
+.dropdown-option input[type="checkbox"] {
+  pointer-events: none;
+  cursor: pointer;
+  margin: 0;
+  width: 18px;
+  height: 18px;
+  position: relative;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  border: 2px solid #ccc;
+  border-radius: 3px;
+  background: white;
+  transition: all 0.2s;
+}
+
+.dropdown-option input[type="checkbox"]:checked {
+  background: rgb(22, 53, 27);
+  border-color: rgb(22, 53, 27);
+}
+
+.dropdown-option input[type="checkbox"]:checked::after {
+  content: '✓';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 14px;
+  color: white;
+  font-weight: bold;
 }
 
 .listings-section {
