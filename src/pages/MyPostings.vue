@@ -1681,56 +1681,112 @@ export default {
         }
 
         // Handle amenities
+        // Handle amenities: compare old vs new and only process actual changes
         const oldAmenities = listing.amenities || [];
-        const newAmenities = editForm.value.amenities || [];
+        const newAmenities = (editForm.value.amenities || []).filter(
+          (a) => a.title && a.title.trim() !== ""
+        );
 
-        // Delete amenities that were removed
-        for (const oldAmenity of oldAmenities) {
-          const stillExists = newAmenities.some(
-            (newA) =>
-              newA._id === oldAmenity._id &&
-              newA.title === oldAmenity.title &&
-              newA.distance === oldAmenity.distance
+        // Helper function to normalize distance for comparison
+        const normalizeDistance = (distance) => {
+          if (distance === "" || distance === null || distance === undefined) {
+            return 0;
+          }
+          return Number(distance);
+        };
+
+        // Helper function to check if two amenities are the same
+        const areAmenitiesEqual = (oldA, newA) => {
+          const oldDistance = normalizeDistance(oldA.distance);
+          const newDistance = normalizeDistance(newA.distance);
+          return (
+            oldA.title === newA.title &&
+            oldDistance === newDistance
           );
-          if (!stillExists && oldAmenity._id) {
+        };
+
+        // Step 1: Delete amenities that were completely removed (not in new list at all)
+        for (const oldAmenity of oldAmenities) {
+          const existsInNew = newAmenities.some((newA) => {
+            // Check if this old amenity exists in new list by _id
+            return newA._id === oldAmenity._id;
+          });
+
+          // If old amenity is not in new list at all, delete it
+          if (!existsInNew && oldAmenity._id) {
             await listingsApi.deleteAmenity(listingId, oldAmenity._id);
           }
         }
 
-        // Add new amenities
+        // Step 2: Handle new amenities and changed amenities
         for (const newAmenity of newAmenities) {
-          // If it doesn't have an _id, it's a new amenity
-          if (
-            !newAmenity._id &&
-            newAmenity.title &&
-            newAmenity.distance !== ""
-          ) {
+          // If it doesn't have an _id, check if it's actually a duplicate of an existing amenity
+          // by comparing title and distance (in case _id was lost)
+          if (!newAmenity._id) {
+            // Check if this amenity already exists in old amenities (by title and distance)
+            const normalizedNewDistance = normalizeDistance(newAmenity.distance);
+            const isDuplicate = oldAmenities.some((oldA) => {
+              const normalizedOldDistance = normalizeDistance(oldA.distance);
+              return (
+                oldA.title === newAmenity.title &&
+                normalizedOldDistance === normalizedNewDistance
+              );
+            });
+
+            // If it's a duplicate, skip it (don't try to add)
+            if (isDuplicate) {
+              continue;
+            }
+
+            // It's truly new - add it
+            const distance = normalizeDistance(newAmenity.distance);
             await listingsApi.addAmenity(
               listingId,
               newAmenity.title,
-              newAmenity.distance
+              distance
             );
+            continue;
           }
-          // If it has an _id but values changed, delete old and add new
-          else if (newAmenity._id) {
-            const oldAmenity = oldAmenities.find(
-              (a) => a._id === newAmenity._id
-            );
-            if (
-              oldAmenity &&
-              (oldAmenity.title !== newAmenity.title ||
-                oldAmenity.distance !== newAmenity.distance)
-            ) {
-              await listingsApi.deleteAmenity(listingId, newAmenity._id);
-              if (newAmenity.title && newAmenity.distance !== "") {
-                await listingsApi.addAmenity(
-                  listingId,
-                  newAmenity.title,
-                  newAmenity.distance
-                );
-              }
+          
+          // If it has an _id, find the corresponding old amenity
+          const oldAmenity = oldAmenities.find(
+            (a) => a._id === newAmenity._id
+          );
+
+          // If old amenity doesn't exist, check if it's a duplicate by title/distance
+          if (!oldAmenity) {
+            const normalizedNewDistance = normalizeDistance(newAmenity.distance);
+            const isDuplicate = oldAmenities.some((oldA) => {
+              const normalizedOldDistance = normalizeDistance(oldA.distance);
+              return (
+                oldA.title === newAmenity.title &&
+                normalizedOldDistance === normalizedNewDistance
+              );
+            });
+
+            // If it's a duplicate, skip it
+            if (isDuplicate) {
+              continue;
             }
+
+            // Not a duplicate and no old amenity found - skip it to be safe
+            continue;
           }
+
+          // Check if values are unchanged - if so, skip entirely (don't process)
+          if (areAmenitiesEqual(oldAmenity, newAmenity)) {
+            // Amenity is unchanged - skip it completely
+            continue;
+          }
+
+          // Values changed - update it (delete old, add new)
+          await listingsApi.deleteAmenity(listingId, newAmenity._id);
+          const distance = normalizeDistance(newAmenity.distance);
+          await listingsApi.addAmenity(
+            listingId,
+            newAmenity.title,
+            distance
+          );
         }
 
         // Refresh listings to get updated data

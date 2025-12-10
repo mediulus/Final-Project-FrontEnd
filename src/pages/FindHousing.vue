@@ -45,12 +45,19 @@
               id="filterLocation"
               v-model="filters.location"
               @input="handleFilterLocationInput"
-              @focus="showFilterSuggestions = filterAutocompleteSuggestions.length > 0"
+              @focus="
+                showFilterSuggestions = filterAutocompleteSuggestions.length > 0
+              "
               @blur="handleFilterLocationBlur"
               placeholder="e.g., Cambridge"
               autocomplete="off"
             />
-            <ul v-if="showFilterSuggestions && filterAutocompleteSuggestions.length" class="suggestions-list filter-suggestions-list">
+            <ul
+              v-if="
+                showFilterSuggestions && filterAutocompleteSuggestions.length
+              "
+              class="suggestions-list filter-suggestions-list"
+            >
               <li
                 v-for="(suggestion, index) in filterAutocompleteSuggestions"
                 :key="index"
@@ -79,7 +86,17 @@
           :class="{ active: showMapView }"
         >
           <span v-if="showMapView" class="toggle-content">
-            <svg class="toggle-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <svg
+              class="toggle-icon"
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
               <line x1="8" y1="6" x2="21" y2="6"></line>
               <line x1="8" y1="12" x2="21" y2="12"></line>
               <line x1="8" y1="18" x2="21" y2="18"></line>
@@ -90,15 +107,32 @@
             Show List View
           </span>
           <span v-else class="toggle-content">
-            <svg class="toggle-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon>
+            <svg
+              class="toggle-icon"
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            >
+              <polygon
+                points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"
+              ></polygon>
               <line x1="8" y1="2" x2="8" y2="18"></line>
               <line x1="16" y1="6" x2="16" y2="22"></line>
             </svg>
             Show Map View
           </span>
         </button>
-        <span class="results-count">{{ filteredListings.length }} listing{{ filteredListings.length !== 1 ? 's' : '' }} found</span>
+        <span class="results-count"
+          >{{ filteredListings.length }} listing{{
+            filteredListings.length !== 1 ? "s" : ""
+          }}
+          found</span
+        >
       </div>
 
       <!-- Map View -->
@@ -121,24 +155,48 @@
           v-for="listing in filteredListings"
           :key="listing._id"
           class="posting-card"
-          :class="{ 'expanded': expandedListing === listing._id }"
+          :class="{ expanded: expandedListing === listing._id }"
           @click="toggleListingDetails(listing._id)"
         >
           <div class="card-header">
             <div class="card-title">
-            <h3>{{ listing.title }}</h3>
+              <h3>{{ listing.title }}</h3>
               <div class="quick-info">
                 <span class="address-preview">
-                  <svg class="info-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                  <svg
+                    class="info-icon"
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path
+                      d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"
+                    ></path>
                     <circle cx="12" cy="10" r="3"></circle>
                   </svg>
                   {{ listing.address }}
                 </span>
                 <span class="price-preview">
-                  <svg class="info-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="rgb(22, 53, 27)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <svg
+                    class="info-icon"
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="rgb(22, 53, 27)"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
                     <line x1="12" y1="1" x2="12" y2="23"></line>
-                    <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+                    <path
+                      d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"
+                    ></path>
                   </svg>
                   {{ listing.price }}/month
                 </span>
@@ -168,19 +226,35 @@
           <div class="card-preview">
             <div class="listing-summary">
               <span class="dates-preview">
-                <svg class="info-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <svg
+                  class="info-icon"
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="2"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                >
                   <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
                   <line x1="16" y1="2" x2="16" y2="6"></line>
                   <line x1="8" y1="2" x2="8" y2="6"></line>
                   <line x1="3" y1="10" x2="21" y2="10"></line>
                 </svg>
-                {{ formatDate(listing.startDate) }} - {{ formatDate(listing.endDate) }}
+                {{ formatDate(listing.startDate) }} -
+                {{ formatDate(listing.endDate) }}
               </span>
-              <span class="type-preview">{{ listing.type === "sublet" ? "Sublet" : "Renting" }}</span>
+              <span class="type-preview">{{
+                listing.type === "sublet" ? "Sublet" : "Renting"
+              }}</span>
             </div>
 
             <!-- Photo Preview -->
-            <div v-if="listing.photos && listing.photos.length > 0" class="card-photos">
+            <div
+              v-if="listing.photos && listing.photos.length > 0"
+              class="card-photos"
+            >
               <div
                 v-for="(photo, index) in listing.photos.slice(0, 2)"
                 :key="index"
@@ -197,7 +271,10 @@
               </div>
             </div>
 
-            <p class="description-preview" v-if="listing.description && listing.description.trim()">
+            <p
+              class="description-preview"
+              v-if="listing.description && listing.description.trim()"
+            >
               {{ truncateText(listing.description, 100) }}
             </p>
             <div class="expand-hint">
@@ -218,7 +295,13 @@
 
         <div class="detail-content">
           <!-- Photos Gallery -->
-          <div v-if="getExpandedListing().photos && getExpandedListing().photos.length > 0" class="info-section">
+          <div
+            v-if="
+              getExpandedListing().photos &&
+              getExpandedListing().photos.length > 0
+            "
+            class="info-section"
+          >
             <h3>Photos</h3>
             <div class="modal-photos-gallery">
               <div
@@ -233,7 +316,7 @@
                 />
               </div>
             </div>
-            </div>
+          </div>
 
           <!-- Property Information -->
           <div class="info-section">
@@ -246,7 +329,13 @@
                 </tr>
                 <tr>
                   <td>Type</td>
-                  <td>{{ getExpandedListing().type === "sublet" ? "Sublet" : "Renting" }}</td>
+                  <td>
+                    {{
+                      getExpandedListing().type === "sublet"
+                        ? "Sublet"
+                        : "Renting"
+                    }}
+                  </td>
                 </tr>
                 <tr>
                   <td>Price</td>
@@ -263,14 +352,23 @@
               <tbody>
                 <tr>
                   <td>Duration</td>
-                  <td>{{ formatDate(getExpandedListing().startDate) }} - {{ formatDate(getExpandedListing().endDate) }}</td>
+                  <td>
+                    {{ formatDate(getExpandedListing().startDate) }} -
+                    {{ formatDate(getExpandedListing().endDate) }}
+                  </td>
                 </tr>
               </tbody>
             </table>
           </div>
 
           <!-- Description -->
-          <div class="info-section" v-if="getExpandedListing().description && getExpandedListing().description.trim()">
+          <div
+            class="info-section"
+            v-if="
+              getExpandedListing().description &&
+              getExpandedListing().description.trim()
+            "
+          >
             <h3>About This Property</h3>
             <div class="description-full">
               {{ getExpandedListing().description }}
@@ -278,13 +376,28 @@
           </div>
 
           <!-- Amenities -->
-          <div class="info-section" v-if="getExpandedListing().amenities && getExpandedListing().amenities.length > 0">
+          <div
+            class="info-section"
+            v-if="
+              getExpandedListing().amenities &&
+              getExpandedListing().amenities.length > 0
+            "
+          >
             <h3>Amenities</h3>
             <table class="info-table">
               <tbody>
-                <tr v-for="amenity in getExpandedListing().amenities" :key="amenity._id">
+                <tr
+                  v-for="amenity in getExpandedListing().amenities"
+                  :key="amenity._id"
+                >
                   <td>{{ amenity.title }}</td>
-                  <td>{{ amenity.distance && amenity.distance > 0 ? `${amenity.distance} miles` : 'On-site' }}</td>
+                  <td>
+                    {{
+                      amenity.distance && amenity.distance > 0
+                        ? `${amenity.distance} miles`
+                        : "On-site"
+                    }}
+                  </td>
                 </tr>
               </tbody>
             </table>
@@ -293,52 +406,98 @@
 
         <!-- Action Buttons -->
         <div class="detail-actions">
-          <div v-if="!isOwner(getExpandedListing())" class="action-buttons-grid">
+          <div
+            v-if="!isOwner(getExpandedListing())"
+            class="action-buttons-grid"
+          >
             <button
               v-if="!isSaved(getExpandedListing()._id)"
               @click.stop="toggleSavedItem(getExpandedListing()._id)"
               class="favorite-action-btn"
             >
-              <svg class="btn-icon" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+              <svg
+                class="btn-icon"
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path
+                  d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"
+                ></path>
               </svg>
               <span>Favorite</span>
             </button>
 
-            <div v-if="isSaved(getExpandedListing()._id)" class="favorited-message">
+            <div
+              v-if="isSaved(getExpandedListing()._id)"
+              class="favorited-message"
+            >
               Already favorited
             </div>
 
             <button
-              v-if="!getItemTags(getExpandedListing()._id).includes('Contacted')"
+              v-if="
+                !getItemTags(getExpandedListing()._id).includes('Contacted')
+              "
               @click="sendInterest(getExpandedListing()._id)"
               class="contact-btn"
               :disabled="isSendingInterest[getExpandedListing()._id]"
             >
-              <svg class="btn-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+              <svg
+                class="btn-icon"
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path
+                  d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"
+                ></path>
               </svg>
-              <span>{{ isSendingInterest[getExpandedListing()._id] ? "Contacting..." : "Contact" }}</span>
+              <span>{{
+                isSendingInterest[getExpandedListing()._id]
+                  ? "Contacting..."
+                  : "Contact"
+              }}</span>
             </button>
 
-            <div v-if="getItemTags(getExpandedListing()._id).includes('Contacted')" class="contacted-message">
+            <div
+              v-if="getItemTags(getExpandedListing()._id).includes('Contacted')"
+              class="contacted-message"
+            >
               Already contacted
             </div>
           </div>
 
           <div v-if="isOwner(getExpandedListing())" class="owner-actions">
-            <button @click="editListing(getExpandedListing())" class="edit-btn">Edit Listing</button>
-            <button @click="deleteListing(getExpandedListing()._id)" class="delete-btn">Delete Listing</button>
+            <button @click="editListing(getExpandedListing())" class="edit-btn">
+              Edit Listing
+            </button>
+            <button
+              @click="deleteListing(getExpandedListing()._id)"
+              class="delete-btn"
+            >
+              Delete Listing
+            </button>
           </div>
         </div>
       </div>
-      </div>
+    </div>
 
     <!-- Create Listing Modal -->
     <div v-if="showCreateModal" class="modal-overlay" @click="closeCreateModal">
       <div class="modal-content" @click.stop>
         <div class="modal-header">
-        <h2>Create New Listing</h2>
+          <h2>Create New Listing</h2>
           <button @click="closeCreateModal" class="close-btn">×</button>
         </div>
         <form @submit.prevent="handleCreateListing">
@@ -356,18 +515,21 @@
           <div class="form-group">
             <label for="address">Address *</label>
             <div class="autocomplete-wrapper">
-            <input
-              type="text"
-              id="address"
-              v-model="newListing.address"
+              <input
+                type="text"
+                id="address"
+                v-model="newListing.address"
                 @input="handleAddressInput"
                 @focus="showSuggestions = autocompleteSuggestions.length > 0"
                 @blur="handleAddressBlur"
-              required
-              placeholder="e.g., 123 Main St, Cambridge, MA"
+                required
+                placeholder="e.g., 123 Main St, Cambridge, MA"
                 autocomplete="off"
               />
-              <ul v-if="showSuggestions && autocompleteSuggestions.length" class="suggestions-list">
+              <ul
+                v-if="showSuggestions && autocompleteSuggestions.length"
+                class="suggestions-list"
+              >
                 <li
                   v-for="(suggestion, index) in autocompleteSuggestions"
                   :key="index"
@@ -436,9 +598,9 @@
           <div class="form-group">
             <label>Amenities</label>
             <p class="amenities-description">
-              Add any perks about the house, such as in-house laundry or kitchen features,
-              or convenient nearby locations like grocery stores. For locations, specify
-              the distance in miles from home.
+              Add any perks about the house, such as in-house laundry or kitchen
+              features, or convenient nearby locations like grocery stores. For
+              locations, specify the distance in miles from home.
             </p>
             <div class="amenities-list">
               <div
@@ -487,19 +649,53 @@
                 style="display: none"
               />
 
-              <div class="photo-preview-grid" v-if="selectedPhotos.length > 0 || newListing.photos.length > 0">
+              <div
+                class="photo-preview-grid"
+                v-if="selectedPhotos.length > 0 || newListing.photos.length > 0"
+              >
                 <!-- Existing uploaded photos -->
-                <div v-for="(photo, index) in newListing.photos" :key="'uploaded-' + index" class="photo-preview-item">
-                  <img :src="getPhotoUrl(photo)" :alt="'Photo ' + (index + 1)" class="photo-preview" />
-                  <button type="button" @click="removeUploadedPhoto(index)" class="remove-photo-btn">×</button>
+                <div
+                  v-for="(photo, index) in newListing.photos"
+                  :key="'uploaded-' + index"
+                  class="photo-preview-item"
+                >
+                  <img
+                    :src="getPhotoUrl(photo)"
+                    :alt="'Photo ' + (index + 1)"
+                    class="photo-preview"
+                  />
+                  <button
+                    type="button"
+                    @click="removeUploadedPhoto(index)"
+                    class="remove-photo-btn"
+                  >
+                    ×
+                  </button>
                   <div class="photo-status uploaded">✓ Uploaded</div>
                 </div>
 
                 <!-- New photos being uploaded -->
-                <div v-for="(photo, index) in selectedPhotos" :key="'selected-' + index" class="photo-preview-item">
-                  <img :src="photo.preview" :alt="'Selected photo ' + (index + 1)" class="photo-preview" />
-                  <button type="button" @click="removeSelectedPhoto(index)" class="remove-photo-btn">×</button>
-                  <div class="photo-status" :class="{ uploading: photo.uploading, error: photo.error }">
+                <div
+                  v-for="(photo, index) in selectedPhotos"
+                  :key="'selected-' + index"
+                  class="photo-preview-item"
+                >
+                  <img
+                    :src="photo.preview"
+                    :alt="'Selected photo ' + (index + 1)"
+                    class="photo-preview"
+                  />
+                  <button
+                    type="button"
+                    @click="removeSelectedPhoto(index)"
+                    class="remove-photo-btn"
+                  >
+                    ×
+                  </button>
+                  <div
+                    class="photo-status"
+                    :class="{ uploading: photo.uploading, error: photo.error }"
+                  >
                     <span v-if="photo.uploading">Uploading...</span>
                     <span v-else-if="photo.error">{{ photo.error }}</span>
                     <span v-else>Ready to upload</span>
@@ -508,8 +704,15 @@
               </div>
 
               <div class="photo-upload-actions">
-                <button type="button" @click="triggerPhotoSelect" class="photo-upload-btn" :disabled="uploading">
-                  📷 Add Photos ({{ newListing.photos.length + selectedPhotos.length }}/5)
+                <button
+                  type="button"
+                  @click="triggerPhotoSelect"
+                  class="photo-upload-btn"
+                  :disabled="uploading"
+                >
+                  📷 Add Photos ({{
+                    newListing.photos.length + selectedPhotos.length
+                  }}/5)
                 </button>
                 <button
                   v-if="selectedPhotos.length > 0"
@@ -518,12 +721,14 @@
                   class="upload-photos-btn"
                   :disabled="uploading"
                 >
-                  {{ uploading ? 'Uploading...' : 'Upload Photos' }}
+                  {{ uploading ? "Uploading..." : "Upload Photos" }}
                 </button>
               </div>
 
               <div class="photo-upload-info">
-                <p>• Max 5 photos • Each photo max 10MB • JPG, PNG, GIF supported</p>
+                <p>
+                  • Max 5 photos • Each photo max 10MB • JPG, PNG, GIF supported
+                </p>
               </div>
             </div>
           </div>
@@ -534,8 +739,18 @@
             <button type="button" @click="closeCreateModal" class="cancel-btn">
               Cancel
             </button>
-            <button type="submit" class="submit-btn" :disabled="creating || uploading">
-              {{ creating ? "Creating..." : uploading ? "Uploading Photos..." : "Create Listing" }}
+            <button
+              type="submit"
+              class="submit-btn"
+              :disabled="creating || uploading"
+            >
+              {{
+                creating
+                  ? "Creating..."
+                  : uploading
+                  ? "Uploading Photos..."
+                  : "Create Listing"
+              }}
             </button>
           </div>
         </form>
@@ -564,18 +779,23 @@
           <div class="form-group">
             <label for="edit-address">Address *</label>
             <div class="autocomplete-wrapper">
-            <input
-              type="text"
-              id="edit-address"
-              v-model="editForm.address"
+              <input
+                type="text"
+                id="edit-address"
+                v-model="editForm.address"
                 @input="handleEditAddressInput"
-                @focus="showEditSuggestions = editAutocompleteSuggestions.length > 0"
+                @focus="
+                  showEditSuggestions = editAutocompleteSuggestions.length > 0
+                "
                 @blur="handleEditAddressBlur"
-              required
-              placeholder="e.g., 123 Main St, Cambridge, MA"
+                required
+                placeholder="e.g., 123 Main St, Cambridge, MA"
                 autocomplete="off"
               />
-              <ul v-if="showEditSuggestions && editAutocompleteSuggestions.length" class="suggestions-list">
+              <ul
+                v-if="showEditSuggestions && editAutocompleteSuggestions.length"
+                class="suggestions-list"
+              >
                 <li
                   v-for="(suggestion, index) in editAutocompleteSuggestions"
                   :key="index"
@@ -643,9 +863,9 @@
           <div class="form-group">
             <label>Amenities</label>
             <p class="amenities-description">
-              Add any perks about the house, such as in-house laundry or kitchen features,
-              or convenient nearby locations like grocery stores. For locations, specify
-              the distance in miles from home.
+              Add any perks about the house, such as in-house laundry or kitchen
+              features, or convenient nearby locations like grocery stores. For
+              locations, specify the distance in miles from home.
             </p>
             <div class="amenities-list">
               <div
@@ -698,19 +918,55 @@
                 style="display: none"
               />
 
-              <div class="photo-preview-grid" v-if="editSelectedPhotos.length > 0 || editForm.photos.length > 0">
+              <div
+                class="photo-preview-grid"
+                v-if="
+                  editSelectedPhotos.length > 0 || editForm.photos.length > 0
+                "
+              >
                 <!-- Existing uploaded photos -->
-                <div v-for="(photo, index) in editForm.photos" :key="'edit-uploaded-' + index" class="photo-preview-item">
-                  <img :src="getPhotoUrl(photo)" :alt="'Photo ' + (index + 1)" class="photo-preview" />
-                  <button type="button" @click="removeEditUploadedPhoto(index)" class="remove-photo-btn">×</button>
+                <div
+                  v-for="(photo, index) in editForm.photos"
+                  :key="'edit-uploaded-' + index"
+                  class="photo-preview-item"
+                >
+                  <img
+                    :src="getPhotoUrl(photo)"
+                    :alt="'Photo ' + (index + 1)"
+                    class="photo-preview"
+                  />
+                  <button
+                    type="button"
+                    @click="removeEditUploadedPhoto(index)"
+                    class="remove-photo-btn"
+                  >
+                    ×
+                  </button>
                   <div class="photo-status uploaded">✓ Uploaded</div>
                 </div>
 
                 <!-- New photos being uploaded -->
-                <div v-for="(photo, index) in editSelectedPhotos" :key="'edit-selected-' + index" class="photo-preview-item">
-                  <img :src="photo.preview" :alt="'Selected photo ' + (index + 1)" class="photo-preview" />
-                  <button type="button" @click="removeEditSelectedPhoto(index)" class="remove-photo-btn">×</button>
-                  <div class="photo-status" :class="{ uploading: photo.uploading, error: photo.error }">
+                <div
+                  v-for="(photo, index) in editSelectedPhotos"
+                  :key="'edit-selected-' + index"
+                  class="photo-preview-item"
+                >
+                  <img
+                    :src="photo.preview"
+                    :alt="'Selected photo ' + (index + 1)"
+                    class="photo-preview"
+                  />
+                  <button
+                    type="button"
+                    @click="removeEditSelectedPhoto(index)"
+                    class="remove-photo-btn"
+                  >
+                    ×
+                  </button>
+                  <div
+                    class="photo-status"
+                    :class="{ uploading: photo.uploading, error: photo.error }"
+                  >
                     <span v-if="photo.uploading">Uploading...</span>
                     <span v-else-if="photo.error">{{ photo.error }}</span>
                     <span v-else>Ready to upload</span>
@@ -719,8 +975,15 @@
               </div>
 
               <div class="photo-upload-actions">
-                <button type="button" @click="triggerEditPhotoSelect" class="photo-upload-btn" :disabled="editUploading">
-                  📷 Add Photos ({{ editForm.photos.length + editSelectedPhotos.length }}/5)
+                <button
+                  type="button"
+                  @click="triggerEditPhotoSelect"
+                  class="photo-upload-btn"
+                  :disabled="editUploading"
+                >
+                  📷 Add Photos ({{
+                    editForm.photos.length + editSelectedPhotos.length
+                  }}/5)
                 </button>
                 <button
                   v-if="editSelectedPhotos.length > 0"
@@ -729,12 +992,14 @@
                   class="upload-photos-btn"
                   :disabled="editUploading"
                 >
-                  {{ editUploading ? 'Uploading...' : 'Upload Photos' }}
+                  {{ editUploading ? "Uploading..." : "Upload Photos" }}
                 </button>
               </div>
 
               <div class="photo-upload-info">
-                <p>• Max 5 photos • Each photo max 10MB • JPG, PNG, GIF supported</p>
+                <p>
+                  • Max 5 photos • Each photo max 10MB • JPG, PNG, GIF supported
+                </p>
               </div>
             </div>
           </div>
@@ -745,8 +1010,18 @@
             <button type="button" @click="closeEditModal" class="cancel-btn">
               Cancel
             </button>
-            <button type="submit" class="submit-btn" :disabled="isEditing || editUploading">
-              {{ isEditing ? "Saving..." : editUploading ? "Uploading Photos..." : "Save Changes" }}
+            <button
+              type="submit"
+              class="submit-btn"
+              :disabled="isEditing || editUploading"
+            >
+              {{
+                isEditing
+                  ? "Saving..."
+                  : editUploading
+                  ? "Uploading Photos..."
+                  : "Save Changes"
+              }}
             </button>
           </div>
         </form>
@@ -754,7 +1029,11 @@
     </div>
 
     <!-- Floating Create Button -->
-    <button @click="showCreateModal = true" class="floating-create-btn" title="Create New Listing">
+    <button
+      @click="showCreateModal = true"
+      class="floating-create-btn"
+      title="Create New Listing"
+    >
       +
     </button>
   </main>
@@ -777,7 +1056,7 @@ import GoogleMap from "../components/GoogleMap.vue";
 export default {
   name: "FindHousing",
   components: {
-    GoogleMap
+    GoogleMap,
   },
   setup() {
     const route = useRoute();
@@ -887,16 +1166,30 @@ export default {
 
           // Listing must start on or before the requested start date
           // AND listing must end on or after the requested end date
-          const isValid = listingStartDate <= filterStartDate && listingEndDate >= filterEndDate;
+          const isValid =
+            listingStartDate <= filterStartDate &&
+            listingEndDate >= filterEndDate;
 
           // Debug logging
           if (listing.title) {
             console.log(`[Filter] Listing: ${listing.title}`);
-            console.log(`  Listing dates: ${listingStartDate.toLocaleDateString()} to ${listingEndDate.toLocaleDateString()}`);
-            console.log(`  Filter dates: ${filterStartDate.toLocaleDateString()} to ${filterEndDate.toLocaleDateString()}`);
-            console.log(`  Start check: ${listingStartDate.toISOString()} <= ${filterStartDate.toISOString()} = ${listingStartDate <= filterStartDate}`);
-            console.log(`  End check: ${listingEndDate.toISOString()} >= ${filterEndDate.toISOString()} = ${listingEndDate >= filterEndDate}`);
-            console.log(`  Result: ${isValid ? 'PASS' : 'FAIL'}`);
+            console.log(
+              `  Listing dates: ${listingStartDate.toLocaleDateString()} to ${listingEndDate.toLocaleDateString()}`
+            );
+            console.log(
+              `  Filter dates: ${filterStartDate.toLocaleDateString()} to ${filterEndDate.toLocaleDateString()}`
+            );
+            console.log(
+              `  Start check: ${listingStartDate.toISOString()} <= ${filterStartDate.toISOString()} = ${
+                listingStartDate <= filterStartDate
+              }`
+            );
+            console.log(
+              `  End check: ${listingEndDate.toISOString()} >= ${filterEndDate.toISOString()} = ${
+                listingEndDate >= filterEndDate
+              }`
+            );
+            console.log(`  Result: ${isValid ? "PASS" : "FAIL"}`);
           }
 
           return isValid;
@@ -928,10 +1221,11 @@ export default {
       // Apply location filter (case-insensitive partial match) - searches address, city, and location fields
       if (appliedFilters.value.location) {
         const locationFilter = appliedFilters.value.location.toLowerCase();
-        result = result.filter((listing) =>
-          (listing.address || "").toLowerCase().includes(locationFilter) ||
-          (listing.city || "").toLowerCase().includes(locationFilter) ||
-          (listing.location || "").toLowerCase().includes(locationFilter)
+        result = result.filter(
+          (listing) =>
+            (listing.address || "").toLowerCase().includes(locationFilter) ||
+            (listing.city || "").toLowerCase().includes(locationFilter) ||
+            (listing.location || "").toLowerCase().includes(locationFilter)
         );
       }
 
@@ -941,25 +1235,25 @@ export default {
     // Computed property for map markers from filtered listings
     const mapMarkers = computed(() => {
       const markers = filteredListings.value
-        .filter(listing => listing.latitude && listing.longitude)
-        .map(listing => ({
+        .filter((listing) => listing.latitude && listing.longitude)
+        .map((listing) => ({
           lat: listing.latitude,
           lng: listing.longitude,
           title: listing.title,
-          listing: listing
+          listing: listing,
         }));
 
-      console.log('[FindHousing] mapMarkers computed:', {
+      console.log("[FindHousing] mapMarkers computed:", {
         totalListings: filteredListings.value.length,
         listingsWithCoords: markers.length,
-        markers: markers
+        markers: markers,
       });
 
       return markers;
     });
 
     const applyFilters = () => {
-      console.log('[FindHousing] Applying filters:', filters.value);
+      console.log("[FindHousing] Applying filters:", filters.value);
       appliedFilters.value = {
         minPrice: filters.value.minPrice,
         maxPrice: filters.value.maxPrice,
@@ -967,8 +1261,11 @@ export default {
         endDate: filters.value.endDate,
         location: filters.value.location,
       };
-      console.log('[FindHousing] Applied filters:', appliedFilters.value);
-      console.log('[FindHousing] Filtered listings count:', filteredListings.value.length);
+      console.log("[FindHousing] Applied filters:", appliedFilters.value);
+      console.log(
+        "[FindHousing] Filtered listings count:",
+        filteredListings.value.length
+      );
     };
 
     const clearFilters = () => {
@@ -1092,14 +1389,17 @@ export default {
     const handlePhotoSelect = (event) => {
       const files = Array.from(event.target.files);
       const maxPhotos = 5;
-      const currentTotal = newListing.value.photos.length + selectedPhotos.value.length;
+      const currentTotal =
+        newListing.value.photos.length + selectedPhotos.value.length;
 
       if (currentTotal + files.length > maxPhotos) {
-        alert(`You can only upload up to ${maxPhotos} photos total. Currently you have ${currentTotal} photos.`);
+        alert(
+          `You can only upload up to ${maxPhotos} photos total. Currently you have ${currentTotal} photos.`
+        );
         return;
       }
 
-      files.forEach(file => {
+      files.forEach((file) => {
         // Create preview URL
         const reader = new FileReader();
         reader.onload = (e) => {
@@ -1107,14 +1407,14 @@ export default {
             file: file,
             preview: e.target.result,
             uploading: false,
-            error: null
+            error: null,
           });
         };
         reader.readAsDataURL(file);
       });
 
       // Clear the input
-      event.target.value = '';
+      event.target.value = "";
     };
 
     const removeSelectedPhoto = (index) => {
@@ -1132,45 +1432,51 @@ export default {
 
       try {
         // Mark all as uploading
-        selectedPhotos.value.forEach(photo => {
+        selectedPhotos.value.forEach((photo) => {
           photo.uploading = true;
           photo.error = null;
         });
 
         // Upload images to Cloudinary
-        const files = selectedPhotos.value.map(photo => photo.file);
-        console.log('Starting upload of', files.length, 'files');
+        const files = selectedPhotos.value.map((photo) => photo.file);
+        console.log("Starting upload of", files.length, "files");
 
         const uploadedUrls = await uploadMultipleImages(files);
-        console.log('Upload completed, received URLs:', uploadedUrls);
+        console.log("Upload completed, received URLs:", uploadedUrls);
 
         // Convert URLs to photo objects for consistent display
-        const photoObjects = uploadedUrls.map(url => ({
+        const photoObjects = uploadedUrls.map((url) => ({
           url: url,
           thumbUrl: url,
-          storageKey: url.split('/').pop() || 'unknown',
+          storageKey: url.split("/").pop() || "unknown",
           alt: "Housing listing photo",
           width: 1200,
           height: 800,
-          contentType: url.includes('.png') ? "image/png" : "image/jpeg",
-          bytes: 500000
+          contentType: url.includes(".png") ? "image/png" : "image/jpeg",
+          bytes: 500000,
         }));
 
         // Add photo objects to listing
         newListing.value.photos.push(...photoObjects);
-        console.log('Photos added to listing, total photos now:', newListing.value.photos.length);
+        console.log(
+          "Photos added to listing, total photos now:",
+          newListing.value.photos.length
+        );
 
         // Clear selected photos
         selectedPhotos.value = [];
-
       } catch (error) {
-        console.error('Photo upload error:', error);
+        console.error("Photo upload error:", error);
         // Mark error on selected photos
-        selectedPhotos.value.forEach(photo => {
+        selectedPhotos.value.forEach((photo) => {
           photo.uploading = false;
-          photo.error = error.message || 'Upload failed';
+          photo.error = error.message || "Upload failed";
         });
-        alert(`Failed to upload photos: ${error.message || 'Unknown error'}. Please try again.`);
+        alert(
+          `Failed to upload photos: ${
+            error.message || "Unknown error"
+          }. Please try again.`
+        );
       } finally {
         uploading.value = false;
       }
@@ -1186,14 +1492,17 @@ export default {
     const handleEditPhotoSelect = (event) => {
       const files = Array.from(event.target.files);
       const maxPhotos = 5;
-      const currentTotal = editForm.value.photos.length + editSelectedPhotos.value.length;
+      const currentTotal =
+        editForm.value.photos.length + editSelectedPhotos.value.length;
 
       if (currentTotal + files.length > maxPhotos) {
-        alert(`You can only upload up to ${maxPhotos} photos total. Currently you have ${currentTotal} photos.`);
+        alert(
+          `You can only upload up to ${maxPhotos} photos total. Currently you have ${currentTotal} photos.`
+        );
         return;
       }
 
-      files.forEach(file => {
+      files.forEach((file) => {
         // Create preview URL
         const reader = new FileReader();
         reader.onload = (e) => {
@@ -1201,14 +1510,14 @@ export default {
             file: file,
             preview: e.target.result,
             uploading: false,
-            error: null
+            error: null,
           });
         };
         reader.readAsDataURL(file);
       });
 
       // Clear the input
-      event.target.value = '';
+      event.target.value = "";
     };
 
     const removeEditSelectedPhoto = (index) => {
@@ -1226,45 +1535,51 @@ export default {
 
       try {
         // Mark all as uploading
-        editSelectedPhotos.value.forEach(photo => {
+        editSelectedPhotos.value.forEach((photo) => {
           photo.uploading = true;
           photo.error = null;
         });
 
         // Upload files
-        const files = editSelectedPhotos.value.map(photo => photo.file);
-        console.log('Starting edit upload of', files.length, 'files');
+        const files = editSelectedPhotos.value.map((photo) => photo.file);
+        console.log("Starting edit upload of", files.length, "files");
 
         const uploadedUrls = await uploadMultipleImages(files);
-        console.log('Edit upload completed, received URLs:', uploadedUrls);
+        console.log("Edit upload completed, received URLs:", uploadedUrls);
 
         // Convert URLs to photo objects for consistent display
-        const photoObjects = uploadedUrls.map(url => ({
+        const photoObjects = uploadedUrls.map((url) => ({
           url: url,
           thumbUrl: url,
-          storageKey: url.split('/').pop() || 'unknown',
+          storageKey: url.split("/").pop() || "unknown",
           alt: "Housing listing photo",
           width: 1200,
           height: 800,
-          contentType: url.includes('.png') ? "image/png" : "image/jpeg",
-          bytes: 500000
+          contentType: url.includes(".png") ? "image/png" : "image/jpeg",
+          bytes: 500000,
         }));
 
         // Add photo objects to edit form
         editForm.value.photos.push(...photoObjects);
-        console.log('Photos added to edit form, total photos now:', editForm.value.photos.length);
+        console.log(
+          "Photos added to edit form, total photos now:",
+          editForm.value.photos.length
+        );
 
         // Clear selected photos
         editSelectedPhotos.value = [];
-
       } catch (error) {
-        console.error('Edit photo upload error:', error);
+        console.error("Edit photo upload error:", error);
         // Mark error on selected photos
-        editSelectedPhotos.value.forEach(photo => {
+        editSelectedPhotos.value.forEach((photo) => {
           photo.uploading = false;
-          photo.error = error.message || 'Upload failed';
+          photo.error = error.message || "Upload failed";
         });
-        alert(`Failed to upload photos: ${error.message || 'Unknown error'}. Please try again.`);
+        alert(
+          `Failed to upload photos: ${
+            error.message || "Unknown error"
+          }. Please try again.`
+        );
       } finally {
         editUploading.value = false;
       }
@@ -1276,35 +1591,38 @@ export default {
     const ensureGoogleMapsLoaded = async () => {
       // Check if already loaded and initialized
       if (window.google?.maps?.places?.AutocompleteSuggestion) {
-        console.log('Google Maps API already loaded');
+        console.log("Google Maps API already loaded");
         return true;
       }
 
       try {
-        const response = await apiRequest('/config/mapsKey', {});
-        const apiKey = response.apiKey || import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+        const response = await apiRequest("/config/mapsKey", {});
+        const apiKey =
+          response.apiKey || import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 
         if (!apiKey) {
-          console.error('Google Maps API key not available for autocomplete');
+          console.error("Google Maps API key not available for autocomplete");
           return false;
         }
 
         // Check if script tag already exists
-        const existingScript = document.querySelector('script[src*="maps.googleapis.com"]');
+        const existingScript = document.querySelector(
+          'script[src*="maps.googleapis.com"]'
+        );
 
         if (!existingScript) {
-          console.log('Loading Google Maps API...');
+          console.log("Loading Google Maps API...");
           await new Promise((resolve, reject) => {
-            const script = document.createElement('script');
+            const script = document.createElement("script");
             script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&loading=async&callback=Function.prototype`;
             script.async = true;
             script.defer = true;
             script.onload = () => {
-              console.log('Google Maps script loaded');
+              console.log("Google Maps script loaded");
               resolve();
             };
             script.onerror = (error) => {
-              console.error('Failed to load Google Maps script:', error);
+              console.error("Failed to load Google Maps script:", error);
               reject(error);
             };
             document.head.appendChild(script);
@@ -1315,17 +1633,17 @@ export default {
         let retries = 0;
         while (retries < 50) {
           if (window.google?.maps?.places?.AutocompleteSuggestion) {
-            console.log('Google Maps API ready');
+            console.log("Google Maps API ready");
             return true;
           }
-          await new Promise(resolve => setTimeout(resolve, 100));
+          await new Promise((resolve) => setTimeout(resolve, 100));
           retries++;
         }
 
-        console.error('Google Maps API failed to initialize after waiting');
+        console.error("Google Maps API failed to initialize after waiting");
         return false;
       } catch (error) {
-        console.error('Error loading Google Maps API:', error);
+        console.error("Error loading Google Maps API:", error);
         return false;
       }
     };
@@ -1334,10 +1652,15 @@ export default {
      * Fetch autocomplete suggestions using the new API
      */
     const fetchAutocompleteSuggestions = async (input, isEditMode = false) => {
-      console.log('fetchAutocompleteSuggestions called with input:', input, 'isEditMode:', isEditMode);
+      console.log(
+        "fetchAutocompleteSuggestions called with input:",
+        input,
+        "isEditMode:",
+        isEditMode
+      );
 
       if (!input || input.length < 2) {
-        console.log('Input too short, clearing suggestions');
+        console.log("Input too short, clearing suggestions");
         if (isEditMode) {
           editAutocompleteSuggestions.value = [];
           showEditSuggestions.value = false;
@@ -1349,28 +1672,29 @@ export default {
       }
 
       try {
-        console.log('Ensuring Google Maps is loaded...');
+        console.log("Ensuring Google Maps is loaded...");
         const isLoaded = await ensureGoogleMapsLoaded();
         if (!isLoaded) {
-          console.error('Failed to load Google Maps API');
+          console.error("Failed to load Google Maps API");
           return;
         }
 
-        console.log('Google Maps loaded, checking API availability...');
+        console.log("Google Maps loaded, checking API availability...");
         if (!google.maps.places.AutocompleteSuggestion) {
-          console.error('AutocompleteSuggestion not available');
+          console.error("AutocompleteSuggestion not available");
           return;
         }
 
         // Create session token if not exists
         if (isEditMode) {
           if (!editSessionToken) {
-            console.log('Creating edit session token');
-            editSessionToken = new google.maps.places.AutocompleteSessionToken();
+            console.log("Creating edit session token");
+            editSessionToken =
+              new google.maps.places.AutocompleteSessionToken();
           }
         } else {
           if (!sessionToken) {
-            console.log('Creating session token');
+            console.log("Creating session token");
             sessionToken = new google.maps.places.AutocompleteSessionToken();
           }
         }
@@ -1381,41 +1705,56 @@ export default {
           locationBias: {
             // Bias towards Cambridge, MA area
             west: -71.15,
-            north: 42.40,
+            north: 42.4,
             east: -71.05,
             south: 42.35,
           },
         };
 
-        console.log('Fetching autocomplete suggestions with request:', request);
-        const { suggestions } = await google.maps.places.AutocompleteSuggestion.fetchAutocompleteSuggestions(request);
+        console.log("Fetching autocomplete suggestions with request:", request);
+        const { suggestions } =
+          await google.maps.places.AutocompleteSuggestion.fetchAutocompleteSuggestions(
+            request
+          );
 
-        console.log('Autocomplete API response:', { suggestions, count: suggestions?.length });
+        console.log("Autocomplete API response:", {
+          suggestions,
+          count: suggestions?.length,
+        });
 
         if (suggestions && suggestions.length > 0) {
           const first = suggestions[0];
-          console.log('First suggestion structure:', first);
+          console.log("First suggestion structure:", first);
 
           // Check if it has a placePrediction property
           if (first.placePrediction) {
-            console.log('Has placePrediction property');
+            console.log("Has placePrediction property");
             const pred = first.placePrediction;
 
             // Try to log text via toString or valueOf
-            console.log('placePrediction.text:', pred.text);
-            console.log('placePrediction.text type:', typeof pred.text);
+            console.log("placePrediction.text:", pred.text);
+            console.log("placePrediction.text type:", typeof pred.text);
 
-            if (pred.text && typeof pred.text === 'object') {
-              console.log('text.toString():', pred.text.toString());
-              console.log('text keys:', Object.keys(pred.text));
+            if (pred.text && typeof pred.text === "object") {
+              console.log("text.toString():", pred.text.toString());
+              console.log("text keys:", Object.keys(pred.text));
             }
 
-            console.log('placePrediction.structuredFormat:', pred.structuredFormat);
+            console.log(
+              "placePrediction.structuredFormat:",
+              pred.structuredFormat
+            );
             if (pred.structuredFormat?.mainText) {
-              console.log('mainText:', pred.structuredFormat.mainText);
-              console.log('mainText type:', typeof pred.structuredFormat.mainText);
-              if (typeof pred.structuredFormat.mainText === 'object') {
-                console.log('mainText.toString():', pred.structuredFormat.mainText.toString());
+              console.log("mainText:", pred.structuredFormat.mainText);
+              console.log(
+                "mainText type:",
+                typeof pred.structuredFormat.mainText
+              );
+              if (typeof pred.structuredFormat.mainText === "object") {
+                console.log(
+                  "mainText.toString():",
+                  pred.structuredFormat.mainText.toString()
+                );
               }
             }
           }
@@ -1423,51 +1762,65 @@ export default {
 
         if (isEditMode) {
           // Extract text immediately before Vue wraps the objects
-          editAutocompleteSuggestions.value = suggestions.map(s => {
+          editAutocompleteSuggestions.value = suggestions.map((s) => {
             const prediction = s.placePrediction;
-            let displayText = 'Unknown location';
+            let displayText = "Unknown location";
 
             try {
               if (prediction && prediction.text) {
                 displayText = String(prediction.text);
               }
             } catch (e) {
-              console.log('Error extracting text:', e.message);
+              console.log("Error extracting text:", e.message);
             }
 
             return {
               displayText: displayText,
               placePrediction: prediction,
-              rawSuggestion: s
+              rawSuggestion: s,
             };
           });
           showEditSuggestions.value = suggestions && suggestions.length > 0;
-          console.log('Edit suggestions set:', editAutocompleteSuggestions.value.length, 'Show:', showEditSuggestions.value);
+          console.log(
+            "Edit suggestions set:",
+            editAutocompleteSuggestions.value.length,
+            "Show:",
+            showEditSuggestions.value
+          );
         } else {
           // Extract text immediately before Vue wraps the objects
-          autocompleteSuggestions.value = suggestions.map(s => {
+          autocompleteSuggestions.value = suggestions.map((s) => {
             const prediction = s.placePrediction;
-            let displayText = 'Unknown location';
+            let displayText = "Unknown location";
 
             try {
               if (prediction && prediction.text) {
                 displayText = String(prediction.text);
               }
             } catch (e) {
-              console.log('Error extracting text:', e.message);
+              console.log("Error extracting text:", e.message);
             }
 
             return {
               displayText: displayText,
               placePrediction: prediction,
-              rawSuggestion: s
+              rawSuggestion: s,
             };
           });
           showSuggestions.value = suggestions && suggestions.length > 0;
-          console.log('Create suggestions set:', autocompleteSuggestions.value.length, 'Show:', showSuggestions.value);
+          console.log(
+            "Create suggestions set:",
+            autocompleteSuggestions.value.length,
+            "Show:",
+            showSuggestions.value
+          );
         }
       } catch (err) {
-        console.error('Error fetching autocomplete suggestions:', err, err.stack);
+        console.error(
+          "Error fetching autocomplete suggestions:",
+          err,
+          err.stack
+        );
         if (isEditMode) {
           editAutocompleteSuggestions.value = [];
           showEditSuggestions.value = false;
@@ -1546,7 +1899,8 @@ export default {
         }
 
         if (!filterSessionToken) {
-          filterSessionToken = new google.maps.places.AutocompleteSessionToken();
+          filterSessionToken =
+            new google.maps.places.AutocompleteSessionToken();
         }
 
         const request = {
@@ -1554,35 +1908,38 @@ export default {
           sessionToken: filterSessionToken,
           locationBias: {
             west: -71.15,
-            north: 42.40,
+            north: 42.4,
             east: -71.05,
             south: 42.35,
           },
         };
 
-        const { suggestions } = await google.maps.places.AutocompleteSuggestion.fetchAutocompleteSuggestions(request);
+        const { suggestions } =
+          await google.maps.places.AutocompleteSuggestion.fetchAutocompleteSuggestions(
+            request
+          );
 
-        filterAutocompleteSuggestions.value = suggestions.map(s => {
+        filterAutocompleteSuggestions.value = suggestions.map((s) => {
           const prediction = s.placePrediction;
-          let displayText = 'Unknown location';
+          let displayText = "Unknown location";
 
           try {
             if (prediction && prediction.text) {
               displayText = String(prediction.text);
             }
           } catch (e) {
-            console.log('Error extracting text:', e.message);
+            console.log("Error extracting text:", e.message);
           }
 
           return {
             displayText: displayText,
             placePrediction: prediction,
-            rawSuggestion: s
+            rawSuggestion: s,
           };
         });
         showFilterSuggestions.value = suggestions && suggestions.length > 0;
       } catch (err) {
-        console.error('Error fetching filter location suggestions:', err);
+        console.error("Error fetching filter location suggestions:", err);
         filterAutocompleteSuggestions.value = [];
         showFilterSuggestions.value = false;
       }
@@ -1595,17 +1952,18 @@ export default {
       try {
         if (!suggestion) return;
 
-        const prediction = suggestion.placePrediction || suggestion.rawSuggestion || suggestion;
+        const prediction =
+          suggestion.placePrediction || suggestion.rawSuggestion || suggestion;
         let place;
 
-        if (typeof prediction.toPlace === 'function') {
+        if (typeof prediction.toPlace === "function") {
           place = prediction.toPlace();
         } else {
           return;
         }
 
         await place.fetchFields({
-          fields: ['displayName', 'formattedAddress', 'location'],
+          fields: ["displayName", "formattedAddress", "location"],
         });
 
         const address = place.formattedAddress || place.displayName;
@@ -1614,7 +1972,7 @@ export default {
         filterAutocompleteSuggestions.value = [];
         filterSessionToken = null;
       } catch (err) {
-        console.error('Error selecting filter location:', err);
+        console.error("Error selecting filter location:", err);
       }
     };
 
@@ -1623,7 +1981,7 @@ export default {
      */
     const getSuggestionText = (suggestion) => {
       if (!suggestion) {
-        return '';
+        return "";
       }
 
       // We now cache displayText directly in the suggestion object
@@ -1631,7 +1989,7 @@ export default {
         return suggestion.displayText;
       }
 
-      return 'Unknown location';
+      return "Unknown location";
     };
 
     /**
@@ -1640,36 +1998,40 @@ export default {
     const selectSuggestion = async (suggestion, isEditMode = false) => {
       try {
         if (!suggestion) {
-          console.error('Invalid suggestion object:', suggestion);
+          console.error("Invalid suggestion object:", suggestion);
           return;
         }
 
-        console.log('Selecting suggestion:', suggestion);
+        console.log("Selecting suggestion:", suggestion);
 
         // Get the actual prediction from our wrapper
-        const prediction = suggestion.placePrediction || suggestion.rawSuggestion || suggestion;
-        console.log('Using prediction for toPlace:', prediction);
+        const prediction =
+          suggestion.placePrediction || suggestion.rawSuggestion || suggestion;
+        console.log("Using prediction for toPlace:", prediction);
 
         // The prediction should have a toPlace() method
         let place;
-        if (typeof prediction.toPlace === 'function') {
+        if (typeof prediction.toPlace === "function") {
           place = prediction.toPlace();
         } else {
-          console.error('Prediction does not have toPlace method:', prediction);
-          console.error('Available methods:', Object.getOwnPropertyNames(Object.getPrototypeOf(prediction)));
+          console.error("Prediction does not have toPlace method:", prediction);
+          console.error(
+            "Available methods:",
+            Object.getOwnPropertyNames(Object.getPrototypeOf(prediction))
+          );
           return;
         }
 
-        console.log('Place object created:', place);
+        console.log("Place object created:", place);
 
         await place.fetchFields({
-          fields: ['displayName', 'formattedAddress', 'location'],
+          fields: ["displayName", "formattedAddress", "location"],
         });
 
-        console.log('Place fields fetched:', place);
+        console.log("Place fields fetched:", place);
 
         if (!place.location) {
-          console.error('Place has no location data:', place);
+          console.error("Place has no location data:", place);
           return;
         }
 
@@ -1681,7 +2043,7 @@ export default {
           editGeocodedLocation.value = {
             latitude: lat,
             longitude: lng,
-            address: address
+            address: address,
           };
           editForm.value.address = address;
           showEditSuggestions.value = false;
@@ -1692,7 +2054,7 @@ export default {
           geocodedLocation.value = {
             latitude: lat,
             longitude: lng,
-            address: address
+            address: address,
           };
           newListing.value.address = address;
           showSuggestions.value = false;
@@ -1701,17 +2063,15 @@ export default {
           sessionToken = null;
         }
 
-        console.log('Place selected:', {
+        console.log("Place selected:", {
           address: address,
           lat: lat,
-          lng: lng
+          lng: lng,
         });
       } catch (err) {
-        console.error('Error selecting place:', err);
+        console.error("Error selecting place:", err);
       }
     };
-
-
 
     /**
      * Geocode an address to get lat/lng coordinates
@@ -1720,18 +2080,19 @@ export default {
       try {
         // Check if Google Maps is already loaded
         if (!window.google || !window.google.maps) {
-          const response = await apiRequest('/config/mapsKey', {});
-          const apiKey = response.apiKey || import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
+          const response = await apiRequest("/config/mapsKey", {});
+          const apiKey =
+            response.apiKey || import.meta.env.VITE_GOOGLE_MAPS_API_KEY;
 
           if (!apiKey) {
-            console.warn('Cannot geocode: API key not available');
+            console.warn("Cannot geocode: API key not available");
             return null;
           }
 
           // Load script if not already loaded
           if (!document.querySelector('script[src*="maps.googleapis.com"]')) {
             await new Promise((resolve, reject) => {
-              const script = document.createElement('script');
+              const script = document.createElement("script");
               script.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places,geocoding&v=weekly`;
               script.async = true;
               script.defer = true;
@@ -1744,7 +2105,7 @@ export default {
           // Wait for Google Maps to be available
           let retries = 0;
           while ((!window.google || !window.google.maps) && retries < 50) {
-            await new Promise(resolve => setTimeout(resolve, 100));
+            await new Promise((resolve) => setTimeout(resolve, 100));
             retries++;
           }
         }
@@ -1753,21 +2114,21 @@ export default {
 
         return new Promise((resolve) => {
           geocoder.geocode({ address: address }, (results, status) => {
-            if (status === 'OK' && results && results[0]) {
+            if (status === "OK" && results && results[0]) {
               const location = results[0].geometry.location;
               resolve({
                 latitude: location.lat(),
                 longitude: location.lng(),
-                address: results[0].formatted_address
+                address: results[0].formatted_address,
               });
             } else {
-              console.warn('Geocoding failed:', status);
+              console.warn("Geocoding failed:", status);
               resolve(null);
             }
           });
         });
       } catch (err) {
-        console.error('Error geocoding address:', err);
+        console.error("Error geocoding address:", err);
         return null;
       }
     };
@@ -1782,8 +2143,12 @@ export default {
 
         // Debug: Log each listing's lister ID and coordinates
         if (result && Array.isArray(result)) {
-          const listingsWithCoords = result.filter(l => l.latitude && l.longitude);
-          console.log(`[FindHousing] Listings with coordinates: ${listingsWithCoords.length}/${result.length}`);
+          const listingsWithCoords = result.filter(
+            (l) => l.latitude && l.longitude
+          );
+          console.log(
+            `[FindHousing] Listings with coordinates: ${listingsWithCoords.length}/${result.length}`
+          );
 
           result.forEach((listing, index) => {
             console.log(`[FindHousing] Listing ${index}:`, {
@@ -1856,12 +2221,12 @@ export default {
           const tagsMap = new Map();
 
           items.forEach((saved) => {
-              console.log(
-                "Processing saved item:",
-                JSON.stringify(saved, null, 2)
-              );
-              // API returns: {user: "...", savedItem: {item: "id", tags: [...]}}
-              if (saved.savedItem && saved.savedItem.item) {
+            console.log(
+              "Processing saved item:",
+              JSON.stringify(saved, null, 2)
+            );
+            // API returns: {user: "...", savedItem: {item: "id", tags: [...]}}
+            if (saved.savedItem && saved.savedItem.item) {
               const itemId = saved.savedItem.item;
               const tags = saved.savedItem.tags || [];
               console.log(`Found itemId: ${itemId}, tags:`, tags);
@@ -1878,7 +2243,7 @@ export default {
               } else {
                 tagsMap.set(itemId, { tags: tags });
               }
-              } else if (saved._id) {
+            } else if (saved._id) {
               const itemId = saved._id;
               console.log("Using saved._id:", itemId);
               if (!ids.includes(itemId)) {
@@ -1887,7 +2252,7 @@ export default {
               if (!tagsMap.has(itemId)) {
                 tagsMap.set(itemId, { tags: [] });
               }
-              } else if (saved.item && saved.item.item) {
+            } else if (saved.item && saved.item.item) {
               const itemId = saved.item.item;
               console.log("Using saved.item.item:", itemId);
               if (!ids.includes(itemId)) {
@@ -2015,15 +2380,17 @@ export default {
 
     // Helper functions
     const truncateText = (text, maxLength) => {
-      if (!text) return '';
+      if (!text) return "";
       if (text.length <= maxLength) return text;
-      return text.substring(0, maxLength) + '...';
+      return text.substring(0, maxLength) + "...";
     };
 
     const getPhotoUrl = (photo) => {
-      if (!photo) return '';
+      if (!photo) return "";
       // Handle both old format (string) and new format (object with url property)
-      return typeof photo === 'string' ? photo : photo.url || photo.thumbUrl || '';
+      return typeof photo === "string"
+        ? photo
+        : photo.url || photo.thumbUrl || "";
     };
 
     const toggleListingDetails = (listingId) => {
@@ -2045,7 +2412,11 @@ export default {
     };
 
     const getExpandedListing = () => {
-      return listingsData.value.find(listing => listing._id === expandedListing.value) || {};
+      return (
+        listingsData.value.find(
+          (listing) => listing._id === expandedListing.value
+        ) || {}
+      );
     };
 
     const formatDate = (dateString) => {
@@ -2089,9 +2460,12 @@ export default {
           .filter((a) => a.title && a.title.trim() !== "")
           .map((a) => ({
             title: a.title,
-            distance: a.distance !== "" && a.distance !== null && a.distance !== undefined
-              ? Number(a.distance)
-              : 0,
+            distance:
+              a.distance !== "" &&
+              a.distance !== null &&
+              a.distance !== undefined
+                ? Number(a.distance)
+                : 0,
           }));
 
         console.log("Valid amenities:", validAmenities);
@@ -2110,27 +2484,27 @@ export default {
         }
 
         // Ensure all photos are in object format for backend create function
-        const photoObjects = (newListing.value.photos || []).map(photo => {
-          if (typeof photo === 'string') {
+        const photoObjects = (newListing.value.photos || []).map((photo) => {
+          if (typeof photo === "string") {
             // Convert string URL to photo object
             return {
               url: photo,
               thumbUrl: photo,
-              storageKey: photo.split('/').pop() || 'unknown',
+              storageKey: photo.split("/").pop() || "unknown",
               alt: "Housing listing photo",
               width: 1200,
               height: 800,
-              contentType: photo.includes('.png') ? "image/png" : "image/jpeg",
-              bytes: 500000
+              contentType: photo.includes(".png") ? "image/png" : "image/jpeg",
+              bytes: 500000,
             };
           }
           return photo; // Already an object
         });
 
-        console.log('📷 Final photo objects for create:', {
+        console.log("📷 Final photo objects for create:", {
           totalPhotos: photoObjects.length,
           photos: photoObjects,
-          samplePhoto: photoObjects[0]
+          samplePhoto: photoObjects[0],
         });
 
         // Geocode address if not already geocoded
@@ -2312,7 +2686,12 @@ export default {
             }
           }
 
-          await listings.editAddress(listingId, editForm.value.address, latitude, longitude);
+          await listings.editAddress(
+            listingId,
+            editForm.value.address,
+            latitude,
+            longitude
+          );
         }
         if (
           formatDateForInput(listing.startDate) !== editForm.value.startDate
@@ -2334,66 +2713,103 @@ export default {
           await listings.editDescription(listingId, newDescription);
         }
 
-        // Handle amenities: deleted, new, and updated
-        // Only require title, distance is optional
+        // Handle amenities: compare old vs new and only process actual changes
         const oldAmenities = listing.amenities || [];
         const newAmenities = editForm.value.amenities.filter(
           (a) => a.title && a.title.trim() !== ""
         );
 
-        // Delete amenities that were removed
+        // Helper function to normalize distance for comparison
+        const normalizeDistance = (distance) => {
+          if (distance === "" || distance === null || distance === undefined) {
+            return 0;
+          }
+          return Number(distance);
+        };
+
+        // Helper function to check if two amenities are the same
+        const areAmenitiesEqual = (oldA, newA) => {
+          const oldDistance = normalizeDistance(oldA.distance);
+          const newDistance = normalizeDistance(newA.distance);
+          return oldA.title === newA.title && oldDistance === newDistance;
+        };
+
+        // Step 1: Delete amenities that were completely removed (not in new list at all)
         for (const oldAmenity of oldAmenities) {
-          const stillExists = newAmenities.some(
-            (newA) =>
-              newA._id === oldAmenity._id &&
-              newA.title === oldAmenity.title &&
-              newA.distance === oldAmenity.distance
-          );
-          if (!stillExists && oldAmenity._id) {
+          const existsInNew = newAmenities.some((newA) => {
+            // Check if this old amenity exists in new list by _id
+            return newA._id === oldAmenity._id;
+          });
+
+          // If old amenity is not in new list at all, delete it
+          if (!existsInNew && oldAmenity._id) {
             await listings.deleteAmenity(listingId, oldAmenity._id);
           }
         }
 
-        // Add new amenities or update existing ones if changed
+        // Step 2: Handle new amenities and changed amenities
         for (const newAmenity of newAmenities) {
-          // If it doesn't have an _id, it's a new amenity
-          if (!newAmenity._id && newAmenity.title) {
-            const distance = newAmenity.distance !== "" &&
-                           newAmenity.distance !== null &&
-                           newAmenity.distance !== undefined
-              ? Number(newAmenity.distance)
-              : 0;
-            await listings.addAmenity(
-              listingId,
-              newAmenity.title,
-              distance
+          // If it doesn't have an _id, check if it's actually a duplicate of an existing amenity
+          // by comparing title and distance (in case _id was lost)
+          if (!newAmenity._id) {
+            // Check if this amenity already exists in old amenities (by title and distance)
+            const normalizedNewDistance = normalizeDistance(
+              newAmenity.distance
             );
-          }
-          // If it has an _id but values changed, delete old and add new
-          else if (newAmenity._id) {
-            const oldAmenity = oldAmenities.find(
-              (a) => a._id === newAmenity._id
-            );
-            const newDistance = newAmenity.distance !== "" &&
-                               newAmenity.distance !== null &&
-                               newAmenity.distance !== undefined
-              ? Number(newAmenity.distance)
-              : 0;
-            if (
-              oldAmenity &&
-              (oldAmenity.title !== newAmenity.title ||
-                oldAmenity.distance !== newDistance)
-            ) {
-              await listings.deleteAmenity(listingId, newAmenity._id);
-              if (newAmenity.title) {
-                await listings.addAmenity(
-                  listingId,
-                  newAmenity.title,
-                  newDistance
-                );
-              }
+            const isDuplicate = oldAmenities.some((oldA) => {
+              const normalizedOldDistance = normalizeDistance(oldA.distance);
+              return (
+                oldA.title === newAmenity.title &&
+                normalizedOldDistance === normalizedNewDistance
+              );
+            });
+
+            // If it's a duplicate, skip it (don't try to add)
+            if (isDuplicate) {
+              continue;
             }
+
+            // It's truly new - add it
+            const distance = normalizeDistance(newAmenity.distance);
+            await listings.addAmenity(listingId, newAmenity.title, distance);
+            continue;
           }
+
+          // If it has an _id, find the corresponding old amenity
+          const oldAmenity = oldAmenities.find((a) => a._id === newAmenity._id);
+
+          // If old amenity doesn't exist, check if it's a duplicate by title/distance
+          if (!oldAmenity) {
+            const normalizedNewDistance = normalizeDistance(
+              newAmenity.distance
+            );
+            const isDuplicate = oldAmenities.some((oldA) => {
+              const normalizedOldDistance = normalizeDistance(oldA.distance);
+              return (
+                oldA.title === newAmenity.title &&
+                normalizedOldDistance === normalizedNewDistance
+              );
+            });
+
+            // If it's a duplicate, skip it
+            if (isDuplicate) {
+              continue;
+            }
+
+            // Not a duplicate and no old amenity found - skip it to be safe
+            continue;
+          }
+
+          // Check if values are unchanged - if so, skip entirely (don't process)
+          if (areAmenitiesEqual(oldAmenity, newAmenity)) {
+            // Amenity is unchanged - skip it completely
+            continue;
+          }
+
+          // Values changed - update it (delete old, add new)
+          await listings.deleteAmenity(listingId, newAmenity._id);
+          const distance = normalizeDistance(newAmenity.distance);
+          await listings.addAmenity(listingId, newAmenity.title, distance);
         }
 
         // Handle photos: compare original with edited
@@ -2401,7 +2817,8 @@ export default {
         const editedPhotos = editForm.value.photos || [];
 
         // Extract URLs for comparison (handle both string and object formats)
-        const getPhotoUrl = (photo) => typeof photo === 'string' ? photo : photo.url;
+        const getPhotoUrl = (photo) =>
+          typeof photo === "string" ? photo : photo.url;
         const originalUrls = originalPhotos.map(getPhotoUrl);
         const editedUrls = editedPhotos.map(getPhotoUrl);
 
@@ -2411,12 +2828,20 @@ export default {
           if (!editedUrls.includes(originalUrl)) {
             // Photo was removed - need to delete it
             try {
-              const photoId = typeof originalPhoto === 'string' ? null : originalPhoto._id;
+              const photoId =
+                typeof originalPhoto === "string" ? null : originalPhoto._id;
               if (photoId) {
-                console.log('🗑️ Deleting photo:', { listingId, photoId, url: originalUrl });
+                console.log("🗑️ Deleting photo:", {
+                  listingId,
+                  photoId,
+                  url: originalUrl,
+                });
                 await listings.deletePhoto(listingId, photoId);
               } else {
-                console.warn("Cannot delete photo: no photo ID available for URL:", originalUrl);
+                console.warn(
+                  "Cannot delete photo: no photo ID available for URL:",
+                  originalUrl
+                );
               }
             } catch (photoError) {
               console.error("Could not delete photo:", originalUrl, photoError);
@@ -2430,7 +2855,10 @@ export default {
           if (!originalUrls.includes(editedUrl)) {
             // Photo was added - need to add it
             try {
-              console.log('🖼️ Adding photo to listing:', { listingId, photoUrl: editedUrl });
+              console.log("🖼️ Adding photo to listing:", {
+                listingId,
+                photoUrl: editedUrl,
+              });
               await listings.addPhoto(listingId, editedUrl);
             } catch (photoError) {
               console.error("Could not add photo:", editedPhoto, photoError);
@@ -2462,7 +2890,9 @@ export default {
         console.log("Sending interest for listing:", listingId);
         const result = await listings.sendInterest(listingId);
         console.log("Interest sent successfully:", result);
-        alert("Your interest has been sent to the listing owner! They will email you with next steps if they choose to continue the conversation");
+        alert(
+          "Your interest has been sent to the listing owner! They will email you with next steps if they choose to continue the conversation"
+        );
 
         // Refetch saved items to update local state
         await fetchSavedItems();
@@ -2509,7 +2939,7 @@ export default {
       fetchSavedItems();
 
       // Check if we should auto-open the create modal
-      if (route.query.openCreate === 'true') {
+      if (route.query.openCreate === "true") {
         showCreateModal.value = true;
       }
     });
@@ -2524,8 +2954,6 @@ export default {
         }
       }
     );
-
-
 
     return {
       listings: listingsData,
@@ -2619,7 +3047,7 @@ export default {
 
 .hero {
   background-color: rgb(47, 71, 62);
-  background-image: url('../assets/scene.png');
+  background-image: url("../assets/scene.png");
   background-size: cover;
   background-position: center bottom;
   color: white;
@@ -3453,7 +3881,7 @@ export default {
 .close-btn {
   background: none;
   border: none;
-    font-size: 2rem;
+  font-size: 2rem;
   cursor: pointer;
   color: white;
   padding: 0.25rem;
@@ -3916,5 +4344,4 @@ export default {
 .filter-suggestions-list {
   z-index: 1001;
 }
-
 </style>
