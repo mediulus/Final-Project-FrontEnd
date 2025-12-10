@@ -354,13 +354,20 @@
                 type="date"
                 id="startDate"
                 v-model="form.startDate"
+                @blur="validateDate('startDate')"
                 required
               />
             </div>
 
             <div class="form-group">
               <label for="endDate">End Date *</label>
-              <input type="date" id="endDate" v-model="form.endDate" required />
+              <input 
+                type="date" 
+                id="endDate" 
+                v-model="form.endDate" 
+                @blur="validateDate('endDate')"
+                required 
+              />
             </div>
           </div>
 
@@ -572,6 +579,7 @@
                 type="date"
                 id="edit-startDate"
                 v-model="editForm.startDate"
+                @blur="validateDate('edit-startDate', true)"
                 required
               />
             </div>
@@ -582,6 +590,7 @@
                 type="date"
                 id="edit-endDate"
                 v-model="editForm.endDate"
+                @blur="validateDate('edit-endDate', true)"
                 required
               />
             </div>
@@ -1498,6 +1507,64 @@ export default {
       return `${year}-${month}-${day}`;
     };
 
+    // Helper function to validate date string
+    const isValidDate = (dateString) => {
+      if (!dateString) return false;
+      // Check if it matches YYYY-MM-DD format
+      const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+      if (!dateRegex.test(dateString)) return false;
+      // Try to create a date and check if it's valid
+      const date = new Date(dateString);
+      return date instanceof Date && !isNaN(date.getTime());
+    };
+
+    // Validate and format date on blur
+    const validateDate = (fieldId, isEdit = false) => {
+      const input = document.getElementById(fieldId);
+      if (!input) return;
+      
+      const value = input.value;
+      if (!value) return;
+
+      // Check if the date is valid
+      if (!isValidDate(value)) {
+        // Try to fix common formatting issues
+        // If user typed something like "2025-6-1", try to format it
+        const parts = value.split('-');
+        if (parts.length === 3) {
+          const year = parts[0].padStart(4, '0');
+          const month = parts[1].padStart(2, '0');
+          const day = parts[2].padStart(2, '0');
+          const formatted = `${year}-${month}-${day}`;
+          
+          // Check if the formatted date is valid
+          if (isValidDate(formatted)) {
+            if (isEdit) {
+              if (fieldId === 'edit-startDate') {
+                editForm.value.startDate = formatted;
+              } else if (fieldId === 'edit-endDate') {
+                editForm.value.endDate = formatted;
+              }
+            } else {
+              if (fieldId === 'startDate') {
+                form.value.startDate = formatted;
+              } else if (fieldId === 'endDate') {
+                form.value.endDate = formatted;
+              }
+            }
+            input.value = formatted;
+            return;
+          }
+        }
+        
+        // If we can't fix it, show an error
+        input.setCustomValidity('Please enter a valid date in YYYY-MM-DD format');
+        input.reportValidity();
+      } else {
+        input.setCustomValidity('');
+      }
+    };
+
     // New methods for expanded view
     const togglePostingDetails = (postingId) => {
       if (expandedPosting.value === postingId) {
@@ -1698,6 +1765,30 @@ export default {
         if (!userId) {
           editError.value = "User not found";
           return;
+        }
+
+        // Validate date formats before updating
+        if (editForm.value.startDate && !isValidDate(editForm.value.startDate)) {
+          editError.value = "Please enter a valid start date (YYYY-MM-DD format)";
+          isEditing.value = false;
+          return;
+        }
+
+        if (editForm.value.endDate && !isValidDate(editForm.value.endDate)) {
+          editError.value = "Please enter a valid end date (YYYY-MM-DD format)";
+          isEditing.value = false;
+          return;
+        }
+
+        // Validate date order if both dates are present
+        if (editForm.value.startDate && editForm.value.endDate) {
+          const startDate = new Date(editForm.value.startDate);
+          const endDate = new Date(editForm.value.endDate);
+          if (startDate >= endDate) {
+            editError.value = "Start date must be before end date";
+            isEditing.value = false;
+            return;
+          }
         }
 
         // Compare and update only changed fields
@@ -1935,6 +2026,28 @@ export default {
           return;
         }
 
+        // Validate date formats
+        if (!isValidDate(form.value.startDate)) {
+          createError.value = "Please enter a valid start date (YYYY-MM-DD format)";
+          isCreating.value = false;
+          return;
+        }
+
+        if (!isValidDate(form.value.endDate)) {
+          createError.value = "Please enter a valid end date (YYYY-MM-DD format)";
+          isCreating.value = false;
+          return;
+        }
+
+        // Validate date order
+        const startDate = new Date(form.value.startDate);
+        const endDate = new Date(form.value.endDate);
+        if (startDate >= endDate) {
+          createError.value = "Start date must be before end date";
+          isCreating.value = false;
+          return;
+        }
+
         const postingData = {
           city: form.value.city,
           gender: form.value.gender,
@@ -2079,6 +2192,7 @@ export default {
       isPoster,
       deletePosting,
       formatDate,
+      validateDate,
       editPosting,
       showEditModal,
       isEditing,
